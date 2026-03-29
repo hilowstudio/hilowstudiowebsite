@@ -33,13 +33,12 @@ export function StandardsCTA() {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <a
-                            href="/qsf-v1.pdf"
-                            download
+                        <Link
+                            href="/standards/spec"
                             className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-clay text-paper text-sm font-medium hover:bg-clay-muted focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 transition-all duration-300"
                         >
-                            Download the Full Specification (PDF)
-                        </a>
+                            Read the Full Specification
+                        </Link>
                         <Link
                             href="/book"
                             className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-ink/10 text-ink text-sm font-medium hover:border-ink/20 focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 transition-all duration-300"

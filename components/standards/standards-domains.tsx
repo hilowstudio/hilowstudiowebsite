@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 const domains = [
@@ -149,12 +150,18 @@ export function StandardsDomains() {
                     <h2 className="text-3xl md:text-4xl mb-4">
                         7 Domains. 104 Criteria.
                     </h2>
-                    <p className="text-ink-muted max-w-xl">
+                    <p className="text-ink-muted max-w-xl mb-6">
                         Each domain maps to a core conviction about how software
                         should treat the people who use it. Every criterion is
                         specific enough that two independent auditors reach the
                         same conclusion.
                     </p>
+                    <Link
+                        href="/standards/spec"
+                        className="inline-flex items-center text-sm text-clay hover:text-clay-muted transition-colors duration-300"
+                    >
+                        Read the full specification &rarr;
+                    </Link>
                 </motion.div>
 
                 <div className="space-y-8 max-w-4xl">
