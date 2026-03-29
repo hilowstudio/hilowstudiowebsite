@@ -6,3 +6,7 @@ out/
 next-env.d.ts
 sa-key.json
 .env.local
+
+# PDF generation artifacts
+qsf-spec.html
+generate-pdf.mjs

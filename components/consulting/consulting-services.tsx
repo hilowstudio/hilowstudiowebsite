@@ -21,6 +21,12 @@ const services = [
         description:
             "Technology should inform without demanding attention. We apply calm technology principles to product interfaces and business workflows, designing systems that stay in the background until the moment they're needed, degrade gracefully, and respect the limited attention of the people who use them.",
     },
+    {
+        title: "Audit",
+        subtitle: "Quiet Standards Certification",
+        description:
+            "We evaluate software products against the Quiet Standards Framework \u2014 104 auditable criteria across attention, data sovereignty, honesty, departure, respect, durability, and governance. You get a detailed report with your score, your failures, and a prioritized remediation path. Self-audit toolkit is free. Guided audits and formal certification are available.",
+    },
 ];
 
 const topics = [
@@ -56,16 +62,17 @@ export function ConsultingServices() {
                         What We Offer
                     </p>
                     <h2 className="text-3xl md:text-4xl mb-4">
-                        Three Ways to Work Together
+                        Four Ways to Work Together
                     </h2>
                     <p className="text-ink-muted max-w-xl">
                         Whether you need a system built, want to learn to build your
-                        own, or need help designing technology that respects your
-                        users, we have a path for you.
+                        own, need help designing technology that respects your
+                        users, or want your product audited against calm tech
+                        standards &mdash; we have a path for you.
                     </p>
                 </motion.div>
 
-                <div className="grid md:grid-cols-3 gap-6 max-w-5xl">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl">
                     {services.map((service, index) => (
                         <motion.div
                             key={service.title}
