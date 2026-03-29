@@ -75,7 +75,7 @@ export function ContactForm() {
                             <h3 className="text-xl">Message Sent</h3>
                         </div>
                         <p className="text-ink-muted text-sm">
-                            Thanks for reaching out. We'll get back to you within a few days.
+                            Thanks for reaching out. We&apos;ll get back to you within 2 business days.
                         </p>
                     </motion.div>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { PaperPlaneTilt, Check } from "@phosphor-icons/react";
 
@@ -71,7 +72,14 @@ export function Footer() {
                     </motion.div>
 
                     {/* Divider */}
-                    <div className="w-full h-px bg-ink/5 mb-8" />
+                    <div className="w-full h-px bg-ink/5 mb-6" />
+
+                    {/* Transparency */}
+                    <p className="text-xs text-ink-light text-center mb-6">
+                        Hi-Low Studio is bootstrapped and funded by consulting
+                        services and product sales. We do not sell data or run
+                        ads.
+                    </p>
 
                     {/* Bottom Row */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-ink-muted">
@@ -90,6 +98,18 @@ export function Footer() {
                             >
                                 Contact
                             </a>
+                            <Link
+                                href="/privacy"
+                                className="hover:text-clay transition-colors duration-300"
+                            >
+                                Privacy
+                            </Link>
+                            <Link
+                                href="/changelog"
+                                className="hover:text-clay transition-colors duration-300"
+                            >
+                                Changelog
+                            </Link>
                             <span className="text-ink-light">
                                 © {new Date().getFullYear()}
                             </span>
