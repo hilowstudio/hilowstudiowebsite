@@ -190,16 +190,16 @@
 
 **Must-Pass Gate**: Fail ANY of 27 must-pass criteria → no certification at any tier.
 
-**Point Scoring**: 77 scored criteria, 134 total points.
+**Point Scoring**: 77 scored criteria, 143 total points.
 
 **Domain Minimum**: Silver and Gold require ≥40% of scored points in EVERY domain (no compensating weak areas with strong ones).
 
 | Tier | Name | Requirement |
 |------|------|-------------|
 | — | Not Certified | Fails any must-pass OR <40% scored |
-| 🟫 | **QSF Verified** | All must-pass + 54+ pts (40%) |
-| ⬜ | **QSF Certified** | All must-pass + 80+ pts (60%) + domain minimums |
-| 🟨 | **QSF Exemplary** | All must-pass + 107+ pts (80%) + domain minimums |
+| 🟫 | **QSF Verified** | All must-pass + 57+ pts (40%) |
+| ⬜ | **QSF Certified** | All must-pass + 86+ pts (60%) + domain minimums |
+| 🟨 | **QSF Exemplary** | All must-pass + 114+ pts (80%) + domain minimums |
 
 ---
 

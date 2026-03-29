@@ -6,7 +6,7 @@ const tiers = [
     {
         name: "QSF Verified",
         threshold: "40%",
-        points: "54+",
+        points: "57+",
         description:
             "Meets baseline ethical standards. No exploitative patterns. All 27 must-pass criteria satisfied.",
         color: "border-ink/20",
@@ -14,7 +14,7 @@ const tiers = [
     {
         name: "QSF Certified",
         threshold: "60%",
-        points: "80+",
+        points: "86+",
         description:
             "Demonstrates active commitment to user respect across all domains. Requires domain minimums \u2014 you cannot compensate for weak data practices with strong notification design.",
         color: "border-clay/40",
@@ -22,7 +22,7 @@ const tiers = [
     {
         name: "QSF Exemplary",
         threshold: "80%",
-        points: "107+",
+        points: "114+",
         description:
             "Industry-leading attention-respecting software. Suitable as a reference implementation for others building in this space.",
         color: "border-clay",
@@ -72,7 +72,7 @@ export function StandardsScoring() {
                         How Certification Works
                     </h2>
                     <p className="text-ink-muted max-w-xl">
-                        27 must-pass gates. 77 scored criteria totaling 134
+                        27 must-pass gates. 77 scored criteria totaling 143
                         points. Fail any must-pass and certification is denied at
                         every tier, regardless of total score. Must-pass criteria
                         are the line between ethical software and everything else.
@@ -95,7 +95,7 @@ export function StandardsScoring() {
                             className={`p-8 rounded-lg border-2 ${tier.color} bg-paper`}
                         >
                             <span className="text-xs uppercase tracking-widest text-clay mb-4 block">
-                                {tier.threshold} of 134 points
+                                {tier.threshold} of 143 points
                             </span>
                             <h3 className="text-lg mb-1">{tier.name}</h3>
                             <p className="text-sm text-ink-muted mb-4">

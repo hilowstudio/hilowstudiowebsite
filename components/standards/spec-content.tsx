@@ -33,7 +33,7 @@ const domains: Domain[] = [
             "Design for the smallest possible amount of your attention",
         totalCriteria: 23,
         mustPass: 6,
-        availablePoints: 26,
+        availablePoints: 27,
         subdomains: [
             {
                 title: "1A. Notification Architecture",
@@ -81,7 +81,7 @@ const domains: Domain[] = [
         principle: "Your data belongs to you",
         totalCriteria: 18,
         mustPass: 5,
-        availablePoints: 30,
+        availablePoints: 27,
         subdomains: [
             {
                 title: "2A. Data Portability",
@@ -125,7 +125,7 @@ const domains: Domain[] = [
             "Amplify the best of people and technology without confusing the two",
         totalCriteria: 16,
         mustPass: 5,
-        availablePoints: 24,
+        availablePoints: 22,
         subdomains: [
             {
                 title: "3A. Dark Pattern Prohibition",
@@ -166,7 +166,7 @@ const domains: Domain[] = [
         principle: "Solve the problem, then get out of your way",
         totalCriteria: 12,
         mustPass: 4,
-        availablePoints: 18,
+        availablePoints: 15,
         subdomains: [
             {
                 title: "4A. Session Closure",
@@ -203,7 +203,7 @@ const domains: Domain[] = [
         principle: "Respect your time and social norms",
         totalCriteria: 14,
         mustPass: 3,
-        availablePoints: 20,
+        availablePoints: 19,
         subdomains: [
             {
                 title: "5A. Temporal Respect",
@@ -242,7 +242,7 @@ const domains: Domain[] = [
         principle: "Software degrades gracefully",
         totalCriteria: 12,
         mustPass: 3,
-        availablePoints: 16,
+        availablePoints: 17,
         subdomains: [
             {
                 title: "6A. Accessibility",
@@ -364,7 +364,7 @@ export function SpecContent() {
                                 Version 1.0
                             </span>{" "}
                             &middot; 104 criteria &middot; 7 domains &middot;
-                            27 must-pass gates &middot; 134 scorable points
+                            27 must-pass gates &middot; 143 scorable points
                         </p>
                         <p>
                             Published openly. A standard you can&apos;t read
@@ -507,7 +507,7 @@ export function SpecContent() {
                                 Point Scoring
                             </h3>
                             <p className="text-sm text-ink-muted leading-relaxed max-w-xl">
-                                The 77 scored criteria total 134 possible
+                                The 77 scored criteria total 143 possible
                                 points. 3 points for criteria requiring
                                 significant investment or representing
                                 industry-leading practice. 2 points for strong
@@ -541,7 +541,7 @@ export function SpecContent() {
                                 QSF Verified
                             </p>
                             <p className="text-xs text-clay font-medium mb-3">
-                                54+ of 134 points (40%)
+                                57+ of 143 points (40%)
                             </p>
                             <p className="text-sm text-ink-muted leading-relaxed">
                                 Meets baseline ethical standards. No exploitative
@@ -553,7 +553,7 @@ export function SpecContent() {
                                 QSF Certified
                             </p>
                             <p className="text-xs text-clay font-medium mb-3">
-                                80+ of 134 points (60%)
+                                86+ of 143 points (60%)
                             </p>
                             <p className="text-sm text-ink-muted leading-relaxed">
                                 Active commitment to user respect across all
@@ -565,7 +565,7 @@ export function SpecContent() {
                                 QSF Exemplary
                             </p>
                             <p className="text-xs text-clay font-medium mb-3">
-                                107+ of 134 points (80%)
+                                114+ of 143 points (80%)
                             </p>
                             <p className="text-sm text-ink-muted leading-relaxed">
                                 Industry-leading attention-respecting software.

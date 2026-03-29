@@ -29,7 +29,7 @@ export function StandardsHero() {
                             The Quiet Standards Framework is the first open,
                             auditable, product-level specification for
                             attention-respecting software. 104 criteria across
-                            7 domains. 27 must-pass gates. Designed so two
+                            7 domains. 27 must-pass gates. 143 scorable points. Designed so two
                             independent auditors reach the same conclusion.
                         </p>
                         <p className="text-ink font-medium">
