@@ -1,0 +1,18 @@
+name: Publish LinkedIn Posts
+
+on:
+  schedule:
+    # Mon-Thu at 13:05 UTC (≈ 9:05am ET) — offset slightly to avoid peak load
+    - cron: "5 13 * * 1-4"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger LinkedIn publish endpoint
+        run: |
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            https://hilowstudio.dev/api/cron/publish-linkedin

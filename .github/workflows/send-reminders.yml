@@ -1,0 +1,18 @@
+name: Send Booking Reminders
+
+on:
+  schedule:
+    # Every hour at :05 (offset to avoid GitHub Actions peak load)
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reminder endpoint
+        run: |
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            https://hilowstudio.dev/api/cron/send-reminders
