@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { calendarClient, CALENDAR_ID, FREEBUSY_CALENDAR_IDS } from "@/lib/google-calendar";
 import { bookingConfig } from "@/lib/booking-config";
 import { randomUUID } from "crypto";
+import { supabase } from "@/lib/supabase";
+import { sendBookingConfirmation } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
     try {
@@ -84,6 +86,9 @@ export async function POST(request: NextRequest) {
             (ep) => ep.entryPointType === "video"
         )?.uri;
 
+        // --- Lead capture: write to Supabase (non-blocking) ---
+        captureLeadAsync({ name, email, message, start, end, meetLink, eventId: event.data.id });
+
         return NextResponse.json({
             success: true,
             booking: {
@@ -97,5 +102,98 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error("Booking creation error:", error);
         return NextResponse.json({ error: "Failed to create booking." }, { status: 500 });
+    }
+}
+
+/** Fire-and-forget lead capture — doesn't block the booking response */
+function captureLeadAsync(params: {
+    name: string;
+    email: string;
+    message?: string;
+    start: string;
+    end: string;
+    meetLink: string | null | undefined;
+    eventId: string | null | undefined;
+}) {
+    captureLead(params).catch((err) =>
+        console.error("Lead capture failed (non-blocking):", err)
+    );
+}
+
+async function captureLead({
+    name,
+    email,
+    message,
+    start,
+    end,
+    meetLink,
+    eventId,
+}: {
+    name: string;
+    email: string;
+    message?: string;
+    start: string;
+    end: string;
+    meetLink: string | null | undefined;
+    eventId: string | null | undefined;
+}) {
+    // Upsert contact
+    const { data: contact, error: contactErr } = await supabase
+        .from("contacts")
+        .upsert(
+            { name, email, source: "booking", stage: "call_booked" },
+            { onConflict: "email" }
+        )
+        .select("id")
+        .single();
+
+    if (contactErr || !contact) {
+        console.error("Contact upsert failed:", contactErr);
+        return;
+    }
+
+    // Insert booking record
+    const { error: bookingErr } = await supabase.from("bookings").insert({
+        contact_id: contact.id,
+        google_event_id: eventId || null,
+        meet_link: meetLink || null,
+        start_time: start,
+        end_time: end,
+        message: message || null,
+    });
+
+    if (bookingErr) {
+        console.error("Booking record insert failed:", bookingErr);
+    }
+
+    // Log activity
+    await supabase.from("activities").insert({
+        contact_id: contact.id,
+        type: "booking_created",
+        description: `Discovery call booked for ${new Date(start).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`,
+    });
+
+    // Send confirmation + questionnaire email
+    try {
+        await sendBookingConfirmation({
+            to: email,
+            name,
+            startTime: start,
+            meetLink: meetLink || null,
+        });
+
+        await supabase
+            .from("bookings")
+            .update({ questionnaire_sent: true })
+            .eq("contact_id", contact.id)
+            .eq("google_event_id", eventId || "");
+
+        await supabase.from("activities").insert({
+            contact_id: contact.id,
+            type: "email_sent",
+            description: "Booking confirmation + pre-call questionnaire sent",
+        });
+    } catch (emailErr) {
+        console.error("Confirmation email failed:", emailErr);
     }
 }
