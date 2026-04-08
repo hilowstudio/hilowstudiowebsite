@@ -1,7 +1,12 @@
 // Hi-Low Studio productized services catalog
 // Content-as-code: edit this file to add or change offerings.
 
-export type CatalogCategory = "build" | "training" | "advisory" | "audit";
+export type CatalogCategory =
+  | "routine"
+  | "build"
+  | "training"
+  | "advisory"
+  | "audit";
 
 export type CatalogCTA =
   | { kind: "buy"; stripeUrl: string; ctaLabel?: string }
@@ -40,6 +45,10 @@ export const categoryMeta: Record<
   CatalogCategory,
   { label: string; tagline: string }
 > = {
+  routine: {
+    label: "Routines",
+    tagline: "Small Claude Code routines you own.",
+  },
   build: {
     label: "Custom Builds",
     tagline: "Small, durable apps you own.",
@@ -59,6 +68,105 @@ export const categoryMeta: Record<
 };
 
 export const catalogItems: CatalogItem[] = [
+  // ============================================
+  // ROUTINES
+  // Small downloadable Claude Code .md routines.
+  // NOTE: These are listed as `inquire` for now. When Stripe Payment Links
+  // are created, switch each cta to:
+  //   { kind: "buy", stripeUrl: "https://buy.stripe.com/...", ctaLabel: "..." }
+  // ============================================
+  {
+    slug: "the-quiet-meeting",
+    name: "The Quiet Meeting",
+    category: "routine",
+    summary:
+      "A small Claude Code routine that builds your prep for any meeting from the email and notes you already have.",
+    description: [
+      "Most meetings are forgettable because we walk in cold. The Quiet Meeting is a small Claude Code routine that turns your existing email history and meeting notes into a one-page prep brief, on demand. Type a single command and you get who's in the room, what was said last time, and what you said you'd do.",
+      "It's a single .md file. You drop it into your Claude Code setup, edit it freely, and own it forever. There's nothing to log into and nothing to cancel.",
+    ],
+    includes: [
+      "One .md routine you drop into your Claude Code project",
+      "A plain-English setup guide with screenshots",
+      "Sensible defaults you can edit in five minutes",
+      "No subscription, no account, no platform",
+    ],
+    outcomes: [
+      "You walk into meetings prepared",
+      "You stop forgetting what you committed to last time",
+      "You own the routine forever — edit, fork, or share it",
+    ],
+    price: "$19",
+    priceNote: "One-time. The file is yours.",
+    cta: { kind: "inquire", ctaLabel: "Get this routine" },
+    timeline: "Delivered after purchase",
+    prerequisites:
+      "Claude Code installed; Gmail and Calendar connected via MCP",
+    order: 1,
+  },
+  {
+    slug: "the-quiet-day",
+    name: "The Quiet Day",
+    category: "routine",
+    summary:
+      "Three Claude Code routines that bookend your day — morning briefing, meeting prep, and end-of-day capture.",
+    description: [
+      "Your day deserves bookends. The Quiet Day bundle includes three small Claude Code routines that handle the work of starting, navigating, and closing the day, without taking up your attention while it's happening.",
+      "Run /daybreak in the morning to get a one-page briefing pulled from your email, calendar, and notes. Run /prep before any meeting to get walked-in-ready. Run /sundown at the end of the day to capture what happened, what got committed, and what's still open.",
+      "Three .md files, three setup guides, no platform. You own everything.",
+    ],
+    includes: [
+      "Three .md routines: /daybreak, /prep, /sundown",
+      "Three plain-English setup guides",
+      "Sensible defaults you can edit in minutes",
+      "Lifetime ownership of the files",
+    ],
+    outcomes: [
+      "Your day starts and ends on purpose, not accident",
+      "You stop scrolling email looking for what matters",
+      "You stop dropping commitments between meetings",
+    ],
+    price: "$59",
+    priceNote: "One-time. Save $16 vs. buying individually.",
+    cta: { kind: "inquire", ctaLabel: "Get the bundle" },
+    timeline: "Delivered after purchase",
+    prerequisites:
+      "Claude Code installed; Gmail, Calendar, and Drive connected via MCP",
+    badge: "popular",
+    order: 2,
+  },
+  {
+    slug: "the-quiet-practice",
+    name: "The Quiet Practice",
+    category: "routine",
+    summary:
+      "All six Hi-Low routines: a complete personal operating system that lives in your own Claude Code.",
+    description: [
+      "The Quiet Practice is the full set: six small Claude Code routines that handle your mornings, meetings, decisions, weekly resets, and personal relationship tracking. Together they form a quiet personal operating system that lives in your own Claude Code environment, with no platform, no subscription, and no account to lose.",
+      "Run them when you need them. Edit them when your work changes. Share the files with whoever you want. They're yours.",
+    ],
+    includes: [
+      "Six .md routines: /daybreak, /prep, /sundown, /align, /weekly, /ledger",
+      "Six plain-English setup guides",
+      "Both versions of /prep (with and without the personal ledger)",
+      "Sensible defaults you can edit in minutes",
+      "Lifetime ownership",
+    ],
+    outcomes: [
+      "A personal operating system you own and edit",
+      "Mornings, meetings, decisions, and follow-ups handled",
+      "No subscription, no platform, no account to lose",
+    ],
+    price: "$89",
+    priceNote: "One-time. Save $42 vs. buying individually.",
+    cta: { kind: "inquire", ctaLabel: "Get the full practice" },
+    timeline: "Delivered after purchase",
+    prerequisites:
+      "Claude Code installed; Gmail, Calendar, Drive, and a Google Sheet for the ledger",
+    badge: "new",
+    order: 3,
+  },
+
   // ============================================
   // CUSTOM BUILDS
   // ============================================
@@ -296,6 +404,89 @@ export const catalogItems: CatalogItem[] = [
     cta: { kind: "inquire", ctaLabel: "Schedule for your team" },
     order: 8,
   },
+  {
+    slug: "one-on-one-quiet-stack-workshop",
+    name: "1-on-1 Quiet Stack Workshop",
+    category: "training",
+    summary:
+      "A focused private session where we build your Claude Code routines together, on your machine, with your data.",
+    description: [
+      "Some people learn best by reading the docs. Others learn best by building the thing. The 1-on-1 Quiet Stack Workshop is for the second group — a private, focused session where we sit down together over Zoom, connect your tools, and build your Claude Code routines around your actual work.",
+      "By the end of the session you have a working personal operating system: your routines installed, your context configured, your daily practice set up. You leave with a system, not a checklist of homework.",
+    ],
+    includes: [
+      "One 90-minute live build session, 1-on-1",
+      "All six routines installed and tuned to your workflow",
+      "Custom context files based on your actual goals and tools",
+      "30-day async follow-up window for tweaks and questions",
+    ],
+    outcomes: [
+      "A working personal Claude Code system, set up and running",
+      "Confidence to maintain and edit it yourself",
+      "A reference point for future build work",
+    ],
+    price: "$749",
+    cta: { kind: "inquire", ctaLabel: "Schedule a session" },
+    timeline: "Booked one to two weeks out",
+    prerequisites: "Claude Code installed; Google account ready to connect",
+    order: 9,
+  },
+  {
+    slug: "done-for-you-quiet-stack",
+    name: "Done-For-You Quiet Stack Setup",
+    category: "training",
+    summary:
+      "We build your Claude Code chief of staff for you, configured around your goals, tools, and team.",
+    description: [
+      "If you want the system but don't want to sit through a workshop, the Done-For-You Quiet Stack Setup is the answer. We design and configure your personal Claude Code routines around your priorities, your tools, and your team — and hand you a working system, end-to-end.",
+      "We start with a short discovery call. We build everything in your environment over the following week. We hand off with a 30-minute walkthrough so you can run it yourself.",
+    ],
+    includes: [
+      "30-minute discovery call",
+      "All six routines installed and tuned to your workflow",
+      "Custom context files built from your goals, tools, and team",
+      "30-minute handoff walkthrough",
+      "30-day async follow-up window for tweaks",
+    ],
+    outcomes: [
+      "A fully configured personal Claude Code system",
+      "No setup time on your part",
+      "You own everything — code, configuration, context",
+    ],
+    price: "$1,200",
+    cta: { kind: "inquire", ctaLabel: "Get started" },
+    timeline: "1 week from discovery to handoff",
+    prerequisites: "Claude Code installable on your machine; Google account ready",
+    order: 10,
+  },
+  {
+    slug: "private-team-onboarding",
+    name: "Private Team Onboarding",
+    category: "training",
+    summary:
+      "We come to your team — remote or in person — for a half-day hands-on session that gets everyone onto the same calm Claude Code stack.",
+    description: [
+      "If you're rolling Claude Code out to a team — an accelerator cohort, a small operations team, a community — the Private Team Onboarding is the fastest way to do it without leaving anyone behind. We come to you, connect everyone's tools, and build the same set of routines on every machine.",
+      "By the end of the session, every participant has a working personal operating system and the same shared vocabulary. You leave with a team that speaks the same language about AI, automation, and ownership.",
+    ],
+    includes: [
+      "3-hour hands-on session for up to 12 people",
+      "Pre-session intake to tune the workshop to your team",
+      "All six routines installed on every machine",
+      "Shared context and prompt library for the team",
+      "30-day async follow-up window for the whole group",
+    ],
+    outcomes: [
+      "Your whole team uses the same calm Claude Code stack",
+      "Shared vocabulary across the org",
+      "A working system on every machine",
+    ],
+    price: "$4,500",
+    priceNote: "Per session; up to 12 participants",
+    cta: { kind: "inquire", ctaLabel: "Schedule for your team" },
+    timeline: "Booked 2–3 weeks out",
+    order: 11,
+  },
 
   // ============================================
   // ADVISORY
@@ -443,6 +634,7 @@ export const catalogItems: CatalogItem[] = [
 // ============================================
 
 export const catalogByCategory: Record<CatalogCategory, CatalogItem[]> = {
+  routine: [],
   build: [],
   training: [],
   advisory: [],
@@ -468,6 +660,7 @@ export function getCatalogSlugs(): string[] {
 }
 
 export const categoryOrder: CatalogCategory[] = [
+  "routine",
   "build",
   "training",
   "advisory",
