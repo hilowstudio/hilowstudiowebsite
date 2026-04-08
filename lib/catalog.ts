@@ -568,28 +568,31 @@ export const catalogItems: CatalogItem[] = [
   // AUDITS
   // ============================================
   {
-    slug: "qsf-self-audit-toolkit",
-    name: "QSF Self-Audit Toolkit",
+    slug: "qsf-self-audit-skill",
+    name: "QSF Self-Audit Skill",
     category: "audit",
     summary:
-      "The Quiet Standards Framework, packaged as a self-service toolkit. Free.",
+      "A Claude Code skill that runs the full 104-criterion Quiet Standards audit on your own codebase. Free.",
     description: [
-      "The Quiet Standards Framework is 104 auditable criteria across attention, data sovereignty, honesty, departure, respect, durability, and governance. The Self-Audit Toolkit packages all 104 criteria as a free download — a checklist, a scoring rubric, and a guide to interpreting the results.",
-      "If you want to know how your software measures up against calm tech principles, this is where to start. No call required.",
+      "The Quiet Standards Framework is 104 auditable criteria across attention, data sovereignty, honesty, departure, respect, durability, and governance. The Self-Audit Skill packages the full framework as a Claude Code skill — drop it into your skills folder and ask Claude to run a QSF audit on any project.",
+      "The skill walks the model through every criterion, collects evidence, scores against the pass conditions, and produces a complete scorecard with a tier determination. No platform, no account, no waiting. You own the skill, you own the output, you run it whenever you want.",
     ],
     includes: [
-      "104-criterion checklist (PDF and editable spreadsheet)",
-      "Scoring rubric for each criterion",
-      "Interpretation guide",
-      "Sample audit report from a published evaluation",
+      "Full Claude Code skill (SKILL.md + rules + criteria data)",
+      "All 104 criteria with per-criterion audit instructions, pass conditions, and fail indicators",
+      "Complete scorecard template",
+      "Installation guide (under 5 minutes, no coding)",
+      "Lifetime ownership of the files",
     ],
     outcomes: [
+      "A working QSF audit you can run on any codebase today",
       "An honest, internal score for your software",
-      "A starting point for remediation conversations",
       "A shared language for calm tech across your team",
     ],
     price: "Free",
-    cta: { kind: "inquire", ctaLabel: "Request the toolkit" },
+    priceNote: "Requires Claude Code installed",
+    cta: { kind: "inquire", ctaLabel: "Request the skill" },
+    prerequisites: "Claude Code installed on your machine",
     order: 12,
   },
   {
