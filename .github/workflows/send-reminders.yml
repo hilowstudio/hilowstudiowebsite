@@ -15,4 +15,4 @@ jobs:
           curl -fsSL -X POST \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
-            https://hilowstudio.dev/api/cron/send-reminders
+            https://www.hilowstudio.dev/api/cron/send-reminders

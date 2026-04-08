@@ -1,6 +1,37 @@
 import { supabase } from "@/lib/supabase";
 import type { ContactStage } from "@/lib/types/database";
 
+type LinkedInBannerState =
+  | { kind: "connected"; name: string | null; expiresAt: string }
+  | { kind: "needs_reauth"; name: string | null }
+  | { kind: "disconnected" };
+
+async function getLinkedInBanner(): Promise<LinkedInBannerState> {
+  const { data } = await supabase
+    .from("linkedin_connections")
+    .select("name, expires_at, status")
+    .in("status", ["active", "needs_reauth"])
+    .order("connected_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return { kind: "disconnected" };
+
+  const expired = new Date(data.expires_at) <= new Date();
+  if (data.status === "needs_reauth" || expired) {
+    return { kind: "needs_reauth", name: data.name };
+  }
+  return { kind: "connected", name: data.name, expiresAt: data.expires_at };
+}
+
+function formatRelativeExpiry(iso: string): string {
+  const ms = new Date(iso).getTime() - Date.now();
+  const days = Math.round(ms / (1000 * 60 * 60 * 24));
+  if (days <= 0) return "expired";
+  if (days === 1) return "in 1 day";
+  return `in ${days} days`;
+}
+
 async function getDashboardStats() {
   const [contactsRes, postsRes, upcomingRes, recentActivityRes] = await Promise.all([
     supabase.from("contacts").select("stage"),
@@ -61,11 +92,48 @@ const stageColors: Record<ContactStage, string> = {
 };
 
 export default async function AdminDashboard() {
-  const stats = await getDashboardStats();
+  const [stats, linkedin] = await Promise.all([
+    getDashboardStats(),
+    getLinkedInBanner(),
+  ]);
 
   return (
     <div className="space-y-8">
       <h1 className="font-serif text-2xl text-ink">Dashboard</h1>
+
+      {/* LinkedIn Connection Banner */}
+      <section
+        className={`rounded-lg border p-4 flex items-center justify-between gap-4 ${
+          linkedin.kind === "connected"
+            ? "border-moss/30 bg-moss/10"
+            : linkedin.kind === "needs_reauth"
+              ? "border-clay/40 bg-clay/10"
+              : "border-paper-muted bg-paper-muted/30"
+        }`}
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-ink">
+            {linkedin.kind === "connected"
+              ? `LinkedIn connected${linkedin.name ? ` as ${linkedin.name}` : ""}`
+              : linkedin.kind === "needs_reauth"
+                ? "LinkedIn token expired"
+                : "LinkedIn not connected"}
+          </p>
+          <p className="text-xs text-ink-muted mt-0.5">
+            {linkedin.kind === "connected"
+              ? `Token expires ${formatRelativeExpiry(linkedin.expiresAt)}`
+              : linkedin.kind === "needs_reauth"
+                ? "Reconnect to resume scheduled publishing"
+                : "Connect your account to enable scheduled publishing"}
+          </p>
+        </div>
+        <a
+          href="/api/auth/linkedin/start"
+          className="shrink-0 rounded-md bg-ink text-paper px-3 py-1.5 text-xs font-medium hover:bg-ink/90"
+        >
+          {linkedin.kind === "connected" ? "Reconnect" : "Connect LinkedIn"}
+        </a>
+      </section>
 
       {/* Pipeline Summary */}
       <section>
