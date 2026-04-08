@@ -36,10 +36,20 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json();
 
-  const allowed = ["title", "body", "post_type", "scheduled_at", "status", "metadata"];
+  const allowed = ["title", "body", "post_type", "scheduled_at", "status", "metadata", "hook_type", "funnel_stage", "content_pillar", "visual_url"];
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];
+  }
+
+  // Auto-compute week_number when scheduled_at changes
+  if (updates.scheduled_at) {
+    const d = new Date(updates.scheduled_at as string);
+    const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = tmp.getUTCDay() || 7;
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+    updates.week_number = Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   }
 
   if (Object.keys(updates).length === 0) {

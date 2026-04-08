@@ -4,9 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/contacts", label: "Pipeline" },
-  { href: "/admin/content", label: "Content" },
+  { href: "/admin", label: "Dashboard", exact: true },
+  { href: "/admin/contacts", label: "Pipeline", exact: false },
+  { href: "/admin/content", label: "Content", exact: true },
+  { href: "/admin/content/calendar", label: "Calendar", exact: true },
+  { href: "/admin/ideas", label: "Ideas", exact: false },
+  { href: "/admin/voice", label: "Voice", exact: false },
+  { href: "/admin/analytics", label: "Analytics", exact: false },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -23,20 +27,25 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <nav className="border-b border-paper-muted px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <span className="font-serif text-lg text-ink">Hi Low Admin</span>
-          <div className="flex gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  pathname === item.href
-                    ? "bg-ink text-paper"
-                    : "text-ink-muted hover:text-ink hover:bg-paper-warm"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+          <div className="flex gap-1 overflow-x-auto">
+            {navItems.map((item) => {
+              const isActive = item.exact
+                  ? pathname === item.href
+                  : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`px-3 py-1.5 rounded-md text-sm transition-colors whitespace-nowrap ${
+                    isActive
+                      ? "bg-ink text-paper"
+                      : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
         <button

@@ -30,6 +30,36 @@ export type PostStatus =
   | "published"
   | "failed";
 
+export type HookType =
+  | "contrarian"
+  | "story"
+  | "stat"
+  | "question"
+  | "how_to"
+  | "listicle"
+  | "framework"
+  | "vulnerable";
+
+export type FunnelStage = "tofu" | "mofu" | "bofu";
+
+export type IdeaStatus = "captured" | "developing" | "promoted" | "discarded";
+
+export type IdeaSource =
+  | "call_notes"
+  | "market_observation"
+  | "competitor"
+  | "personal"
+  | "client_feedback";
+
+export type VoiceCategory = "principle" | "do" | "dont" | "reference_post";
+
+export type ContentPillar =
+  | "calm_tech"
+  | "adhd_operator"
+  | "ai_for_operators"
+  | "own_your_stack"
+  | "cost_of_the_mask";
+
 export interface Contact {
   id: string;
   name: string;
@@ -70,6 +100,11 @@ export interface ContentPost {
   title: string | null;
   body: string;
   post_type: PostType;
+  hook_type: HookType | null;
+  funnel_stage: FunnelStage | null;
+  content_pillar: ContentPillar | null;
+  week_number: number | null;
+  visual_url: string | null;
   scheduled_at: string | null;
   published_at: string | null;
   status: PostStatus;
@@ -91,6 +126,27 @@ export interface LinkedinMetrics {
   fetched_at: string;
 }
 
+export interface ContentIdea {
+  id: string;
+  raw_insight: string;
+  source: IdeaSource;
+  suggested_hook: HookType | null;
+  suggested_funnel: FunnelStage | null;
+  suggested_pillar: ContentPillar | null;
+  status: IdeaStatus;
+  promoted_post_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VoiceGuide {
+  id: string;
+  category: VoiceCategory;
+  content: string;
+  sort_order: number;
+  created_at: string;
+}
+
 // Insert types (omit auto-generated fields)
 export type ContactInsert = Omit<Contact, "id" | "created_at" | "updated_at"> &
   Partial<Pick<Contact, "id">>;
@@ -103,3 +159,9 @@ export type ActivityInsert = Omit<Activity, "id" | "created_at"> &
 
 export type ContentPostInsert = Omit<ContentPost, "id" | "created_at" | "updated_at"> &
   Partial<Pick<ContentPost, "id">>;
+
+export type ContentIdeaInsert = Omit<ContentIdea, "id" | "created_at" | "updated_at"> &
+  Partial<Pick<ContentIdea, "id">>;
+
+export type VoiceGuideInsert = Omit<VoiceGuide, "id" | "created_at"> &
+  Partial<Pick<VoiceGuide, "id">>;
