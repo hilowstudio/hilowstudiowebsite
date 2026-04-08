@@ -8,7 +8,11 @@ export type ContactStage =
   | "won"
   | "lost";
 
-export type ContactSource = "booking" | "manual" | "linkedin";
+export type ContactSource =
+  | "booking"
+  | "manual"
+  | "linkedin"
+  | `catalog:${string}`;
 
 export type ActivityType =
   | "booking_created"

@@ -47,7 +47,7 @@ const topics = [
     },
 ];
 
-export function ConsultingServices() {
+export function BespokeOfferings() {
     return (
         <section className="py-24 bg-paper-warm">
             <div className="container-calm">

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getCatalogSlugs } from "@/lib/catalog";
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = "https://hilowstudio.dev";
@@ -7,7 +8,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const staticPages = [
         "",
         "/work",
-        "/consulting",
+        "/services",
+        "/services/bespoke",
+        "/services/catalog",
         "/notebook",
         "/contact",
         "/book",
@@ -22,6 +25,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: route === "" ? 1 : 0.8,
     }));
 
+    // Catalog detail pages (dynamically generated from lib/catalog.ts)
+    const catalogPages = getCatalogSlugs().map((slug) => ({
+        url: `${baseUrl}/services/catalog/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: "monthly" as const,
+        priority: 0.7,
+    }));
+
     // Notebook entries (in production, these would be dynamically generated)
     const notebookEntries = [
         "/notebook/the-quiet-exodus",
@@ -33,5 +44,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.6,
     }));
 
-    return [...staticPages, ...notebookEntries];
+    return [...staticPages, ...catalogPages, ...notebookEntries];
 }

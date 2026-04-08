@@ -11,9 +11,14 @@ const navLinks = [
     { href: "/", label: "Home" },
     { href: "/work", label: "Our Projects" },
     { href: "/standards", label: "Standards" },
-    { href: "/consulting", label: "Services" },
+    { href: "/services", label: "Services" },
     { href: "/contact", label: "Contact" },
 ];
+
+function isActive(pathname: string, href: string): boolean {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function Header() {
     const pathname = usePathname();
@@ -44,7 +49,7 @@ export function Header() {
                                     href={link.href}
                                     className={cn(
                                         "text-sm transition-colors duration-300",
-                                        pathname === link.href
+                                        isActive(pathname, link.href)
                                             ? "text-ink"
                                             : "text-ink-muted hover:text-ink"
                                     )}

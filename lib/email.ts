@@ -62,6 +62,78 @@ export async function sendBookingConfirmation({
   });
 }
 
+export async function sendCatalogInquiryNotification({
+  to,
+  catalogName,
+  catalogSlug,
+  contactId,
+  name,
+  email,
+  company,
+  message,
+}: {
+  to: string;
+  catalogName: string;
+  catalogSlug: string;
+  contactId: string;
+  name: string;
+  email: string;
+  company?: string | null;
+  message: string;
+}) {
+  const adminUrl = `https://hilowstudio.dev/admin/contacts/${contactId}`;
+
+  await getResend().emails.send({
+    from: FROM,
+    to,
+    subject: `Catalog inquiry: ${catalogName}`,
+    html: `
+      <div style="font-family: Georgia, serif; color: #333; max-width: 560px; margin: 0 auto;">
+        <p style="color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
+          New catalog inquiry
+        </p>
+        <h2 style="font-weight: 400; margin-top: 0; margin-bottom: 24px;">${catalogName}</h2>
+
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #888; width: 100px; vertical-align: top;">Name</td>
+            <td style="padding: 8px 0;">${name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #888; vertical-align: top;">Email</td>
+            <td style="padding: 8px 0;"><a href="mailto:${email}" style="color: #7a5c3e;">${email}</a></td>
+          </tr>
+          ${
+            company
+              ? `<tr>
+                  <td style="padding: 8px 0; color: #888; vertical-align: top;">Company</td>
+                  <td style="padding: 8px 0;">${company}</td>
+                </tr>`
+              : ""
+          }
+          <tr>
+            <td style="padding: 8px 0; color: #888; vertical-align: top;">Catalog item</td>
+            <td style="padding: 8px 0;">${catalogName} <span style="color: #888;">(${catalogSlug})</span></td>
+          </tr>
+        </table>
+
+        <hr style="border: none; border-top: 1px solid #e5e0d8; margin: 24px 0;" />
+
+        <p style="color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+          Message
+        </p>
+        <p style="white-space: pre-wrap; line-height: 1.6;">${message}</p>
+
+        <hr style="border: none; border-top: 1px solid #e5e0d8; margin: 24px 0;" />
+
+        <p style="margin: 0;">
+          <a href="${adminUrl}" style="color: #7a5c3e;">Open contact in admin →</a>
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendReminder({
   to,
   name,

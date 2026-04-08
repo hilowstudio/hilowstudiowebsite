@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-export function ConsultingHero() {
+export function BespokeHero() {
     return (
         <section className="py-24 md:py-32">
             <div className="container-calm">
@@ -12,7 +12,7 @@ export function ConsultingHero() {
                     transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                     className="max-w-2xl"
                 >
-                    <p className="text-sm text-ink-muted mb-6">Services</p>
+                    <p className="text-sm text-ink-muted mb-6">Bespoke Engagements</p>
                     <h1 className="text-4xl md:text-5xl mb-8">
                         Run Your Business Without It Running Your Life
                     </h1>

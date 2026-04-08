@@ -48,7 +48,7 @@ export function TheFuture() {
                             Our Projects
                         </Link>
                         <Link
-                            href="/consulting"
+                            href="/services"
                             className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-ink/10 text-ink text-sm font-medium hover:border-clay hover:text-clay focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 transition-all duration-300"
                         >
                             Work With Us

@@ -26,7 +26,7 @@ const steps = [
     },
 ];
 
-export function ConsultingProcess() {
+export function BespokeProcess() {
     return (
         <section className="py-24">
             <div className="container-calm">
