@@ -92,6 +92,12 @@ export function Footer() {
 
                         {/* Links */}
                         <div className="flex items-center gap-6">
+                            <Link
+                                href="/about"
+                                className="hover:text-clay transition-colors duration-300"
+                            >
+                                About
+                            </Link>
                             <a
                                 href="mailto:hello@hilowstudio.dev"
                                 className="hover:text-clay transition-colors duration-300"

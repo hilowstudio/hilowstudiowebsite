@@ -55,6 +55,15 @@ export function TheFuture() {
                         </Link>
                     </div>
 
+                    <div className="mt-8">
+                        <Link
+                            href="/about"
+                            className="text-sm text-ink-muted hover:text-clay transition-colors duration-300"
+                        >
+                            Or read a note from the founder &rarr;
+                        </Link>
+                    </div>
+
                     <div className="w-12 h-px bg-ink/20 mx-auto mt-12" />
                 </motion.div>
             </div>
