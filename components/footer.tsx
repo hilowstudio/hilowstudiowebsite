@@ -82,16 +82,7 @@ export function Footer() {
                     </p>
 
                     {/* Bottom Row */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-ink-muted">
-                        {/* Logo / Name */}
-                        <div className="flex items-center gap-2">
-                            <span className="font-medium text-ink">Hi Low Studio</span>
-                            <span className="text-ink-light">·</span>
-                            <span>Digital Supports for Analog Living</span>
-                        </div>
-
-                        {/* Links */}
-                        <div className="flex items-center gap-x-6 gap-y-2 flex-wrap justify-center sm:justify-end">
+                    <div className="flex items-center justify-center gap-x-6 gap-y-2 flex-wrap text-sm text-ink-muted">
                             <Link
                                 href="/about"
                                 className="hover:text-clay transition-colors duration-300"
@@ -131,7 +122,6 @@ export function Footer() {
                             <span className="text-ink-light">
                                 © {new Date().getFullYear()}
                             </span>
-                        </div>
                     </div>
                 </div>
             </div>
