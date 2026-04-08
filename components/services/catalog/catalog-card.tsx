@@ -5,18 +5,6 @@ import { motion } from "framer-motion";
 import { ArrowUpRight } from "@phosphor-icons/react";
 import { CatalogItem, categoryMeta } from "@/lib/catalog";
 
-const badgeStyles: Record<string, string> = {
-    popular: "bg-clay/15 text-clay",
-    new: "bg-moss/15 text-moss",
-    limited: "bg-terracotta/15 text-terracotta",
-};
-
-const badgeLabels: Record<string, string> = {
-    popular: "Popular",
-    new: "New",
-    limited: "Limited",
-};
-
 interface CatalogCardProps {
     item: CatalogItem;
     index: number;
@@ -42,14 +30,6 @@ export function CatalogCard({ item, index }: CatalogCardProps) {
                 href={`/services/catalog/${item.slug}`}
                 className="group relative block p-8 rounded-lg border border-ink/10 bg-paper hover:bg-paper-warm transition-all duration-500 hover:shadow-md h-full"
             >
-                {item.badge && (
-                    <span
-                        className={`absolute top-6 right-6 inline-block px-2 py-1 rounded-full text-xs font-medium ${badgeStyles[item.badge]}`}
-                    >
-                        {badgeLabels[item.badge]}
-                    </span>
-                )}
-
                 <span className="inline-block text-xs uppercase tracking-widest text-clay mb-4">
                     {categoryMeta[item.category].label}
                 </span>

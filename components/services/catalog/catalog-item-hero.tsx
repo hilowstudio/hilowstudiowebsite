@@ -5,18 +5,6 @@ import { motion } from "framer-motion";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { CatalogItem, categoryMeta } from "@/lib/catalog";
 
-const badgeStyles: Record<string, string> = {
-    popular: "bg-clay/15 text-clay",
-    new: "bg-moss/15 text-moss",
-    limited: "bg-terracotta/15 text-terracotta",
-};
-
-const badgeLabels: Record<string, string> = {
-    popular: "Popular",
-    new: "New",
-    limited: "Limited",
-};
-
 interface CatalogItemHeroProps {
     item: CatalogItem;
 }
@@ -39,18 +27,9 @@ export function CatalogItemHero({ item }: CatalogItemHeroProps) {
                         <span>Back to the catalog</span>
                     </Link>
 
-                    <div className="flex items-center gap-3 mb-6">
-                        <span className="inline-block text-xs uppercase tracking-widest text-clay">
-                            {categoryMeta[item.category].label}
-                        </span>
-                        {item.badge && (
-                            <span
-                                className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${badgeStyles[item.badge]}`}
-                            >
-                                {badgeLabels[item.badge]}
-                            </span>
-                        )}
-                    </div>
+                    <p className="inline-block text-xs uppercase tracking-widest text-clay mb-6">
+                        {categoryMeta[item.category].label}
+                    </p>
 
                     <h1 className="text-4xl md:text-5xl mb-6">{item.name}</h1>
 

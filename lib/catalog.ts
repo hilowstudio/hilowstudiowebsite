@@ -12,8 +12,6 @@ export type CatalogCTA =
   | { kind: "buy"; stripeUrl: string; ctaLabel?: string }
   | { kind: "inquire"; ctaLabel?: string };
 
-export type CatalogBadge = "popular" | "new" | "limited";
-
 export interface CatalogItem {
   // identity
   slug: string;
@@ -37,7 +35,6 @@ export interface CatalogItem {
   prerequisites?: string;
 
   // presentation
-  badge?: CatalogBadge;
   order?: number;
 }
 
@@ -132,7 +129,6 @@ export const catalogItems: CatalogItem[] = [
     timeline: "Delivered after purchase",
     prerequisites:
       "Claude Code installed; Gmail, Calendar, and Drive connected via MCP",
-    badge: "popular",
     order: 2,
   },
   {
@@ -163,7 +159,6 @@ export const catalogItems: CatalogItem[] = [
     timeline: "Delivered after purchase",
     prerequisites:
       "Claude Code installed; Gmail, Calendar, Drive, and a Google Sheet for the ledger",
-    badge: "new",
     order: 3,
   },
 
@@ -198,7 +193,6 @@ export const catalogItems: CatalogItem[] = [
     cta: { kind: "inquire" },
     timeline: "2–3 weeks from discovery to handoff",
     scope: "One inbox, one workflow. Multi-mailbox setups quoted separately.",
-    badge: "popular",
     order: 1,
   },
   {
@@ -374,7 +368,6 @@ export const catalogItems: CatalogItem[] = [
     priceNote: "Per seat; small cohorts gated by application",
     cta: { kind: "inquire", ctaLabel: "Apply for a seat" },
     timeline: "Six weeks; quarterly cohorts",
-    badge: "limited",
     order: 7,
   },
   {
@@ -516,7 +509,6 @@ export const catalogItems: CatalogItem[] = [
     price: "$1,500",
     priceNote: "Per month; cancel anytime",
     cta: { kind: "inquire", ctaLabel: "Start a conversation" },
-    badge: "popular",
     order: 9,
   },
   {
