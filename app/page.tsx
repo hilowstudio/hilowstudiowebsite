@@ -1,7 +1,5 @@
 import { Hero } from "@/components/hero";
-import { QuietExodus } from "@/components/quiet-exodus";
-import { TheProblem } from "@/components/the-problem";
-import { ParallelEconomy } from "@/components/parallel-economy";
+import { TheWork } from "@/components/the-work";
 import { HowWeBuild } from "@/components/how-we-build";
 import { TheFuture } from "@/components/the-future";
 import { Footer } from "@/components/footer";
@@ -11,9 +9,7 @@ export default function Home() {
         <>
             <main>
                 <Hero />
-                <QuietExodus />
-                <TheProblem />
-                <ParallelEconomy />
+                <TheWork />
                 <HowWeBuild />
                 <TheFuture />
             </main>

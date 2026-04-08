@@ -5,9 +5,9 @@ import { ContactForm } from "@/components/contact/contact-form";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-    title: "Contact | Hi-Low Studio",
+    title: "Contact | Hi Low Studio",
     description:
-        "Get in touch with Hi-Low Studio. Let's build something for the parallel economy.",
+        "Get in touch with Hi Low Studio. Let's build something for the parallel economy.",
 };
 
 export default function ContactPage() {

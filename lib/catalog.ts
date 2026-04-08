@@ -1,4 +1,4 @@
-// Hi-Low Studio productized services catalog
+// Hi Low Studio productized services catalog
 // Content-as-code: edit this file to add or change offerings.
 
 export type CatalogCategory =
@@ -91,7 +91,7 @@ export const catalogItems: CatalogItem[] = [
     outcomes: [
       "You walk into meetings prepared",
       "You stop forgetting what you committed to last time",
-      "You own the routine forever — edit, fork, or share it",
+      "You own the routine forever, so you can edit, fork, or share it",
     ],
     price: "$19",
     priceNote: "One-time. The file is yours.",
@@ -106,7 +106,7 @@ export const catalogItems: CatalogItem[] = [
     name: "The Quiet Day",
     category: "routine",
     summary:
-      "Three Claude Code routines that bookend your day — morning briefing, meeting prep, and end-of-day capture.",
+      "Three Claude Code routines that bookend your day: morning briefing, meeting prep, and end-of-day capture.",
     description: [
       "Your day deserves bookends. The Quiet Day bundle includes three small Claude Code routines that handle the work of starting, navigating, and closing the day, without taking up your attention while it's happening.",
       "Run /daybreak in the morning to get a one-page briefing pulled from your email, calendar, and notes. Run /prep before any meeting to get walked-in-ready. Run /sundown at the end of the day to capture what happened, what got committed, and what's still open.",
@@ -136,7 +136,7 @@ export const catalogItems: CatalogItem[] = [
     name: "The Quiet Practice",
     category: "routine",
     summary:
-      "All six Hi-Low routines: a complete personal operating system that lives in your own Claude Code.",
+      "All six Hi Low routines: a complete personal operating system that lives in your own Claude Code.",
     description: [
       "The Quiet Practice is the full set: six small Claude Code routines that handle your mornings, meetings, decisions, weekly resets, and personal relationship tracking. Together they form a quiet personal operating system that lives in your own Claude Code environment, with no platform, no subscription, and no account to lose.",
       "Run them when you need them. Edit them when your work changes. Share the files with whoever you want. They're yours.",
@@ -172,7 +172,7 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "A small, custom email triage app that runs on your own Vercel and Supabase. We hand you the keys.",
     description: [
-      "Most inbox tools want to live in your inbox forever. Quiet Inbox is the opposite — a focused triage layer we build for your specific workflow, deploy to your own infrastructure, and walk away from. There is no account to cancel because the account is yours from day one.",
+      "Most inbox tools want to live in your inbox forever. Quiet Inbox is the opposite. It is a focused triage layer we build for your specific workflow, deploy to your own infrastructure, and walk away from. There is no account to cancel because the account is yours from day one.",
       "We start with a short scoping call to understand which messages actually need your attention and which patterns can be handled with rules, summarization, or routing. Then we build a small Next.js + Supabase app that does exactly that and nothing more.",
     ],
     includes: [
@@ -186,7 +186,7 @@ export const catalogItems: CatalogItem[] = [
     outcomes: [
       "You stop checking email reflexively",
       "Important messages still reach you; the rest get out of the way",
-      "You own everything — code, data, deployment, exit",
+      "You own everything: code, data, deployment, exit",
     ],
     price: "From $4,500",
     priceNote: "Scope-dependent; final quote after discovery call",
@@ -202,8 +202,8 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "A focused outreach watcher that surfaces what's worth a reply, without a CRM in sight.",
     description: [
-      "If you're tracking prospects, partners, or sources, you probably don't need a CRM — you need a small, durable system that watches the places that matter and tells you when something happens. Signal Catcher is that system, built for your specific signals.",
-      "We identify three to five sources you actually care about (LinkedIn searches, RSS feeds, public filings, job boards, podcast feeds — whatever fits your work) and build a small app that ingests them, filters down to what matters, and surfaces the rest in a calm daily digest.",
+      "If you're tracking prospects, partners, or sources, you probably don't need a CRM. You need a small, durable system that watches the places that matter and tells you when something happens. Signal Catcher is that system, built for your specific signals.",
+      "We identify three to five sources you actually care about (LinkedIn searches, RSS feeds, public filings, job boards, podcast feeds, whatever fits your work) and build a small app that ingests them, filters down to what matters, and surfaces the rest in a calm daily digest.",
     ],
     includes: [
       "Up to five custom signal sources",
@@ -231,7 +231,7 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "A custom client intake-to-contract flow that collects what you need and gets out of your way.",
     description: [
-      "Most onboarding tools optimize for the vendor's metrics, not yours. Intake & Onboarding is a small custom app we build for your exact process — discovery form, document collection, contract sending, kickoff scheduling — without forcing you into anyone else's workflow.",
+      "Most onboarding tools optimize for the vendor's metrics, not yours. Intake & Onboarding is a small custom app we build for your exact process (discovery form, document collection, contract sending, kickoff scheduling) without forcing you into anyone else's workflow.",
       "We map your current intake process, find the friction, and build a Next.js + Supabase app that mirrors how you actually work. Forms feed straight into your CRM (or no CRM at all). Documents land in your storage. Contracts go out through your existing tooling.",
     ],
     includes: [
@@ -260,7 +260,7 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "A research-to-publication pipeline that keeps your notes, sources, and drafts in the same calm place.",
     description: [
-      "Writers, researchers, and analysts collect more than they ever publish. Field Notebook is a small custom app that connects your capture habit to your publishing habit — a single place to drop sources, take notes, and turn them into drafts when the time is right.",
+      "Writers, researchers, and analysts collect more than they ever publish. Field Notebook is a small custom app that connects your capture habit to your publishing habit. A single place to drop sources, take notes, and turn them into drafts when the time is right.",
       "We build it around your existing tools and your existing voice. No platform lock-in, no AI-generated slop, no algorithmic feed. Just a quiet workspace that respects what you've already saved.",
     ],
     includes: [
@@ -318,10 +318,10 @@ export const catalogItems: CatalogItem[] = [
     name: "Personal Knowledge System Intensive",
     category: "training",
     summary:
-      "A focused workshop on building a knowledge system that thinks with you — and an AI workflow that knows your business.",
+      "A focused workshop on building a knowledge system that thinks with you, and an AI workflow that knows your business.",
     description: [
       "Most people collect information they never use. The Personal Knowledge System Intensive teaches you to capture what matters, organize it so you can find it, and structure it so AI tools start producing work that sounds like you instead of generic noise.",
-      "This is tool-agnostic — Notion, Obsidian, Apple Notes, plain text, whatever you already use. The system is the point; the tool is interchangeable.",
+      "This is tool-agnostic. Notion, Obsidian, Apple Notes, plain text, whatever you already use. The system is the point; the tool is interchangeable.",
     ],
     includes: [
       "Two live sessions (3 hours each, recorded)",
@@ -349,7 +349,7 @@ export const catalogItems: CatalogItem[] = [
       "A six-week small group for founders building the systems that handle the operational work.",
     description: [
       "The Quiet Systems Cohort is six weeks, small group, hands-on. You leave with a working personal knowledge system, an AI workflow that knows your business, and the confidence to build the next system yourself.",
-      "We meet weekly. Between sessions you build. By the end, you have something you actually use — not a notebook full of ideas you never executed on.",
+      "We meet weekly. Between sessions you build. By the end, you have something you actually use, not a notebook full of ideas you never executed on.",
     ],
     includes: [
       "Six weekly live sessions (90 minutes each)",
@@ -404,7 +404,7 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "A focused private session where we build your Claude Code routines together, on your machine, with your data.",
     description: [
-      "Some people learn best by reading the docs. Others learn best by building the thing. The 1-on-1 Quiet Stack Workshop is for the second group — a private, focused session where we sit down together over Zoom, connect your tools, and build your Claude Code routines around your actual work.",
+      "Some people learn best by reading the docs. Others learn best by building the thing. The 1-on-1 Quiet Stack Workshop is for the second group. A private, focused session where we sit down together over Zoom, connect your tools, and build your Claude Code routines around your actual work.",
       "By the end of the session you have a working personal operating system: your routines installed, your context configured, your daily practice set up. You leave with a system, not a checklist of homework.",
     ],
     includes: [
@@ -431,7 +431,7 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "We build your Claude Code chief of staff for you, configured around your goals, tools, and team.",
     description: [
-      "If you want the system but don't want to sit through a workshop, the Done-For-You Quiet Stack Setup is the answer. We design and configure your personal Claude Code routines around your priorities, your tools, and your team — and hand you a working system, end-to-end.",
+      "If you want the system but don't want to sit through a workshop, the Done-For-You Quiet Stack Setup is the answer. We design and configure your personal Claude Code routines around your priorities, your tools, and your team, then hand you a working system, end-to-end.",
       "We start with a short discovery call. We build everything in your environment over the following week. We hand off with a 30-minute walkthrough so you can run it yourself.",
     ],
     includes: [
@@ -444,7 +444,7 @@ export const catalogItems: CatalogItem[] = [
     outcomes: [
       "A fully configured personal Claude Code system",
       "No setup time on your part",
-      "You own everything — code, configuration, context",
+      "You own everything: code, configuration, context",
     ],
     price: "$1,200",
     cta: { kind: "inquire", ctaLabel: "Get started" },
@@ -457,9 +457,9 @@ export const catalogItems: CatalogItem[] = [
     name: "Private Team Onboarding",
     category: "training",
     summary:
-      "We come to your team — remote or in person — for a half-day hands-on session that gets everyone onto the same calm Claude Code stack.",
+      "We come to your team (remote or in person) for a half-day hands-on session that gets everyone onto the same calm Claude Code stack.",
     description: [
-      "If you're rolling Claude Code out to a team — an accelerator cohort, a small operations team, a community — the Private Team Onboarding is the fastest way to do it without leaving anyone behind. We come to you, connect everyone's tools, and build the same set of routines on every machine.",
+      "If you're rolling Claude Code out to a team (an accelerator cohort, a small operations team, a community) the Private Team Onboarding is the fastest way to do it without leaving anyone behind. We come to you, connect everyone's tools, and build the same set of routines on every machine.",
       "By the end of the session, every participant has a working personal operating system and the same shared vocabulary. You leave with a team that speaks the same language about AI, automation, and ownership.",
     ],
     includes: [
@@ -489,7 +489,7 @@ export const catalogItems: CatalogItem[] = [
     name: "Calm Counsel",
     category: "advisory",
     summary:
-      "A monthly retainer for founders making technical bets — one call, one written brief, unlimited async questions.",
+      "A monthly retainer for founders making technical bets. One call, one written brief, unlimited async questions.",
     description: [
       "Calm Counsel is for founders who don't need a full-time technical co-founder but do need a calm second brain on the technical side of the business. One scheduled monthly call, one written brief summarizing what we discussed and what to do next, and unlimited async questions in between.",
       "The brief is the point. Every month you get a short written document you can hand to your team, your investors, or your future self. You stop forgetting what we decided.",
@@ -518,7 +518,7 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "By the hour, on retainer, or by the project. We help you say no to the wrong build.",
     description: [
-      "Sometimes you don't need a strategy. You need someone to look at a vendor proposal, a roadmap, or a hiring decision and tell you whether it's the right move. Fractional Technical Conscience is exactly that — focused, hourly technical judgment from someone who has built and shipped a lot of small, durable software.",
+      "Sometimes you don't need a strategy. You need someone to look at a vendor proposal, a roadmap, or a hiring decision and tell you whether it's the right move. Fractional Technical Conscience is exactly that: focused, hourly technical judgment from someone who has built and shipped a lot of small, durable software.",
       "Think of it as a consult with a calm friend who happens to know the landscape. We don't try to scope work into our own pipeline. If the answer is 'do nothing,' we'll tell you.",
     ],
     includes: [
@@ -544,7 +544,7 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "Four focused hours on a single technical question, with a written follow-up.",
     description: [
-      "Sometimes you need more than an hour and less than a retainer. The Half-Day Strategy Session is four focused hours on one technical question — a build vs. buy decision, a vendor migration, a system audit, a roadmap stress test — followed by a written summary you can share with your team.",
+      "Sometimes you need more than an hour and less than a retainer. The Half-Day Strategy Session is four focused hours on one technical question (a build vs. buy decision, a vendor migration, a system audit, a roadmap stress test) followed by a written summary you can share with your team.",
       "We come prepared (you send a brief beforehand), we work through the question together, and you walk away with a document you can act on.",
     ],
     includes: [
@@ -574,7 +574,7 @@ export const catalogItems: CatalogItem[] = [
     summary:
       "A Claude Code skill that runs the full 104-criterion Quiet Standards audit on your own codebase. Free.",
     description: [
-      "The Quiet Standards Framework is 104 auditable criteria across attention, data sovereignty, honesty, departure, respect, durability, and governance. The Self-Audit Skill packages the full framework as a Claude Code skill — drop it into your skills folder and ask Claude to run a QSF audit on any project.",
+      "The Quiet Standards Framework is 104 auditable criteria across attention, data sovereignty, honesty, departure, respect, durability, and governance. The Self-Audit Skill packages the full framework as a Claude Code skill. Drop it into your skills folder and ask Claude to run a QSF audit on any project.",
       "The skill walks the model through every criterion, collects evidence, scores against the pass conditions, and produces a complete scorecard with a tier determination. No platform, no account, no waiting. You own the skill, you own the output, you run it whenever you want.",
     ],
     includes: [
@@ -603,7 +603,7 @@ export const catalogItems: CatalogItem[] = [
       "We run the full 104-criterion audit on your product and deliver a prioritized remediation report.",
     description: [
       "The Guided Audit is the full Quiet Standards Framework evaluation, run by us, on your product. We work through every one of the 104 criteria, document our findings, and deliver a written report with your score, your failures, and a prioritized path to remediation.",
-      "This is the right step if you've already done a self-audit and want a second pair of eyes — or if you want a credible third-party score you can share publicly.",
+      "This is the right step if you've already done a self-audit and want a second pair of eyes, or if you want a credible third-party score you can share publicly.",
     ],
     includes: [
       "Full 104-criterion evaluation",

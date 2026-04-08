@@ -23,7 +23,7 @@ export function StandardsCTA() {
                     <p className="text-ink-muted leading-relaxed mb-6 max-w-lg mx-auto">
                         Whether you want to self-audit against the framework,
                         bring us in to evaluate your product, or work together
-                        to remediate what you find &mdash; we are here for builders
+                        to remediate what you find. We are here for builders
                         who believe attention is worth protecting.
                     </p>
 

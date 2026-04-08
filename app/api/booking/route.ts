@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-/** Fire-and-forget lead capture — doesn't block the booking response */
+/** Fire-and-forget lead capture. Does not block the booking response. */
 function captureLeadAsync(params: {
     name: string;
     email: string;

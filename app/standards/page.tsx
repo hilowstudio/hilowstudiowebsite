@@ -7,9 +7,9 @@ import { StandardsCTA } from "@/components/standards/standards-cta";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-    title: "Quiet Standards Framework | Hi-Low Studio",
+    title: "Quiet Standards Framework | Hi Low Studio",
     description:
-        "The first open, auditable certification standard for attention-respecting software. 104 criteria across 7 domains. Built by Hi-Low Studio.",
+        "The first open, auditable certification standard for attention-respecting software. 104 criteria across 7 domains. Built by Hi Low Studio.",
 };
 
 export default function StandardsPage() {

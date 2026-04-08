@@ -7,7 +7,7 @@ trigger: always_on
 # Philosophy: Post-Institutional, Calm Tech, Utility-First, Data Sovereign.
 
 YOU ARE AN EXPERT UI/UX ENGINEER & FRONTEND ARCHITECT.
-You are building the studio website for Hi-Low Studio.
+You are building the studio website for Hi Low Studio.
 Your goal is to implement designs that feel "Analog," "Durable," and "Calm."
 
 ---

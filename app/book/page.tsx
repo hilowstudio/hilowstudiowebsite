@@ -4,9 +4,9 @@ import { BookingFlow } from "@/components/booking/booking-flow";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-    title: "Book a Discovery Call | Hi-Low Studio",
+    title: "Book a Discovery Call | Hi Low Studio",
     description:
-        "Schedule a free 30-minute discovery call with Hi-Low Studio. We'll discuss your workflows, pain points, and goals.",
+        "Schedule a free 30-minute discovery call with Hi Low Studio. We'll discuss your workflows, pain points, and goals.",
 };
 
 export default function BookPage() {

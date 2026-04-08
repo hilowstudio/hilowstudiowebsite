@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 export function Hero() {
@@ -31,11 +32,30 @@ export function Hero() {
                         }}
                         className="text-lg md:text-xl text-ink-muted measure mx-auto mb-12 leading-relaxed"
                     >
-                        There is a quiet exodus happening. People are choosing agency over
-                        convenience, simplicity over scale. They need better tools. We
-                        build calm technology that solves the problem, then gets out of
-                        your way.
+                        Hi Low Studio is a calm tech practice. We help founders and
+                        small teams use AI and automation to offload the operational
+                        work, so they can spend their attention on the things that
+                        actually matter.
                     </motion.p>
+
+                    {/* Primary CTA */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                            duration: 0.8,
+                            delay: 0.4,
+                            ease: [0.22, 1, 0.36, 1]
+                        }}
+                        className="mb-12"
+                    >
+                        <Link
+                            href="/services"
+                            className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-clay text-paper text-sm font-medium hover:bg-clay-muted focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 transition-all duration-300"
+                        >
+                            Work With Us
+                        </Link>
+                    </motion.div>
 
                     {/* Subtle decorative element */}
                     <motion.div
@@ -43,7 +63,7 @@ export function Hero() {
                         animate={{ opacity: 1, scaleX: 1 }}
                         transition={{
                             duration: 1,
-                            delay: 0.5,
+                            delay: 0.6,
                             ease: [0.22, 1, 0.36, 1]
                         }}
                         className="w-24 h-px bg-ink/20 mx-auto"

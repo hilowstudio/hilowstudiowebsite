@@ -68,7 +68,7 @@ export function BespokeOfferings() {
                         Whether you need a system built, want to learn to build your
                         own, need help designing technology that respects your
                         users, or want your product audited against calm tech
-                        standards &mdash; we have a path for you.
+                        standards, we have a path for you.
                     </p>
                 </motion.div>
 

@@ -18,7 +18,7 @@ export function CatalogHero() {
                     </h1>
                     <div className="space-y-6 text-ink-muted leading-relaxed">
                         <p>
-                            A small set of fixed-scope offerings — custom builds you
+                            A small set of fixed-scope offerings: custom builds you
                             own, workshops you can book, advisory retainers, and
                             Quiet Standards audits. Each one is designed to ship
                             quickly without sacrificing the things that make our

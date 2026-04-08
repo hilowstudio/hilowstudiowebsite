@@ -4,7 +4,7 @@ import { NotebookGrid } from "@/components/notebook/notebook-grid";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-    title: "Notebook | Hi-Low Studio",
+    title: "Notebook | Hi Low Studio",
     description:
         "Essays and reflections on building for the parallel economy.",
 };

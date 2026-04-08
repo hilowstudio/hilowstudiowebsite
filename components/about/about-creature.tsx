@@ -121,8 +121,8 @@ export function AboutCreature() {
                                                     className="text-ink hover:text-clay transition-colors duration-300 font-medium"
                                                 >
                                                     {item.link.label}
-                                                </Link>{" "}
-                                                &mdash; {item.description}
+                                                </Link>
+                                                : {item.description}
                                             </li>
                                         ))}
                                     </ul>

@@ -81,7 +81,7 @@ export function NotebookEntry({ title, date, category, content }: NotebookEntryP
                     {/* Footer decoration */}
                     <div className="mt-16 pt-8 border-t border-ink/5">
                         <p className="text-xs text-ink-light italic text-center">
-                            From the Hi-Low Studio notebook
+                            From the Hi Low Studio notebook
                         </p>
                     </div>
                 </motion.div>

@@ -139,7 +139,7 @@ h1, h2, h3, h4, h5, h6 {
    UTILITY CLASSES
    ============================================ */
 
-/* Stipple dither pattern — halftone/risograph feel */
+/* Stipple dither pattern, halftone/risograph feel */
 .bg-dither {
   background-image: radial-gradient(
     circle,

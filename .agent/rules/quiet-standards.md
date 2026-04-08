@@ -37,7 +37,7 @@ Scan this list before starting any task.
 
 ### DATA GATES
 - ALWAYS provide full data export in an open, machine-readable format (JSON, CSV, XML). [DAT-01]
-- ALWAYS make exports complete — content, metadata, configuration, history, the lot. [DAT-02]
+- ALWAYS make exports complete: content, metadata, configuration, history, the lot. [DAT-02]
 - ALWAYS make export accessible within 3 clicks from settings. No support tickets, no waiting periods, no discouragement flow. [DAT-03]
 - NEVER collect data beyond what an actively-used feature requires. [DAT-07]
 - NEVER sell, share, or provide user data to advertisers, brokers, or ad networks. [DAT-08]
@@ -62,7 +62,7 @@ Scan this list before starting any task.
 
 ### DURABILITY GATES
 - ALWAYS meet WCAG 2.1 Level AA on every primary user flow. [DUR-01] *(See user-interfaces.md §4 for the contrast and focus rules already in force.)*
-- ALWAYS provide 44x44 touch targets and keyboard-equivalent focus for all interactive elements. [DUR-02] *(See user-interfaces.md §3 ATOMS — already in force.)*
+- ALWAYS provide 44x44 touch targets and keyboard-equivalent focus for all interactive elements. [DUR-02] *(See user-interfaces.md §3 ATOMS, already in force.)*
 - ALWAYS use open web standards. NEVER require proprietary plugins, browser-specific features, or single-vendor runtimes. [DUR-07]
 
 ### GOVERNANCE GATE
@@ -91,11 +91,11 @@ Scan this list before starting any task.
 - COMPLETE the primary task flow in **3 screens or fewer** from launch. [ATT-16]
 - NEVER show interstitial screens or splash animations longer than 2 seconds when content is available. [ATT-17]
 - USE modal dialogs ONLY for destructive actions or critical confirmations. NEVER for promotions, upsells, or announcements. [ATT-18]
-- RESPECT `prefers-reduced-motion`. [ATT-19] *(See user-interfaces.md §2 — already in force.)*
+- RESPECT `prefers-reduced-motion`. [ATT-19] *(See user-interfaces.md §2, already in force.)*
 - ENFORCE clear visual hierarchy. NEVER place two competing calls-to-action of equal weight. [ATT-20]
 - WRITE empty states that are informative and calm. NEVER use empty states for upselling, cross-promotion, or anxiety. [ATT-21]
 - NEVER use the color red, urgency language, or pulsing/animating elements to manufacture false urgency. NO badges like "Popular," "New," "Limited." [ATT-22]
-- MAINTAIN a 45–80 character measure for body text. [ATT-23] *(See user-interfaces.md §1 TYPOGRAPHY — already in force.)*
+- MAINTAIN a 45–80 character measure for body text. [ATT-23] *(See user-interfaces.md §1 TYPOGRAPHY, already in force.)*
 
 ---
 
@@ -109,7 +109,7 @@ Scan this list before starting any task.
 - SUPPORT import from at least one competing product or common format in the category. [DAT-06]
 
 ### 2B. DATA COLLECTION MINIMALISM
-- BUILD a real-time, user-accessible inventory of all data held about the user. NOT a privacy-policy category list — an actual data viewer. [DAT-09]
+- BUILD a real-time, user-accessible inventory of all data held about the user. NOT a privacy-policy category list, an actual data viewer. [DAT-09]
 - IF analytics or telemetry are present, they MUST be opt-in (not opt-out) with a plain-language explanation of what is collected and why. [DAT-10]
 - ENSURE core features function with all optional data collection declined. [DAT-11]
 - STATE data retention periods explicitly. AUTO-PURGE when the stated purpose expires. [DAT-12]
@@ -134,7 +134,7 @@ Scan this list before starting any task.
 - NEVER pre-check optional consent boxes, newsletter signups, or add-on purchases. [HON-05]
 - ALWAYS show price clearly at the point of decision. NO hidden fees, NO "starting at" pricing that escalates. [HON-06]
 - NEVER use false urgency. NO fake countdown timers, NO "only 3 left!" when inventory is not genuinely scarce. [HON-07]
-- NEVER use visual misdirection — equal weight for the user's choice and the company's preferred choice, every time. [HON-08]
+- NEVER use visual misdirection. Equal weight for the user's choice and the company's preferred choice, every time. [HON-08]
 
 ### 3B. ALGORITHMIC TRANSPARENCY
 - IF any algorithmic curation exists, DISCLOSE the primary ranking factors in plain language, accessible from the interface. [HON-09]
@@ -143,7 +143,7 @@ Scan this list before starting any task.
 - NEVER use dynamic pricing personalized by user behavior or inferred willingness to pay. [HON-12]
 
 ### 3C. BUSINESS MODEL TRANSPARENCY
-- IF the product is free, EXPLAIN how it is funded — on the marketing site and in the app. [HON-14]
+- IF the product is free, EXPLAIN how it is funded, on both the marketing site and in the app. [HON-14]
 - NEVER degrade existing features to upsell paid tiers without advance notice and a data export option. [HON-15]
 - PUBLISH a plain-language summary of the Terms of Service at maximum 8th-grade reading level. [HON-16]
 

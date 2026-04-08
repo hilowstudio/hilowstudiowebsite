@@ -18,8 +18,8 @@ export function BespokeHero() {
                     </h1>
                     <div className="space-y-6 text-ink-muted leading-relaxed">
                         <p>
-                            The same principles that drive our products — minimum
-                            attention, maximum presence — drive our services. We help
+                            The same principles that drive our products (minimum
+                            attention, maximum presence) drive our services. We help
                             founders and small businesses build the systems that handle
                             the operational work, so they can spend their time on the
                             work that actually matters.

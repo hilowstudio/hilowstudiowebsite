@@ -30,9 +30,9 @@
 **1C. Interface Restraint (8 criteria)**
 - **ATT-16** [2 pts]: Primary task flow completable in ≤3 screens from launch.
 - **ATT-17** [2 pts]: No interstitials/splash screens exceeding 2s when content is ready.
-- **ATT-18** [2 pts]: Modals only for destructive/critical confirmations — not promos or upsells.
+- **ATT-18** [2 pts]: Modals only for destructive/critical confirmations, not promos or upsells.
 - **ATT-19** [2 pts]: Supports `prefers-reduced-motion`.
-- **ATT-20** [1 pt]: Clear visual hierarchy — no competing CTAs of equal weight.
+- **ATT-20** [1 pt]: Clear visual hierarchy with no competing CTAs of equal weight.
 - **ATT-21** [1 pt]: Empty states are calm and informative, not upsells.
 - **ATT-22** [1 pt]: No false urgency (red, pulsing elements, "Act now!" language).
 - **ATT-23** [1 pt]: Body text line length 45–80 characters.
@@ -196,7 +196,7 @@
 
 | Tier | Name | Requirement |
 |------|------|-------------|
-| — | Not Certified | Fails any must-pass OR <40% scored |
+| · | Not Certified | Fails any must-pass OR <40% scored |
 | 🟫 | **QSF Verified** | All must-pass + 57+ pts (40%) |
 | ⬜ | **QSF Certified** | All must-pass + 86+ pts (60%) + domain minimums |
 | 🟨 | **QSF Exemplary** | All must-pass + 114+ pts (80%) + domain minimums |

@@ -18,7 +18,7 @@ export function AboutHero() {
                     </p>
                     <Image
                         src="/adam-profile.png"
-                        alt="Adam Vega, founder of Hi-Low Studio"
+                        alt="Adam Vega, founder of Hi Low Studio"
                         width={256}
                         height={256}
                         priority
@@ -29,7 +29,7 @@ export function AboutHero() {
                     </h1>
                     <div className="space-y-6 text-ink-muted leading-relaxed">
                         <p>
-                            Hi-Low Studio is my studio. Right now, &ldquo;studio&rdquo;
+                            Hi Low Studio is my studio. Right now, &ldquo;studio&rdquo;
                             and &ldquo;I&rdquo; are the same thing. That may change one
                             day. For now, when you&apos;re reading this page, you&apos;re
                             reading a single person&apos;s note about the work he is

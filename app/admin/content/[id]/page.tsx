@@ -96,7 +96,7 @@ export default function EditPostPage() {
         <span className="text-xs text-ink-muted">
           {post.status}
           {post.published_at &&
-            ` — ${new Date(post.published_at).toLocaleDateString("en-US", {
+            ` · ${new Date(post.published_at).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
               hour: "numeric",

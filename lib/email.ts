@@ -10,7 +10,7 @@ function getResend(): Resend {
   return _resend;
 }
 
-const FROM = "Hi-Low Studio <hello@hilowstudio.dev>";
+const FROM = "Hi Low Studio <hello@hilowstudio.dev>";
 
 export async function sendBookingConfirmation({
   to,
@@ -41,7 +41,7 @@ export async function sendBookingConfirmation({
     html: `
       <div style="font-family: Georgia, serif; color: #333; max-width: 560px; margin: 0 auto;">
         <h2 style="font-weight: 400; margin-bottom: 4px;">Hi ${name},</h2>
-        <p>Your discovery call with Hi-Low Studio is confirmed for:</p>
+        <p>Your discovery call with Hi Low Studio is confirmed for:</p>
         <p style="font-size: 18px; font-weight: 500; margin: 20px 0;">${formatted}</p>
         ${meetLink ? `<p><a href="${meetLink}" style="color: #7a5c3e;">Join via Google Meet</a></p>` : ""}
         <hr style="border: none; border-top: 1px solid #e5e0d8; margin: 24px 0;" />
@@ -54,9 +54,9 @@ export async function sendBookingConfirmation({
           <li>What would a successful engagement look like for you?</li>
         </ol>
         <p style="color: #888; font-size: 14px; margin-top: 24px;">
-          No pressure if you'd rather just chat — these just help me come prepared.
+          No pressure if you'd rather just chat. These just help me come prepared.
         </p>
-        <p style="margin-top: 32px;">Looking forward to it,<br/>Adam Vega<br/>Hi-Low Studio</p>
+        <p style="margin-top: 32px;">Looking forward to it,<br/>Adam Vega<br/>Hi Low Studio</p>
       </div>
     `,
   });
@@ -167,7 +167,7 @@ export async function sendReminder({
     html: `
       <div style="font-family: Georgia, serif; color: #333; max-width: 560px; margin: 0 auto;">
         <p>Hi ${name},</p>
-        <p>Just a reminder — your discovery call with Hi-Low Studio is ${timeLabel}:</p>
+        <p>Just a reminder, your discovery call with Hi Low Studio is ${timeLabel}:</p>
         <p style="font-size: 18px; font-weight: 500; margin: 20px 0;">${formatted}</p>
         ${meetLink ? `<p><a href="${meetLink}" style="color: #7a5c3e;">Join via Google Meet</a></p>` : ""}
         <p style="margin-top: 24px;">See you then,<br/>Adam</p>

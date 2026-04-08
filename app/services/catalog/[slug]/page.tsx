@@ -23,11 +23,11 @@ export async function generateMetadata({
     const item = getCatalogItem(slug);
 
     if (!item) {
-        return { title: "Not Found | Hi-Low Studio" };
+        return { title: "Not Found | Hi Low Studio" };
     }
 
     return {
-        title: `${item.name} | Catalog | Hi-Low Studio`,
+        title: `${item.name} | Catalog | Hi Low Studio`,
         description: item.summary,
     };
 }

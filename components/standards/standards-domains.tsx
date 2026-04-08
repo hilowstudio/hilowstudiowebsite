@@ -233,7 +233,7 @@ export function StandardsDomains() {
                                             className="text-sm text-ink-muted leading-relaxed flex gap-3"
                                         >
                                             <span className="text-clay shrink-0">
-                                                &mdash;
+                                                &middot;
                                             </span>
                                             {example}
                                         </li>

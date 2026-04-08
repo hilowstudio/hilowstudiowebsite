@@ -7,7 +7,7 @@ const entries = [
         date: "March 28, 2026",
         title: "Quiet Standards Framework Published",
         changes: [
-            "Published the Quiet Standards Framework (QSF) — 104 auditable criteria for attention-respecting software",
+            "Published the Quiet Standards Framework (QSF): 104 auditable criteria for attention-respecting software",
             "Added /standards overview page with 7-domain breakdown",
             "Added /standards/spec for the full specification",
             "Added downloadable PDF of the specification",
@@ -78,7 +78,7 @@ export function ChangelogContent() {
                                         className="text-sm text-ink-muted leading-relaxed flex gap-3"
                                     >
                                         <span className="text-clay shrink-0">
-                                            &mdash;
+                                            &middot;
                                         </span>
                                         {change}
                                     </li>

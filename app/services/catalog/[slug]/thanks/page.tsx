@@ -3,8 +3,8 @@ import { Metadata } from "next";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-    title: "Thank You | Hi-Low Studio",
-    description: "Thanks for your purchase from the Hi-Low Studio catalog.",
+    title: "Thank You | Hi Low Studio",
+    description: "Thanks for your purchase from the Hi Low Studio catalog.",
 };
 
 export default function CatalogThanksPage() {

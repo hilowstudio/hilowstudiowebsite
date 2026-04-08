@@ -22,7 +22,7 @@ export function CatalogCTA() {
 
                     <p className="text-ink-muted leading-relaxed mb-12 max-w-lg mx-auto">
                         The catalog covers the work that has shape. If your problem
-                        needs something custom, we still build that — start a
+                        needs something custom, we still build that. Start a
                         bespoke conversation and we&apos;ll figure it out together.
                     </p>
 

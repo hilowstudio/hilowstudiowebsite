@@ -3,7 +3,7 @@ import { ChangelogContent } from "@/components/changelog/changelog-content";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-    title: "Changelog | Hi-Low Studio",
+    title: "Changelog | Hi Low Studio",
     description:
         "What we've added, changed, and removed on hilowstudio.dev.",
 };

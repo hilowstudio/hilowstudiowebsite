@@ -25,7 +25,7 @@ const doors = [
         title: "Calm Tech, Off the Shelf",
         tagline: "For founders who already know what they want.",
         description:
-            "A small set of fixed-scope offerings — custom builds, workshops, advisory retainers, and audits. Some you can purchase directly, others start with a short conversation.",
+            "A small set of fixed-scope offerings: custom builds, workshops, advisory retainers, and audits. Some you can purchase directly, others start with a short conversation.",
         bullets: [
             "Fixed scope, transparent pricing",
             "Custom builds you own, deployed to your own infrastructure",

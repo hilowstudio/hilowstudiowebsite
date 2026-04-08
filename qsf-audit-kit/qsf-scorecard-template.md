@@ -17,9 +17,9 @@
 
 | | Result |
 |---|---|
-| **Must-Pass Gate** | [PASS / FAIL — X of 27 passed] |
+| **Must-Pass Gate** | [PASS / FAIL, X of 27 passed] |
 | **Total Scored Points** | [X of 143] |
-| **Domain Minimums Met** | [Yes / No — list any failing domains] |
+| **Domain Minimums Met** | [Yes / No, list any failing domains] |
 | **Certification Tier** | [Not Certified / QSF Verified / QSF Certified / QSF Exemplary] |
 
 ---
@@ -189,5 +189,5 @@ For each criterion, record:
 
 ---
 
-*Audit conducted using the Quiet Standards Framework v1.0, published by Hi-Low Studio LLC.*
+*Audit conducted using the Quiet Standards Framework v1.0, published by Hi Low Studio LLC.*
 *Full specification: https://hilowstudio.dev/standards/spec*

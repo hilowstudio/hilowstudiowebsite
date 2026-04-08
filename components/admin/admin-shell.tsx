@@ -22,7 +22,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-paper">
       <nav className="border-b border-paper-muted px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-8">
-          <span className="font-serif text-lg text-ink">Hi-Low Admin</span>
+          <span className="font-serif text-lg text-ink">Hi Low Admin</span>
           <div className="flex gap-1">
             {navItems.map((item) => (
               <Link

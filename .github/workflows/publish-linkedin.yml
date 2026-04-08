@@ -2,7 +2,7 @@ name: Publish LinkedIn Posts
 
 on:
   schedule:
-    # Mon-Thu at 13:05 UTC (≈ 9:05am ET) — offset slightly to avoid peak load
+    # Mon-Thu at 13:05 UTC (≈ 9:05am ET), offset slightly to avoid peak load
     - cron: "5 13 * * 1-4"
   workflow_dispatch:
 

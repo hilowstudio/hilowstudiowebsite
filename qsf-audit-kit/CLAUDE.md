@@ -20,9 +20,9 @@ Claude will:
 
 ## Audit Modes
 
-- **Public Surface Audit** — Claude has only the live URL. Uses web browsing, network inspection, screenshot analysis.
-- **Source Code Audit** — Claude has access to the codebase. Reads source files in addition to live inspection.
-- **Full Audit** — Source access plus an attestation questionnaire for criteria that cannot be externally verified.
+- **Public Surface Audit**: Claude has only the live URL. Uses web browsing, network inspection, screenshot analysis.
+- **Source Code Audit**: Claude has access to the codebase. Reads source files in addition to live inspection.
+- **Full Audit**: Source access plus an attestation questionnaire for criteria that cannot be externally verified.
 
 ## Files
 
@@ -34,10 +34,10 @@ Claude will:
 
 ## About QSF
 
-The Quiet Standards Framework is the first open, auditable, product-level certification standard for attention-respecting software. Published by Hi-Low Studio LLC.
+The Quiet Standards Framework is the first open, auditable, product-level certification standard for attention-respecting software. Published by Hi Low Studio LLC.
 
 - 104 criteria across 7 domains (Attention, Data Sovereignty, Honesty, Departure, Respect, Durability, Governance)
-- 27 must-pass gates — fail any one and certification is denied
+- 27 must-pass gates. Fail any one and certification is denied
 - 77 scored criteria totaling 143 points
 - 3 tiers: QSF Verified (40%), QSF Certified (60%), QSF Exemplary (80%)
 

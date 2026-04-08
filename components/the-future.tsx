@@ -40,27 +40,27 @@ export function TheFuture() {
                         it, you are in the right place."
                     </blockquote>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link
-                            href="/work"
-                            className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-clay text-paper text-sm font-medium hover:bg-clay-muted focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 transition-all duration-300"
-                        >
-                            Our Projects
-                        </Link>
+                    <div className="flex items-center justify-center">
                         <Link
                             href="/services"
-                            className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-ink/10 text-ink text-sm font-medium hover:border-clay hover:text-clay focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 transition-all duration-300"
+                            className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-clay text-paper text-sm font-medium hover:bg-clay-muted focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 transition-all duration-300"
                         >
                             Work With Us
                         </Link>
                     </div>
 
-                    <div className="mt-8">
+                    <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-x-8 gap-y-3">
                         <Link
                             href="/about"
                             className="text-sm text-ink-muted hover:text-clay transition-colors duration-300"
                         >
-                            Or read a note from the founder &rarr;
+                            A note from the founder &rarr;
+                        </Link>
+                        <Link
+                            href="/philosophy"
+                            className="text-sm text-ink-muted hover:text-clay transition-colors duration-300"
+                        >
+                            Why we build this way &rarr;
                         </Link>
                     </div>
 

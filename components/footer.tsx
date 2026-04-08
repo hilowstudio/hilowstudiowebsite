@@ -76,7 +76,7 @@ export function Footer() {
 
                     {/* Transparency */}
                     <p className="text-xs text-ink-light text-center mb-6">
-                        Hi-Low Studio is bootstrapped and funded by consulting
+                        Hi Low Studio is bootstrapped and funded by consulting
                         services and product sales. We do not sell data or run
                         ads.
                     </p>
@@ -85,18 +85,30 @@ export function Footer() {
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-ink-muted">
                         {/* Logo / Name */}
                         <div className="flex items-center gap-2">
-                            <span className="font-medium text-ink">Hi-Low Studio</span>
+                            <span className="font-medium text-ink">Hi Low Studio</span>
                             <span className="text-ink-light">·</span>
                             <span>Digital Supports for Analog Living</span>
                         </div>
 
                         {/* Links */}
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-x-6 gap-y-2 flex-wrap justify-center sm:justify-end">
                             <Link
                                 href="/about"
                                 className="hover:text-clay transition-colors duration-300"
                             >
                                 About
+                            </Link>
+                            <Link
+                                href="/work"
+                                className="hover:text-clay transition-colors duration-300"
+                            >
+                                Projects
+                            </Link>
+                            <Link
+                                href="/philosophy"
+                                className="hover:text-clay transition-colors duration-300"
+                            >
+                                Philosophy
                             </Link>
                             <a
                                 href="mailto:hello@hilowstudio.dev"

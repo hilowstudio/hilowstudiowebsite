@@ -13,7 +13,7 @@ function getCalendarClient() {
 
 export const calendarClient = getCalendarClient();
 
-// Primary calendar — where booking events are created
+// Primary calendar. Booking events are created here.
 export const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
 
 // All calendars to check for conflicts (comma-separated).

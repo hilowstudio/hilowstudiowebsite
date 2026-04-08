@@ -24,7 +24,7 @@ They want agency. They want simplicity. They want their data back. And most of a
 
 ## The Hardware Problem
 
-I realized that this movement—the "Post-Institutional" shift—has a hardware problem. We have the desire to live differently, but we are still using software built by the attention economy to do it.
+I realized that this movement, the "Post-Institutional" shift, has a hardware problem. We have the desire to live differently, but we are still using software built by the attention economy to do it.
 
 That's the tension. We want to opt out of systems designed to capture our attention, but the tools we use to build alternatives are themselves built on the same extractive principles.
 
@@ -32,9 +32,9 @@ That's the tension. We want to opt out of systems designed to capture our attent
 
 What if we built software differently?
 
-What if utility came first—solve the problem, then get out of the way? What if we designed tools that were addiction-free—no infinite scrolls, no doom-loops, no dark patterns? What if users owned their data, could export it, could leave whenever they wanted?
+What if utility came first, so we solve the problem and then get out of the way? What if we designed tools that were addiction-free, with no infinite scrolls, no doom-loops, no dark patterns? What if users owned their data, could export it, could leave whenever they wanted?
 
-This is the thesis behind Hi-Low Studio.
+This is the thesis behind Hi Low Studio.
 
 We're building digital supports for analog living. Tools that help you do the thing you came to do, then return to your life offline.
 
@@ -46,7 +46,7 @@ The parallel economy needs better rails. We're building them.`,
         category: "Design",
         content: `The attention economy has trained us to expect software that screams for our time. What if we built tools that whispered instead?
 
-Every notification, every badge, every infinite scroll is designed to capture your attention and hold it hostage. These aren't bugs—they're features. They're the business model.
+Every notification, every badge, every infinite scroll is designed to capture your attention and hold it hostage. These aren't bugs, they're features. They're the business model.
 
 ## The Cost
 
@@ -77,11 +77,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const entry = entries[slug];
 
     if (!entry) {
-        return { title: "Entry Not Found | Hi-Low Studio" };
+        return { title: "Entry Not Found | Hi Low Studio" };
     }
 
     return {
-        title: `${entry.title} | Notebook | Hi-Low Studio`,
+        title: `${entry.title} | Notebook | Hi Low Studio`,
         description: entry.content.slice(0, 160).replace(/\n/g, " "),
     };
 }

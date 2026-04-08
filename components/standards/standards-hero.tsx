@@ -34,7 +34,7 @@ export function StandardsHero() {
                         </p>
                         <p className="text-ink font-medium">
                             Built by the team that ships calm technology
-                            every day &mdash; not as theory, but as
+                            every day. Not as theory, but as
                             engineering practice.
                         </p>
                     </div>

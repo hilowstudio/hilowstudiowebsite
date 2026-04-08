@@ -1,12 +1,12 @@
 # QSF Audit Rules
 
-You are conducting a Quiet Standards Framework (QSF) audit — evaluating a software product against 104 criteria across 7 domains. Your goal is to produce a rigorous, evidence-based scorecard that two independent auditors would agree on.
+You are conducting a Quiet Standards Framework (QSF) audit, evaluating a software product against 104 criteria across 7 domains. Your goal is to produce a rigorous, evidence-based scorecard that two independent auditors would agree on.
 
 ## Setup
 
-1. Read `qsf-criteria.json` (in this directory) — it contains all 104 criteria with audit instructions, pass conditions, and fail indicators.
+1. Read `qsf-criteria.json` (in this directory). It contains all 104 criteria with audit instructions, pass conditions, and fail indicators.
 2. Confirm with the user: the product URL, the audit mode, and (if source code audit) the repo location.
-3. Determine what kind of product this is (SaaS app, marketing site, mobile app, browser extension, desktop app, etc.) — many criteria will be N/A for simpler products.
+3. Determine what kind of product this is (SaaS app, marketing site, mobile app, browser extension, desktop app, etc.). Many criteria will be N/A for simpler products.
 
 ## Audit Modes
 
@@ -20,13 +20,13 @@ You are conducting a Quiet Standards Framework (QSF) audit — evaluating a soft
 
 Work through each domain sequentially:
 
-1. **Attention** (23 criteria) — notifications, engagement patterns, interface restraint
-2. **Data Sovereignty** (18 criteria) — portability, collection minimalism, security/deletion
-3. **Honesty** (16 criteria) — dark patterns, algorithmic transparency, business model
-4. **Departure** (12 criteria) — session closure, offboarding, graceful degradation
-5. **Respect** (14 criteria) — temporal, contextual, resource respect
-6. **Durability** (12 criteria) — accessibility, interoperability, longevity
-7. **Governance** (9 criteria) — privacy/legal, communication, ethical commitments
+1. **Attention** (23 criteria): notifications, engagement patterns, interface restraint
+2. **Data Sovereignty** (18 criteria): portability, collection minimalism, security/deletion
+3. **Honesty** (16 criteria): dark patterns, algorithmic transparency, business model
+4. **Departure** (12 criteria): session closure, offboarding, graceful degradation
+5. **Respect** (14 criteria): temporal, contextual, resource respect
+6. **Durability** (12 criteria): accessibility, interoperability, longevity
+7. **Governance** (9 criteria): privacy/legal, communication, ethical commitments
 
 For each criterion:
 
@@ -39,16 +39,16 @@ For each criterion:
 ### Confidence Levels
 
 For each criterion, assign one of:
-- **High** — Evidence is clear and unambiguous.
-- **Medium** — Evidence supports the conclusion but has ambiguity. Auditor should review.
-- **Low** — Insufficient evidence or judgment call required. Flag for auditor override.
+- **High**: Evidence is clear and unambiguous.
+- **Medium**: Evidence supports the conclusion but has ambiguity. Auditor should review.
+- **Low**: Insufficient evidence or judgment call required. Flag for auditor override.
 
 ### Automation Levels
 
 Respect the `automationLevel` field in each criterion:
 - **full**: Evaluate and score independently. Present evidence to auditor.
 - **assisted**: Evaluate and present evidence, but flag for auditor confirmation before finalizing.
-- **manual**: Generate the attestation question. Do not score — mark as "Pending Attestation."
+- **manual**: Generate the attestation question. Do not score. Mark as "Pending Attestation."
 
 ## Scoring Rules
 
@@ -84,7 +84,7 @@ QSF Certified and Exemplary tiers require ≥40% of available scored points in E
 
 ## Output
 
-Use `qsf-scorecard-template.md` (in this directory) to produce the final report. Fill in every field. Do not skip criteria — mark unevaluable criteria as "Not Evaluated" with an explanation.
+Use `qsf-scorecard-template.md` (in this directory) to produce the final report. Fill in every field. Do not skip criteria. Mark unevaluable criteria as "Not Evaluated" with an explanation.
 
 ### Attestation Questionnaire
 For criteria with `automationLevel: "manual"`, generate a targeted questionnaire grouped by domain. Include the criterion ID, text, specific questions, and a note that false attestation voids certification. Cross-reference all attestation answers against observable evidence and flag contradictions.
@@ -113,9 +113,9 @@ For criteria with `automationLevel: "manual"`, generate a targeted questionnaire
 - Be precise in evidence collection. Code snippets, file paths, and specific URLs are better than descriptions.
 - Do not editorialize in the scorecard. Present evidence and conclusion. Save recommendations for a separate section.
 - The auditor has final authority on all scores.
-- For large codebases, use parallel agents — one per domain or domain group — to speed up the audit.
+- For large codebases, use parallel agents (one per domain or domain group) to speed up the audit.
 
 ## About
 
-The Quiet Standards Framework v1.0 is published by Hi-Low Studio LLC.
+The Quiet Standards Framework v1.0 is published by Hi Low Studio LLC.
 Full specification: https://hilowstudio.dev/standards/spec

@@ -10,7 +10,7 @@ const projects = [
         name: "Hilow Browser",
         tagline: "A Cognitive Support Tool for the Desktop",
         description:
-            "A desktop browser that treats your attention as something worth protecting. Designed primarily for people with ADHD, but for anyone who has ever opened a tab to check one thing and surfaced two hours later. Intent declarations, focus guardrails, impulse protection, and capacity tracking — calm technology in practice.",
+            "A desktop browser that treats your attention as something worth protecting. Designed primarily for people with ADHD, but for anyone who has ever opened a tab to check one thing and surfaced two hours later. Intent declarations, focus guardrails, impulse protection, and capacity tracking. Calm technology in practice.",
         href: "/hilowbrowser",
         vertical: "Daily Computing",
         status: "Live Now",
@@ -43,7 +43,7 @@ const projects = [
         name: "Quill & Compass",
         tagline: "A Thoughtful Toolkit for the Modern Christian Homeschooling Family",
         description:
-            "Homeschooling is one of the most radical acts of presence a parent can choose. Quill & Compass eliminates the blank page — lesson plans, differentiated worksheets, curriculum compilation, and a weekly planner, all built to get you back to your children.",
+            "Homeschooling is one of the most radical acts of presence a parent can choose. Quill & Compass eliminates the blank page with lesson plans, differentiated worksheets, curriculum compilation, and a weekly planner, all built to get you back to your children.",
         href: "/quillandcompass",
         website: "https://www.quillandcompass.app",
         vertical: "Education",

@@ -107,7 +107,7 @@
           "text": "Notifications contain enough context to be actionable without opening the app.",
           "evidenceType": "T",
           "automationLevel": "assisted",
-          "auditInstructions": "Trigger several different notification types from the application. For each notification, evaluate: can the user understand what happened and decide whether to act WITHOUT opening the app? A notification saying 'New update available' is low-context. A notification saying 'Your weekly curriculum report for Emma is ready — 12 of 15 tasks completed' is high-context. Screenshot 5+ notification examples and rate each for actionability.",
+          "auditInstructions": "Trigger several different notification types from the application. For each notification, evaluate: can the user understand what happened and decide whether to act WITHOUT opening the app? A notification saying 'New update available' is low-context. A notification saying 'Your weekly curriculum report for Emma is ready, 12 of 15 tasks completed' is high-context. Screenshot 5+ notification examples and rate each for actionability.",
           "passCondition": "The majority of notification types contain sufficient context (who/what/when/action-needed) for the user to decide whether to open the app.",
           "failIndicators": [
             "Generic notifications like 'You have a new notification'",
@@ -225,7 +225,7 @@
           "text": "No auto-play media without explicit user initiation on each piece of content.",
           "evidenceType": "T",
           "automationLevel": "full",
-          "auditInstructions": "Navigate to any page containing video or audio content. Observe whether media begins playing automatically. Check if videos in feeds auto-play on scroll. In source code, check for autoplay attributes on media elements, or JavaScript that programmatically triggers play() without user interaction. Note: muted autoplay in hero sections is a gray area — flag for auditor review.",
+          "auditInstructions": "Navigate to any page containing video or audio content. Observe whether media begins playing automatically. Check if videos in feeds auto-play on scroll. In source code, check for autoplay attributes on media elements, or JavaScript that programmatically triggers play() without user interaction. Note: muted autoplay in hero sections is a gray area; flag for auditor review.",
           "passCondition": "No media auto-plays without explicit user initiation on each individual piece of content.",
           "failIndicators": [
             "autoplay attribute on video/audio elements",
@@ -438,7 +438,7 @@
           "subdomain": "2A. Data Portability",
           "type": "must-pass",
           "points": 0,
-          "text": "Data export is complete — includes ALL user-generated content, metadata, configuration, and history.",
+          "text": "Data export is complete. Includes ALL user-generated content, metadata, configuration, and history.",
           "evidenceType": "U",
           "automationLevel": "assisted",
           "auditInstructions": "Create several types of content in the application (if testing with a test account). Export data. Compare the export contents against what exists in the application. Check for: user-generated content, metadata (dates, tags, categories), configuration (settings, preferences), and history (activity log, edit history). Flag any data visible in the app that is missing from the export. Present comparison to auditor.",
@@ -559,7 +559,7 @@
           "subdomain": "2B. Data Collection Minimalism",
           "type": "scored",
           "points": 3,
-          "text": "Real-time, user-accessible inventory of all data held about the user — not just privacy policy categories, but an actual data viewer.",
+          "text": "Real-time, user-accessible inventory of all data held about the user. Not just privacy policy categories, but an actual data viewer.",
           "evidenceType": "U",
           "automationLevel": "full",
           "auditInstructions": "Search account settings for a 'my data', 'data inventory', or 'what we know about you' feature. Check if it shows actual data values (not just categories like 'we collect your email'). Verify it is real-time or near-real-time (reflects recently added data).",
@@ -647,7 +647,7 @@
           "text": "Account deletion is complete, permanent, and accessible within the application. No 'contact support to delete.'",
           "evidenceType": "U",
           "automationLevel": "full",
-          "auditInstructions": "Navigate to account settings. Look for an account deletion option. Verify: (1) it exists in-app, (2) it does not require contacting support, (3) it clearly states the deletion is permanent, (4) it initiates immediately (not 'we'll process this in 30 days'). Count clicks to reach deletion. Do not actually delete the account — document the flow up to the final confirmation.",
+          "auditInstructions": "Navigate to account settings. Look for an account deletion option. Verify: (1) it exists in-app, (2) it does not require contacting support, (3) it clearly states the deletion is permanent, (4) it initiates immediately (not 'we'll process this in 30 days'). Count clicks to reach deletion. Do not actually delete the account. Document the flow up to the final confirmation.",
           "passCondition": "Account deletion is accessible in-app, clearly permanent, and does not require contacting support. Initiates immediately upon confirmation.",
           "failIndicators": [
             "No in-app deletion option",
@@ -835,7 +835,7 @@
           "text": "No false urgency (fake countdown timers, 'only 3 left!' when inventory is not genuinely scarce).",
           "evidenceType": "T",
           "automationLevel": "full",
-          "auditInstructions": "Scan all pages for countdown timers, scarcity indicators ('only X left'), or urgency messaging. For each: (1) refresh the page — does the timer reset? (2) check different sessions — does the scarcity number change? (3) check source code — is the urgency based on real data or hardcoded/randomized? Timers that reset on refresh and scarcity numbers that don't correspond to real inventory are false urgency.",
+          "auditInstructions": "Scan all pages for countdown timers, scarcity indicators ('only X left'), or urgency messaging. For each: (1) refresh the page, does the timer reset? (2) check different sessions, does the scarcity number change? (3) check source code, is the urgency based on real data or hardcoded/randomized? Timers that reset on refresh and scarcity numbers that don't correspond to real inventory are false urgency.",
           "passCondition": "No fake countdown timers, false scarcity indicators, or manufactured urgency messaging.",
           "failIndicators": [
             "Countdown timer that resets on page refresh",

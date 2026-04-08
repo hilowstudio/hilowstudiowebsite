@@ -17,8 +17,8 @@ export function ContactHero() {
                         Let's Build Something
                     </h1>
                     <p className="text-ink-muted leading-relaxed">
-                        If you're building for the parallel economy—tools for sovereign
-                        health, education, death care, or any of the other verticals—we'd
+                        If you're building for the parallel economy (tools for sovereign
+                        health, education, death care, or any of the other verticals), we'd
                         love to hear from you.
                     </p>
                 </motion.div>

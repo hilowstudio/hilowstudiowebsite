@@ -3,7 +3,7 @@ import { isAuthenticated } from "@/lib/admin-auth";
 import { AdminShell } from "@/components/admin/admin-shell";
 
 export const metadata = {
-  title: "Admin | Hi-Low Studio",
+  title: "Admin | Hi Low Studio",
   robots: { index: false, follow: false },
 };
 

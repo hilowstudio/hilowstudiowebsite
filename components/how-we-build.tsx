@@ -16,7 +16,7 @@ const commitments = [
     {
         title: "Amplify the best of people and technology, without confusing the two",
         description:
-            "Machines should not act like humans. Humans should not act like machines. We let technology handle what it does well — computation, organization, recall — so that you can do what you do well: make decisions, raise your family, be present.",
+            "Machines should not act like humans. Humans should not act like machines. We let technology handle what it does well (computation, organization, recall) so that you can do what you do well: make decisions, raise your family, be present.",
     },
     {
         title: "Your data belongs to you",
@@ -26,7 +26,7 @@ const commitments = [
     {
         title: "Our software degrades gracefully",
         description:
-            "When something breaks — and eventually, something always breaks — our tools continue to function. They fall back, they simplify, they keep working. They never fail catastrophically and take your data with them.",
+            "When something breaks, and eventually something always breaks, our tools continue to function. They fall back, they simplify, they keep working. They never fail catastrophically and take your data with them.",
     },
     {
         title: "We respect your time and your social norms",
@@ -51,8 +51,8 @@ export function HowWeBuild() {
                     </p>
                     <h2 className="text-3xl md:text-4xl mb-4">How We Build</h2>
                     <p className="text-ink-muted max-w-xl">
-                        Every piece of software that leaves our studio is governed by a
-                        simple set of commitments.
+                        Every engagement we take and every product we ship is
+                        governed by the same set of commitments.
                     </p>
                 </motion.div>
 

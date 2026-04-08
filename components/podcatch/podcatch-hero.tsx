@@ -47,7 +47,7 @@ export function PodcatchHero() {
                         <p className="text-ink font-medium">
                             Podcatch does the opposite. It transcribes, summarizes, and
                             organizes your podcast library so that the knowledge comes to
-                            you — on your terms, in your time, in the tools you already use.
+                            you, on your terms, in your time, in the tools you already use.
                         </p>
                     </div>
                 </motion.div>

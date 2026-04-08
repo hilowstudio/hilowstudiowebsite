@@ -122,8 +122,8 @@ export function AboutClose() {
                         <p>
                             I am not trying to be everyone&apos;s guy. Hi Low
                             Studio is for people who are already partway out of the
-                            institutional systems that defined the last century
-                            &mdash; homeschooling parents, death care practitioners,
+                            institutional systems that defined the last century.
+                            Homeschooling parents, death care practitioners,
                             solo builders, founders trying to hold a line on their own
                             attention, anyone who wants tools that serve their life
                             instead of consuming it.
@@ -132,7 +132,7 @@ export function AboutClose() {
                             If that describes you, I hope this place feels like home.
                         </p>
                     </div>
-                    <p className="mt-12 text-ink">&mdash; Adam</p>
+                    <p className="mt-12 text-ink italic">Adam</p>
                 </motion.div>
             </div>
         </section>

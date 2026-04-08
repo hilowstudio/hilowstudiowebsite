@@ -18,8 +18,8 @@ export const bookingConfig = {
     maxAdvanceWeeks: 4, // can book up to 4 weeks out
 
     // Meeting details
-    meetingTitle: "Discovery Call — Hi-Low Studio",
-    meetingDescription: `30-minute discovery call with Hi-Low Studio.\n\nWe'll discuss your workflows, pain points, and goals. No pitch. No pressure.\n\nGoogle Meet link is included below.`,
+    meetingTitle: "Discovery Call with Hi Low Studio",
+    meetingDescription: `30-minute discovery call with Hi Low Studio.\n\nWe'll discuss your workflows, pain points, and goals. No pitch. No pressure.\n\nGoogle Meet link is included below.`,
 } as const;
 
 export type BookingConfig = typeof bookingConfig;

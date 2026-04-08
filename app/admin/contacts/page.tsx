@@ -122,7 +122,7 @@ export default function ContactsPage() {
                   </td>
                   <td className="py-3 text-ink-muted">{contact.email}</td>
                   <td className="py-3 text-ink-muted">
-                    {contact.company || "—"}
+                    {contact.company || "-"}
                   </td>
                   <td className="py-3">
                     <span

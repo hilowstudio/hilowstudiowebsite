@@ -18,7 +18,7 @@ export function NotebookHero() {
                     </h1>
                     <p className="text-ink-muted leading-relaxed">
                         Essays, reflections, and build logs from the studio. No SEO
-                        optimization, no engagement hacks—just honest thinking about
+                        optimization, no engagement hacks, just honest thinking about
                         building for the parallel economy.
                     </p>
                 </motion.div>

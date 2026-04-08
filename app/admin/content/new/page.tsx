@@ -93,9 +93,9 @@ export default function NewPostPage() {
           />
           <p className="text-xs text-ink-light mt-1">
             {body.length} characters
-            {body.length > 0 && body.length < 900 && " — aim for 900-1,500 for best reach"}
-            {body.length >= 900 && body.length <= 1500 && " — sweet spot"}
-            {body.length > 1500 && " — consider trimming"}
+            {body.length > 0 && body.length < 900 && ". Aim for 900-1,500 for best reach"}
+            {body.length >= 900 && body.length <= 1500 && ". Sweet spot"}
+            {body.length > 1500 && ". Consider trimming"}
           </p>
         </div>
 

@@ -133,7 +133,7 @@ export default async function AdminDashboard() {
                         hour: "numeric",
                         minute: "2-digit",
                       })
-                    : "—"}
+                    : "-"}
                 </p>
               </div>
             ))}

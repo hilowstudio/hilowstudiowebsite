@@ -1,4 +1,4 @@
-// Supabase database types for Hi-Low Studio BD system
+// Supabase database types for Hi Low Studio BD system
 
 export type ContactStage =
   | "lead"

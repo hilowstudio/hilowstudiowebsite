@@ -9,9 +9,8 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/work", label: "Our Projects" },
-    { href: "/standards", label: "Standards" },
     { href: "/services", label: "Services" },
+    { href: "/standards", label: "Standards" },
     { href: "/contact", label: "Contact" },
 ];
 
@@ -36,7 +35,7 @@ export function Header() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src="/hilow.png"
-                            alt="Hi-Low Studio"
+                            alt="Hi Low Studio"
                             className="h-14 md:h-16 w-auto"
                         />
                     </Link>

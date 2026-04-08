@@ -346,7 +346,7 @@ export function SpecContent() {
                     className="mb-20"
                 >
                     <p className="text-xs uppercase tracking-widest text-ink-light mb-6">
-                        Hi-Low Studio LLC
+                        Hi Low Studio LLC
                     </p>
                     <h1 className="text-4xl md:text-5xl mb-4">
                         The Quiet Standards Framework
@@ -614,9 +614,9 @@ export function SpecContent() {
                         Certification is valid for 12 months. Recertification
                         requires a delta audit covering criteria affected by
                         product changes, plus a random sample of 20% of
-                        unchanged criteria. Material product changes &mdash; new
+                        unchanged criteria. Material product changes (new
                         monetization model, new data collection, or acquisition
-                        by another company &mdash; trigger mandatory re-audit of
+                        by another company) trigger mandatory re-audit of
                         affected domains.
                     </p>
                 </section>
@@ -627,7 +627,7 @@ export function SpecContent() {
                         <span className="text-ink font-medium">
                             The Quiet Standards Framework
                         </span>{" "}
-                        is published by Hi-Low Studio LLC. The specification is
+                        is published by Hi Low Studio LLC. The specification is
                         open. The self-audit toolkit is free. Certification is
                         earned.
                     </p>

@@ -38,7 +38,7 @@ export default function AdminLogin() {
     <div className="min-h-screen flex items-center justify-center bg-paper">
       <div className="w-full max-w-sm p-8">
         <h1 className="font-serif text-2xl text-ink mb-2">Admin</h1>
-        <p className="text-ink-muted text-sm mb-8">Hi-Low Studio</p>
+        <p className="text-ink-muted text-sm mb-8">Hi Low Studio</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

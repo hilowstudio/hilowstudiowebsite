@@ -54,7 +54,7 @@ export function TheProblem() {
                         </p>
                         <p>
                             The writer Cory Doctorow calls this process
-                            "enshittification" — the deliberate, systematic degradation of
+                            "enshittification," the deliberate, systematic degradation of
                             digital services to extract maximum time, money, and data from
                             the people who use them. Consumers cannot leave these walled-in
                             fiefdoms if there are no viable alternatives to move to.

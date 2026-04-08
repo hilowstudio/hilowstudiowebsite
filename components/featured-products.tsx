@@ -8,7 +8,7 @@ const products = [
         name: "Quill & Compass",
         tagline: "The OS for Modern Homeschooling",
         description:
-            "A calm, comprehensive system for families choosing intellectual liberty. Curriculum planning, progress tracking, and portfolio building—without the overwhelm.",
+            "A calm, comprehensive system for families choosing intellectual liberty. Curriculum planning, progress tracking, and portfolio building without the overwhelm.",
         href: "https://quillandcompass.app",
         vertical: "Education",
     },

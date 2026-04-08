@@ -4,9 +4,9 @@ import { KCFeatures } from "@/components/kinandcairn/kc-features";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-    title: "Kin & Cairn | Hi-Low Studio",
+    title: "Kin & Cairn | Hi Low Studio",
     description:
-        "The operating system for the post-institutional death care industry. Practice management, family coordination, and a practitioner directory — built for the bedside.",
+        "The operating system for the post-institutional death care industry. Practice management, family coordination, and a practitioner directory, all built for the bedside.",
 };
 
 export default function KinAndCairnPage() {
