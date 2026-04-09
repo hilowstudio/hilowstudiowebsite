@@ -49,7 +49,12 @@ export type IdeaSource =
   | "market_observation"
   | "competitor"
   | "personal"
-  | "client_feedback";
+  | "client_feedback"
+  | "book"
+  | "podcast"
+  | "youtube"
+  | "article"
+  | "external";
 
 export type VoiceCategory = "principle" | "do" | "dont" | "reference_post";
 
@@ -135,6 +140,7 @@ export interface ContentIdea {
   suggested_pillar: ContentPillar | null;
   source_url: string | null;
   source_material: string | null;
+  source_metadata: Record<string, unknown>;
   status: IdeaStatus;
   promoted_post_id: string | null;
   created_at: string;

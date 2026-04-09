@@ -35,11 +35,16 @@ export const FUNNEL_STAGES: { value: FunnelStage; label: string; description: st
 export const FLYWHEEL_TARGET = { tofu: 4, mofu: 2, bofu: 1 } as const;
 
 export const IDEA_SOURCES: { value: IdeaSource; label: string }[] = [
+  { value: "personal", label: "Personal Insight" },
   { value: "call_notes", label: "Call Notes" },
   { value: "market_observation", label: "Market Observation" },
   { value: "competitor", label: "Competitor" },
-  { value: "personal", label: "Personal Insight" },
   { value: "client_feedback", label: "Client Feedback" },
+  { value: "book", label: "Book" },
+  { value: "podcast", label: "Podcast" },
+  { value: "youtube", label: "YouTube" },
+  { value: "article", label: "Article" },
+  { value: "external", label: "External" },
 ];
 
 export const VOICE_CATEGORIES: { value: VoiceCategory; label: string }[] = [

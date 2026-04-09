@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { isAuthenticatedRequest } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
-import { generatePostDraft, VoiceGuideMissingError } from "@/lib/generate-post";
+import { generatePostDraft, assembleSourceContext, VoiceGuideMissingError } from "@/lib/generate-post";
 import {
   CONTENT_PILLARS,
   HOOK_TYPES,
@@ -80,12 +80,8 @@ export async function POST(
     );
   }
 
-  // Assemble source material: raw_insight always included; source_material appended if present
-  const parts = [idea.raw_insight];
-  if (idea.source_material) {
-    parts.push(`Additional source material:\n${idea.source_material}`);
-  }
-  const sourceMaterial = parts.join("\n\n");
+  // Assemble rich source context from raw_insight + source_material + source_metadata
+  const sourceMaterial = assembleSourceContext(idea);
 
   let generatedBody: string;
   try {

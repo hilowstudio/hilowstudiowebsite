@@ -88,6 +88,55 @@ function buildUserMessage(input: GenerateInput): string {
   return "Draft a LinkedIn post from scratch. Use the pillar, hook, and funnel stage guidance in the system prompt to pick an angle drawn from your own knowledge and reasoning.";
 }
 
+export function assembleSourceContext(idea: {
+  raw_insight: string;
+  source: string;
+  source_material?: string | null;
+  source_metadata?: Record<string, unknown> | null;
+}): string {
+  const parts: string[] = [idea.raw_insight];
+  const meta = idea.source_metadata;
+
+  if (meta && Object.keys(meta).length > 0) {
+    if (meta.title) parts.push(`Title: ${meta.title}`);
+    if (Array.isArray(meta.authors) && meta.authors.length > 0) {
+      parts.push(`Authors: ${(meta.authors as string[]).join(", ")}`);
+    }
+    if (meta.summary) parts.push(`Summary:\n${meta.summary}`);
+    if (Array.isArray(meta.key_takeaways) && meta.key_takeaways.length > 0) {
+      const takeaways = meta.key_takeaways as string[];
+      parts.push(
+        `Key takeaways:\n${takeaways.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+      );
+    }
+    if (Array.isArray(meta.chapters) && meta.chapters.length > 0) {
+      const chapters = meta.chapters as { title: string }[];
+      parts.push(
+        `Chapters/sections:\n${chapters.map((c) => `- ${c.title}`).join("\n")}`
+      );
+    }
+    if (Array.isArray(meta.entities) && meta.entities.length > 0) {
+      const entities = meta.entities as { name: string; type: string }[];
+      parts.push(
+        `Key entities:\n${entities.map((e) => `- ${e.name} (${e.type})`).join("\n")}`
+      );
+    }
+    if (meta.table_of_contents && Array.isArray(meta.table_of_contents)) {
+      const toc = meta.table_of_contents as string[];
+      parts.push(`Table of contents:\n${toc.map((t) => `- ${t}`).join("\n")}`);
+    }
+    if (Array.isArray(meta.subjects) && meta.subjects.length > 0) {
+      parts.push(`Subjects: ${(meta.subjects as string[]).join(", ")}`);
+    }
+  }
+
+  if (idea.source_material) {
+    parts.push(`Additional source material:\n${idea.source_material}`);
+  }
+
+  return parts.join("\n\n");
+}
+
 export async function generatePostDraft(
   input: GenerateInput
 ): Promise<string> {
