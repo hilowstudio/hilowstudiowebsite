@@ -26,6 +26,7 @@ export default function EditPostPage() {
   const [contentPillar, setContentPillar] = useState<ContentPillar | "">("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
 
   // Voice guide
@@ -91,6 +92,50 @@ export default function EditPostPage() {
       setError(data.error || "Failed to save");
     }
     setSaving(false);
+  }
+
+  async function handlePublishNow() {
+    if (!confirm("Publish this post to LinkedIn right now?")) return;
+    setPublishing(true);
+    setError("");
+
+    // Save any pending edits first so we publish what the user sees on screen
+    const saveRes = await fetch(`/api/admin/content/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: title || null,
+        body,
+        post_type: postType,
+        hook_type: hookType || null,
+        funnel_stage: funnelStage || null,
+        content_pillar: contentPillar || null,
+      }),
+    });
+
+    if (!saveRes.ok) {
+      const data = await saveRes.json();
+      setError(data.error || "Failed to save before publishing");
+      setPublishing(false);
+      return;
+    }
+
+    const res = await fetch(`/api/admin/content/${id}/publish-now`, {
+      method: "POST",
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Failed to publish");
+      // Reload so the user sees the updated status (likely "failed")
+      const reload = await fetch(`/api/admin/content/${id}`);
+      if (reload.ok) setPost(await reload.json());
+      setPublishing(false);
+      return;
+    }
+
+    setPost(data);
+    setPublishing(false);
   }
 
   async function handleDelete() {
@@ -323,10 +368,10 @@ export default function EditPostPage() {
           {error && <p className="text-terracotta text-sm">{error}</p>}
 
           {isEditable && (
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-2 flex-wrap">
               <button
                 onClick={() => handleSave()}
-                disabled={saving}
+                disabled={saving || publishing}
                 className="px-4 py-2 rounded-md border border-paper-muted text-ink text-sm hover:bg-paper-warm transition-colors disabled:opacity-50"
               >
                 Save
@@ -334,15 +379,23 @@ export default function EditPostPage() {
               {(post.status === "draft" || post.status === "failed") && (
                 <button
                   onClick={() => handleSave("scheduled")}
-                  disabled={saving || !scheduledAt}
-                  className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+                  disabled={saving || publishing || !scheduledAt}
+                  className="px-4 py-2 rounded-md border border-ink text-ink text-sm hover:bg-ink hover:text-paper transition-colors disabled:opacity-50"
                 >
                   Schedule
                 </button>
               )}
               <button
+                onClick={handlePublishNow}
+                disabled={saving || publishing || !body.trim()}
+                className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+              >
+                {publishing ? "Publishing..." : "Post now"}
+              </button>
+              <button
                 onClick={handleDelete}
-                className="px-4 py-2 rounded-md text-terracotta text-sm hover:bg-terracotta/10 transition-colors ml-auto"
+                disabled={saving || publishing}
+                className="px-4 py-2 rounded-md text-terracotta text-sm hover:bg-terracotta/10 transition-colors ml-auto disabled:opacity-50"
               >
                 Delete
               </button>
