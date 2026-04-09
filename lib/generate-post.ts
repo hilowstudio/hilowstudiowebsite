@@ -102,7 +102,10 @@ export async function generatePostDraft(
 
   const response = await getAnthropic().messages.create({
     model: SONNET_MODEL,
-    max_tokens: 2000,
+    // High ceiling: adaptive thinking consumes tokens before the text block is
+    // written. 2000 was too tight and hit max_tokens mid-thinking with no final
+    // text. 16000 is the SDK-recommended non-streaming default.
+    max_tokens: 16000,
     thinking: { type: "adaptive" },
     system: systemPrompt,
     tools: input.sourceUrl
@@ -117,7 +120,12 @@ export async function generatePostDraft(
   );
   const finalText = textBlocks[textBlocks.length - 1];
 
-  if (!finalText) {
+  if (!finalText || !finalText.text.trim()) {
+    if (response.stop_reason === "max_tokens") {
+      throw new Error(
+        "Claude ran out of tokens before producing the post. Raise max_tokens in lib/generate-post.ts or retry."
+      );
+    }
     throw new Error(
       `Claude returned no text content (stop_reason: ${response.stop_reason})`
     );
