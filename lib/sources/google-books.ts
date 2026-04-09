@@ -20,6 +20,8 @@ export async function searchGoogleBooks(
   const url = new URL(GOOGLE_BOOKS_API);
   url.searchParams.append("q", query);
   url.searchParams.append("maxResults", "10");
+  const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+  if (apiKey) url.searchParams.append("key", apiKey);
 
   const res = await fetch(url.toString());
   if (!res.ok) {
