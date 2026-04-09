@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticatedRequest } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 
 const LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
@@ -15,10 +14,9 @@ function errorRedirect(appUrl: string, reason: string) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await isAuthenticatedRequest(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  // No admin auth check here: the admin cookie is SameSite=Strict and won't be
+  // sent on the cross-site redirect back from LinkedIn. CSRF protection is
+  // provided by the HttpOnly `state` nonce cookie which is verified below.
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
