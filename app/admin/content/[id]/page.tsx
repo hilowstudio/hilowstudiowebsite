@@ -99,12 +99,13 @@ export default function EditPostPage() {
     router.push("/admin/content");
   }
 
+  // Hooks must run on every render — keep above any early returns.
+  const violations = useMemo(() => checkVoiceViolations(body), [body]);
+
   if (loading) return <p className="text-ink-light text-sm py-8">Loading...</p>;
   if (!post) return <p className="text-terracotta text-sm py-8">Post not found.</p>;
 
   const isEditable = post.status === "draft" || post.status === "scheduled" || post.status === "failed";
-
-  const violations = useMemo(() => checkVoiceViolations(body), [body]);
 
   const voiceGrouped = VOICE_CATEGORIES.map((cat) => ({
     ...cat,
