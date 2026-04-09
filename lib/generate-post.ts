@@ -1,0 +1,127 @@
+import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
+import { supabase } from "@/lib/supabase";
+import {
+  CONTENT_PILLARS,
+  HOOK_TYPES,
+  FUNNEL_STAGES,
+} from "@/lib/content-strategy";
+import type {
+  ContentPillar,
+  HookType,
+  FunnelStage,
+} from "@/lib/types/database";
+
+export interface GenerateInput {
+  pillar: ContentPillar;
+  hookType: HookType;
+  funnelStage: FunnelStage;
+  sourceMaterial?: string;
+  sourceUrl?: string;
+}
+
+export class VoiceGuideMissingError extends Error {
+  constructor() {
+    super(
+      "No voice guide principle found. Add a 'principle' row to voice_guide before generating."
+    );
+    this.name = "VoiceGuideMissingError";
+  }
+}
+
+async function fetchVoicePrinciple(): Promise<string> {
+  const { data, error } = await supabase
+    .from("voice_guide")
+    .select("content")
+    .eq("category", "principle")
+    .order("sort_order", { ascending: true });
+
+  if (error) throw error;
+  if (!data || data.length === 0) throw new VoiceGuideMissingError();
+
+  return data.map((row) => row.content).join("\n\n");
+}
+
+function buildSystemPrompt(
+  voice: string,
+  pillarValue: ContentPillar,
+  hookValue: HookType,
+  funnelValue: FunnelStage
+): string {
+  const pillar = CONTENT_PILLARS.find((p) => p.value === pillarValue)!;
+  const hook = HOOK_TYPES.find((h) => h.value === hookValue)!;
+  const funnel = FUNNEL_STAGES.find((f) => f.value === funnelValue)!;
+
+  return `${voice}
+
+---
+
+## This Specific Post
+
+**Content pillar:** ${pillar.label}
+${pillar.description}
+Funnel role for this pillar: ${pillar.funnelRole}
+
+**Hook type:** ${hook.label} — ${hook.description}
+
+**Funnel stage:** ${funnel.label}
+${funnel.description}
+
+---
+
+## Output Constraint
+
+Return ONLY the LinkedIn post body. No preamble. No meta-commentary. No "Here's your post:". No explanation of choices. No summary at the end. No hashtags unless they emerge naturally from the thought. Write the post as if you're publishing it directly to LinkedIn. Stop when the post is complete.`;
+}
+
+function buildUserMessage(input: GenerateInput): string {
+  if (input.sourceUrl) {
+    const extra = input.sourceMaterial
+      ? `\n\nAdditional context from the user:\n${input.sourceMaterial}`
+      : "";
+    return `Draft a LinkedIn post inspired by this URL. Use the web_fetch tool to read the content first, then write the post.\n\nURL: ${input.sourceUrl}${extra}`;
+  }
+
+  if (input.sourceMaterial) {
+    return `Draft a LinkedIn post inspired by this source material:\n\n<source>\n${input.sourceMaterial}\n</source>\n\nThe source is a starting point, not something to summarize. Find the angle that fits the selected pillar, hook, and funnel stage.`;
+  }
+
+  return "Draft a LinkedIn post from scratch. Use the pillar, hook, and funnel stage guidance in the system prompt to pick an angle drawn from your own knowledge and reasoning.";
+}
+
+export async function generatePostDraft(
+  input: GenerateInput
+): Promise<string> {
+  const voice = await fetchVoicePrinciple();
+  const systemPrompt = buildSystemPrompt(
+    voice,
+    input.pillar,
+    input.hookType,
+    input.funnelStage
+  );
+  const userMessage = buildUserMessage(input);
+
+  const response = await getAnthropic().messages.create({
+    model: SONNET_MODEL,
+    max_tokens: 2000,
+    thinking: { type: "adaptive" },
+    system: systemPrompt,
+    tools: input.sourceUrl
+      ? [{ type: "web_fetch_20260209", name: "web_fetch" }]
+      : undefined,
+    messages: [{ role: "user", content: userMessage }],
+  });
+
+  // Extract the final text block (skip thinking and tool_use blocks)
+  const textBlocks = response.content.filter(
+    (b): b is Extract<typeof b, { type: "text" }> => b.type === "text"
+  );
+  const finalText = textBlocks[textBlocks.length - 1];
+
+  if (!finalText) {
+    throw new Error(
+      `Claude returned no text content (stop_reason: ${response.stop_reason})`
+    );
+  }
+
+  return finalText.text.trim();
+}

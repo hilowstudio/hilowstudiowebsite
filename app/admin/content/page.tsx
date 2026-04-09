@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { GenerateDraftModal } from "@/components/generate-draft-modal";
 import type { ContentPost, PostStatus } from "@/lib/types/database";
 
 const statusTabs: { value: PostStatus | "all"; label: string }[] = [
@@ -24,6 +25,7 @@ export default function ContentPage() {
   const [posts, setPosts] = useState<ContentPost[]>([]);
   const [filter, setFilter] = useState<PostStatus | "all">("all");
   const [loading, setLoading] = useState(true);
+  const [generateOpen, setGenerateOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -43,13 +45,26 @@ export default function ContentPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl text-ink">Content</h1>
-        <Link
-          href="/admin/content/new"
-          className="px-3 py-1.5 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors"
-        >
-          New post
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setGenerateOpen(true)}
+            className="px-3 py-1.5 rounded-md border border-ink text-ink text-sm hover:bg-ink hover:text-paper transition-colors"
+          >
+            Generate draft
+          </button>
+          <Link
+            href="/admin/content/new"
+            className="px-3 py-1.5 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors"
+          >
+            New post
+          </Link>
+        </div>
       </div>
+
+      <GenerateDraftModal
+        open={generateOpen}
+        onClose={() => setGenerateOpen(false)}
+      />
 
       {/* Status tabs */}
       <div className="flex gap-1">

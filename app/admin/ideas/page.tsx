@@ -32,7 +32,11 @@ export default function IdeasPage() {
   const [suggestedHook, setSuggestedHook] = useState<HookType | "">("");
   const [suggestedFunnel, setSuggestedFunnel] = useState<FunnelStage | "">("");
   const [suggestedPillar, setSuggestedPillar] = useState<ContentPillar | "">("");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceMaterial, setSourceMaterial] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null);
 
   async function load() {
     setLoading(true);
@@ -63,6 +67,8 @@ export default function IdeasPage() {
         suggested_hook: suggestedHook || null,
         suggested_funnel: suggestedFunnel || null,
         suggested_pillar: suggestedPillar || null,
+        source_url: sourceUrl.trim() || null,
+        source_material: sourceMaterial.trim() || null,
       }),
     });
 
@@ -71,9 +77,34 @@ export default function IdeasPage() {
       setSuggestedHook("");
       setSuggestedFunnel("");
       setSuggestedPillar("");
+      setSourceUrl("");
+      setSourceMaterial("");
       load();
     }
     setSaving(false);
+  }
+
+  async function generate(id: string) {
+    setGeneratingId(id);
+    setRowError(null);
+    try {
+      const res = await fetch(`/api/admin/ideas/${id}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRowError({ id, message: data.error || "Generation failed" });
+        setGeneratingId(null);
+        return;
+      }
+      router.push(`/admin/content/${data.id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setRowError({ id, message });
+      setGeneratingId(null);
+    }
   }
 
   async function updateStatus(id: string, status: IdeaStatus) {
@@ -175,6 +206,28 @@ export default function IdeasPage() {
             {saving ? "Saving..." : "Capture"}
           </button>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-ink-muted block mb-1">Source URL (optional)</label>
+            <input
+              type="url"
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-clay"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ink-muted block mb-1">Source material (optional)</label>
+            <input
+              type="text"
+              value={sourceMaterial}
+              onChange={(e) => setSourceMaterial(e.target.value)}
+              placeholder="Quote, book ref, podcast summary..."
+              className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-clay"
+            />
+          </div>
+        </div>
       </section>
 
       {/* Status filter tabs */}
@@ -249,7 +302,7 @@ export default function IdeasPage() {
 
               {/* Actions */}
               {idea.status !== "promoted" && idea.status !== "discarded" && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {idea.status === "captured" && (
                     <button
                       onClick={() => updateStatus(idea.id, "developing")}
@@ -259,10 +312,17 @@ export default function IdeasPage() {
                     </button>
                   )}
                   <button
-                    onClick={() => promote(idea.id)}
-                    className="px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors"
+                    onClick={() => generate(idea.id)}
+                    disabled={generatingId === idea.id}
+                    className="px-3 py-1 rounded-md bg-clay text-paper text-xs hover:bg-clay/90 transition-colors disabled:opacity-50"
                   >
-                    Promote to Draft
+                    {generatingId === idea.id ? "Generating..." : "Generate Draft"}
+                  </button>
+                  <button
+                    onClick={() => promote(idea.id)}
+                    className="px-3 py-1 rounded-md border border-ink text-ink text-xs hover:bg-ink hover:text-paper transition-colors"
+                  >
+                    Promote as-is
                   </button>
                   <button
                     onClick={() => discard(idea.id)}
@@ -270,6 +330,30 @@ export default function IdeasPage() {
                   >
                     Discard
                   </button>
+                </div>
+              )}
+
+              {rowError?.id === idea.id && (
+                <div className="rounded-md border border-terracotta/30 bg-terracotta/10 px-3 py-2 text-xs text-terracotta">
+                  {rowError.message}
+                </div>
+              )}
+
+              {(idea.source_url || idea.source_material) && (
+                <div className="text-xs text-ink-light space-y-0.5">
+                  {idea.source_url && (
+                    <p className="truncate">
+                      <span className="text-ink-muted">URL:</span>{" "}
+                      <a href={idea.source_url} target="_blank" rel="noreferrer" className="hover:underline">
+                        {idea.source_url}
+                      </a>
+                    </p>
+                  )}
+                  {idea.source_material && (
+                    <p className="line-clamp-2">
+                      <span className="text-ink-muted">Source:</span> {idea.source_material}
+                    </p>
+                  )}
                 </div>
               )}
 

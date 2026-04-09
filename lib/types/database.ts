@@ -133,6 +133,8 @@ export interface ContentIdea {
   suggested_hook: HookType | null;
   suggested_funnel: FunnelStage | null;
   suggested_pillar: ContentPillar | null;
+  source_url: string | null;
+  source_material: string | null;
   status: IdeaStatus;
   promoted_post_id: string | null;
   created_at: string;

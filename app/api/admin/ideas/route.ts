@@ -33,7 +33,15 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { raw_insight, source, suggested_hook, suggested_funnel, suggested_pillar } = body;
+  const {
+    raw_insight,
+    source,
+    suggested_hook,
+    suggested_funnel,
+    suggested_pillar,
+    source_url,
+    source_material,
+  } = body;
 
   if (!raw_insight) {
     return NextResponse.json({ error: "Insight text is required" }, { status: 400 });
@@ -47,6 +55,8 @@ export async function POST(request: NextRequest) {
       suggested_hook: suggested_hook || null,
       suggested_funnel: suggested_funnel || null,
       suggested_pillar: suggested_pillar || null,
+      source_url: source_url?.trim() || null,
+      source_material: source_material?.trim() || null,
       status: "captured",
     })
     .select()
