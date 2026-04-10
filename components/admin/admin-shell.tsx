@@ -8,8 +8,7 @@ const navItems = [
   { href: "/admin/contacts", label: "Pipeline", exact: false },
   { href: "/admin/content", label: "Content", exact: true },
   { href: "/admin/content/calendar", label: "Calendar", exact: true },
-  { href: "/admin/ideas", label: "Ideas", exact: false },
-  { href: "/admin/sources", label: "Sources", exact: false },
+  { href: "/admin/idea-sources", label: "Idea Sources", exact: false },
   { href: "/admin/voice", label: "Voice", exact: false },
   { href: "/admin/analytics", label: "Analytics", exact: false },
 ];

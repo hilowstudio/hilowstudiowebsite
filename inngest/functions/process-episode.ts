@@ -102,7 +102,6 @@ ${transcript.timestampedTranscript || transcript.rawTranscript}`,
         .from("content_ideas")
         .update({
           raw_insight: insights.summary,
-          source_material: transcript.rawTranscript.slice(0, 8000),
           source_metadata: updatedMeta,
         })
         .eq("id", sourceId);

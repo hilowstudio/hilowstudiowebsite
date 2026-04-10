@@ -42,7 +42,7 @@ export type HookType =
 
 export type FunnelStage = "tofu" | "mofu" | "bofu";
 
-export type IdeaStatus = "captured" | "developing" | "promoted" | "discarded";
+export type IdeaStatus = "captured" | "promoted" | "discarded";
 
 export type IdeaSource =
   | "call_notes"
