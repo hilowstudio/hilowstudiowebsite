@@ -16,6 +16,7 @@ import {
   CONTENT_PILLARS,
 } from "@/lib/content-strategy";
 import type { BookMetadata } from "@/lib/sources/google-books";
+import type { HardcoverBook } from "@/lib/sources/hardcover";
 import type { PodcastSearchResult } from "@/lib/sources/itunes";
 import type { FeedEpisode, ParsedFeed } from "@/lib/sources/rss";
 
@@ -602,11 +603,34 @@ function ArticleIngest() {
 // ─── Book ingestion ───────────────────────────────────────
 
 function BookIngest() {
+  const [bookMode, setBookMode] = useState<"hardcover" | "search">("hardcover");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookMetadata[]>([]);
+  const [hardcoverBooks, setHardcoverBooks] = useState<HardcoverBook[]>([]);
   const [searching, setSearching] = useState(false);
+  const [loadingHardcover, setLoadingHardcover] = useState(false);
   const [ingesting, setIngesting] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  async function loadHardcover() {
+    setLoadingHardcover(true);
+    setMessage(null);
+    const res = await fetch("/api/admin/sources/hardcover?limit=50");
+    if (res.ok) {
+      setHardcoverBooks(await res.json());
+    } else {
+      const data = await res.json();
+      setMessage(data.error || "Failed to load Hardcover library");
+    }
+    setLoadingHardcover(false);
+  }
+
+  useEffect(() => {
+    if (bookMode === "hardcover" && hardcoverBooks.length === 0) {
+      loadHardcover();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookMode]);
 
   async function handleSearch() {
     if (!query.trim()) return;
@@ -623,8 +647,13 @@ function BookIngest() {
     setSearching(false);
   }
 
-  async function handleIngest(book: BookMetadata) {
-    const key = book.isbn || book.title;
+  async function handleIngestBook(book: {
+    title: string;
+    authors: string[];
+    description?: string | null;
+    coverUrl?: string | null;
+  }) {
+    const key = book.title;
     setIngesting(key);
     setMessage(null);
 
@@ -645,75 +674,177 @@ function BookIngest() {
 
   return (
     <section className="space-y-4">
-      <p className="text-sm text-ink-muted">
-        Search Google Books. Select a title to generate an AI summary and add
-        it to your catalog.
-      </p>
       <div className="flex gap-2">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by title, author, or ISBN..."
-          className="flex-1 px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-          disabled={searching}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
         <button
-          onClick={handleSearch}
-          disabled={searching || !query.trim()}
-          className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+          onClick={() => setBookMode("hardcover")}
+          className={`px-3 py-1 rounded-md text-xs transition-colors ${
+            bookMode === "hardcover"
+              ? "bg-clay text-paper"
+              : "text-ink-muted border border-paper-muted hover:text-ink"
+          }`}
         >
-          {searching ? "Searching..." : "Search"}
+          My Hardcover Library
+        </button>
+        <button
+          onClick={() => setBookMode("search")}
+          className={`px-3 py-1 rounded-md text-xs transition-colors ${
+            bookMode === "search"
+              ? "bg-clay text-paper"
+              : "text-ink-muted border border-paper-muted hover:text-ink"
+          }`}
+        >
+          Search Google Books
         </button>
       </div>
+
       {message && <p className="text-sm text-moss">{message}</p>}
-      {results.length > 0 && (
-        <div className="space-y-2">
-          {results.map((book) => {
-            const key = book.isbn || book.title;
-            return (
-              <div
-                key={key}
-                className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
-              >
-                {book.coverUrl && (
-                  <img
-                    src={book.coverUrl}
-                    alt=""
-                    className="w-12 h-16 object-cover rounded shrink-0"
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">
-                    {book.title}
-                  </p>
-                  {book.authors.length > 0 && (
-                    <p className="text-xs text-ink-muted">
-                      {book.authors.join(", ")}
-                    </p>
-                  )}
-                  {book.description && (
-                    <p className="text-xs text-ink-light mt-1 line-clamp-2">
-                      {book.description}
-                    </p>
-                  )}
-                  <div className="flex gap-2 mt-1 text-xs text-ink-light">
-                    {book.pageCount && <span>{book.pageCount} pages</span>}
-                    {book.publishedDate && <span>{book.publishedDate}</span>}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleIngest(book)}
-                  disabled={ingesting === key}
-                  className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+
+      {/* Hardcover library */}
+      {bookMode === "hardcover" && (
+        <>
+          <p className="text-sm text-ink-muted">
+            Books you've marked as "Read" on Hardcover. Select one to generate
+            an AI summary and add it to your catalog.
+          </p>
+          {loadingHardcover ? (
+            <p className="text-ink-light text-sm py-4">
+              Loading your Hardcover library...
+            </p>
+          ) : hardcoverBooks.length === 0 ? (
+            <p className="text-ink-light text-sm py-4">
+              No read books found. Mark books as "Read" on Hardcover to see
+              them here.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {hardcoverBooks.map((book) => (
+                <div
+                  key={book.id}
+                  className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
                 >
-                  {ingesting === key ? "Adding..." : "Add"}
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  {book.coverUrl && (
+                    <img
+                      src={book.coverUrl}
+                      alt=""
+                      className="w-12 h-16 object-cover rounded shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">
+                      {book.title}
+                    </p>
+                    {book.authors.length > 0 && (
+                      <p className="text-xs text-ink-muted">
+                        {book.authors.join(", ")}
+                      </p>
+                    )}
+                    {book.description && (
+                      <p className="text-xs text-ink-light mt-1 line-clamp-2">
+                        {book.description}
+                      </p>
+                    )}
+                    {book.rating && (
+                      <p className="text-xs text-ink-light mt-1">
+                        Your rating: {book.rating}/5
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() =>
+                      handleIngestBook({
+                        title: book.title,
+                        authors: book.authors,
+                        description: book.description,
+                        coverUrl: book.coverUrl,
+                      })
+                    }
+                    disabled={ingesting === book.title}
+                    className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                  >
+                    {ingesting === book.title ? "Adding..." : "Add"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Google Books search */}
+      {bookMode === "search" && (
+        <>
+          <p className="text-sm text-ink-muted">
+            Search Google Books. Select a title to generate an AI summary and
+            add it to your catalog.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by title, author, or ISBN..."
+              className="flex-1 px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
+              disabled={searching}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={searching || !query.trim()}
+              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+            >
+              {searching ? "Searching..." : "Search"}
+            </button>
+          </div>
+          {results.length > 0 && (
+            <div className="space-y-2">
+              {results.map((book) => {
+                const key = book.isbn || book.title;
+                return (
+                  <div
+                    key={key}
+                    className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
+                  >
+                    {book.coverUrl && (
+                      <img
+                        src={book.coverUrl}
+                        alt=""
+                        className="w-12 h-16 object-cover rounded shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">
+                        {book.title}
+                      </p>
+                      {book.authors.length > 0 && (
+                        <p className="text-xs text-ink-muted">
+                          {book.authors.join(", ")}
+                        </p>
+                      )}
+                      {book.description && (
+                        <p className="text-xs text-ink-light mt-1 line-clamp-2">
+                          {book.description}
+                        </p>
+                      )}
+                      <div className="flex gap-2 mt-1 text-xs text-ink-light">
+                        {book.pageCount && <span>{book.pageCount} pages</span>}
+                        {book.publishedDate && (
+                          <span>{book.publishedDate}</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleIngestBook(book)}
+                      disabled={ingesting === key}
+                      className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                    >
+                      {ingesting === key ? "Adding..." : "Add"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
     </section>
   );
