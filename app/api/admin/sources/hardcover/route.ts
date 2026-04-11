@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticatedRequest } from "@/lib/admin-auth";
 import { fetchReadBooks } from "@/lib/sources/hardcover";

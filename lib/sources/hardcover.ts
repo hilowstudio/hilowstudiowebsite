@@ -20,7 +20,7 @@ const READ_BOOKS_QUERY = `
     me {
       user_books(
         where: { status_id: { _eq: 3 } }
-        order_by: { last_read_date: desc_nulls_last }
+        order_by: [{ last_read_date: desc_nulls_last }, { id: desc }]
         limit: $limit
         offset: $offset
       ) {

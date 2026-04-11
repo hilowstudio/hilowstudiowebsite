@@ -619,7 +619,8 @@ function BookIngest() {
     setLoadingHardcover(true);
     setMessage(null);
     const res = await fetch(
-      `/api/admin/sources/hardcover?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`
+      `/api/admin/sources/hardcover?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`,
+      { cache: "no-store" }
     );
     if (res.ok) {
       const data = await res.json();
