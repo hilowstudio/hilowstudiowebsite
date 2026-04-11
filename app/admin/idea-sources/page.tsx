@@ -735,12 +735,16 @@ function BookIngest() {
                   key={book.id}
                   className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
                 >
-                  {book.coverUrl && (
+                  {book.coverUrl ? (
                     <img
                       src={book.coverUrl}
                       alt=""
                       className="w-12 h-16 object-cover rounded shrink-0"
                     />
+                  ) : (
+                    <div className="w-12 h-16 rounded shrink-0 bg-paper-muted flex items-center justify-center">
+                      <span className="text-ink-light text-xs leading-tight text-center px-0.5">No cover</span>
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-ink truncate">
@@ -849,12 +853,16 @@ function BookIngest() {
                     key={key}
                     className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
                   >
-                    {book.coverUrl && (
+                    {book.coverUrl ? (
                       <img
                         src={book.coverUrl}
                         alt=""
                         className="w-12 h-16 object-cover rounded shrink-0"
                       />
+                    ) : (
+                      <div className="w-12 h-16 rounded shrink-0 bg-paper-muted flex items-center justify-center">
+                        <span className="text-ink-light text-xs leading-tight text-center px-0.5">No cover</span>
+                      </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-ink truncate">

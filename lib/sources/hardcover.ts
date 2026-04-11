@@ -155,23 +155,14 @@ export async function fetchReadBooks(
     lastReadDate: ub.last_read_date,
   }));
 
-  // Resolve missing covers in parallel via Open Library / Google Books
-  const missingIndexes = books
-    .map((b, i) => (!b.coverUrl ? i : -1))
-    .filter((i) => i >= 0);
-
-  if (missingIndexes.length > 0) {
-    const resolved = await Promise.all(
-      missingIndexes.map((i) => {
-        const ub = userBooks[i];
-        const isbn13 = ub.book.editions?.[0]?.isbn_13 || null;
-        const isbn10 = ub.book.editions?.[0]?.isbn_10 || null;
-        return resolveCover(books[i].title, books[i].authors, isbn13, isbn10);
-      })
-    );
-    for (let j = 0; j < missingIndexes.length; j++) {
-      if (resolved[j]) books[missingIndexes[j]].coverUrl = resolved[j];
-    }
+  // Resolve missing covers sequentially to avoid Google Books rate limits
+  for (const book of books) {
+    if (book.coverUrl) continue;
+    const ub = userBooks[books.indexOf(book)];
+    const isbn13 = ub.book.editions?.[0]?.isbn_13 || null;
+    const isbn10 = ub.book.editions?.[0]?.isbn_10 || null;
+    const resolved = await resolveCover(book.title, book.authors, isbn13, isbn10);
+    if (resolved) book.coverUrl = resolved;
   }
 
   return { total, books };
