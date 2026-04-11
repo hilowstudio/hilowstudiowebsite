@@ -7,21 +7,26 @@ export interface HardcoverBook {
   description: string | null;
   coverUrl: string | null;
   rating: number | null;
+  lastReadDate: string | null;
 }
 
-// status_id values: 1=Want to Read, 2=Currently Reading, 3=Read, 4=Did Not Finish, 5=Paused
+export interface HardcoverResult {
+  books: HardcoverBook[];
+  total: number;
+}
+
 const READ_BOOKS_QUERY = `
   query ReadBooks($limit: Int!, $offset: Int!) {
     me {
       user_books(
         where: { status_id: { _eq: 3 } }
-        order_by: { updated_at: desc }
+        order_by: { last_read_date: desc_nulls_last }
         limit: $limit
         offset: $offset
       ) {
         id
         rating
-        review
+        last_read_date
         book {
           id
           title
@@ -29,8 +34,10 @@ const READ_BOOKS_QUERY = `
           pages
           image { url }
           contributions { author { name } }
-          taggings { tag { tag } }
         }
+      }
+      user_books_aggregate(where: { status_id: { _eq: 3 } }) {
+        aggregate { count }
       }
     }
   }
@@ -42,7 +49,7 @@ interface HardcoverApiResponse {
       user_books?: {
         id: number;
         rating: number | null;
-        review: string | null;
+        last_read_date: string | null;
         book: {
           id: number;
           title: string;
@@ -50,18 +57,20 @@ interface HardcoverApiResponse {
           pages: number | null;
           image: { url: string } | null;
           contributions: { author: { name: string } }[];
-          taggings: { tag: { tag: string } }[];
         };
       }[];
+      user_books_aggregate?: {
+        aggregate: { count: number };
+      };
     }[];
   };
   errors?: { message: string }[];
 }
 
 export async function fetchReadBooks(
-  limit = 20,
+  limit = 10,
   offset = 0
-): Promise<HardcoverBook[]> {
+): Promise<HardcoverResult> {
   const token = process.env.HARDCOVER_API_TOKEN;
   if (!token) throw new Error("Missing HARDCOVER_API_TOKEN env var");
 
@@ -87,14 +96,20 @@ export async function fetchReadBooks(
     throw new Error(`Hardcover GraphQL error: ${json.errors[0].message}`);
   }
 
-  const userBooks = json.data?.me?.[0]?.user_books || [];
+  const me = json.data?.me?.[0];
+  const userBooks = me?.user_books || [];
+  const total = me?.user_books_aggregate?.aggregate.count || 0;
 
-  return userBooks.map((ub) => ({
-    id: ub.book.id,
-    title: ub.book.title,
-    authors: ub.book.contributions.map((c) => c.author.name),
-    description: ub.book.description,
-    coverUrl: ub.book.image?.url || null,
-    rating: ub.rating,
-  }));
+  return {
+    total,
+    books: userBooks.map((ub) => ({
+      id: ub.book.id,
+      title: ub.book.title,
+      authors: ub.book.contributions.map((c) => c.author.name),
+      description: ub.book.description,
+      coverUrl: ub.book.image?.url || null,
+      rating: ub.rating,
+      lastReadDate: ub.last_read_date,
+    })),
+  };
 }

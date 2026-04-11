@@ -607,17 +607,24 @@ function BookIngest() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookMetadata[]>([]);
   const [hardcoverBooks, setHardcoverBooks] = useState<HardcoverBook[]>([]);
+  const [hardcoverTotal, setHardcoverTotal] = useState(0);
+  const [hardcoverPage, setHardcoverPage] = useState(0);
   const [searching, setSearching] = useState(false);
   const [loadingHardcover, setLoadingHardcover] = useState(false);
   const [ingesting, setIngesting] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const PAGE_SIZE = 10;
 
-  async function loadHardcover() {
+  async function loadHardcover(page: number) {
     setLoadingHardcover(true);
     setMessage(null);
-    const res = await fetch("/api/admin/sources/hardcover?limit=50");
+    const res = await fetch(
+      `/api/admin/sources/hardcover?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`
+    );
     if (res.ok) {
-      setHardcoverBooks(await res.json());
+      const data = await res.json();
+      setHardcoverBooks(data.books);
+      setHardcoverTotal(data.total);
     } else {
       const data = await res.json();
       setMessage(data.error || "Failed to load Hardcover library");
@@ -626,11 +633,11 @@ function BookIngest() {
   }
 
   useEffect(() => {
-    if (bookMode === "hardcover" && hardcoverBooks.length === 0) {
-      loadHardcover();
+    if (bookMode === "hardcover") {
+      loadHardcover(hardcoverPage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookMode]);
+  }, [bookMode, hardcoverPage]);
 
   async function handleSearch() {
     if (!query.trim()) return;
@@ -716,7 +723,12 @@ function BookIngest() {
               them here.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              <p className="text-xs text-ink-muted">
+                {hardcoverTotal} books read. Showing {hardcoverPage * PAGE_SIZE + 1}
+                -{Math.min((hardcoverPage + 1) * PAGE_SIZE, hardcoverTotal)}.
+              </p>
+              <div className="space-y-2">
               {hardcoverBooks.map((book) => (
                 <div
                   key={book.id}
@@ -743,11 +755,18 @@ function BookIngest() {
                         {book.description}
                       </p>
                     )}
-                    {book.rating && (
-                      <p className="text-xs text-ink-light mt-1">
-                        Your rating: {book.rating}/5
-                      </p>
-                    )}
+                    <div className="flex gap-2 mt-1 text-xs text-ink-light">
+                      {book.rating && <span>Rating: {book.rating}/5</span>}
+                      {book.lastReadDate && (
+                        <span>
+                          Read{" "}
+                          {new Date(book.lastReadDate).toLocaleDateString(
+                            "en-US",
+                            { month: "short", year: "numeric" }
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() =>
@@ -765,6 +784,31 @@ function BookIngest() {
                   </button>
                 </div>
               ))}
+              </div>
+              {/* Pagination */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  onClick={() => setHardcoverPage((p) => Math.max(0, p - 1))}
+                  disabled={hardcoverPage === 0 || loadingHardcover}
+                  className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-ink-muted">
+                  Page {hardcoverPage + 1} of{" "}
+                  {Math.ceil(hardcoverTotal / PAGE_SIZE)}
+                </span>
+                <button
+                  onClick={() => setHardcoverPage((p) => p + 1)}
+                  disabled={
+                    (hardcoverPage + 1) * PAGE_SIZE >= hardcoverTotal ||
+                    loadingHardcover
+                  }
+                  className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </>

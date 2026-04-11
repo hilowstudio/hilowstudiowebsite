@@ -7,12 +7,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limit = Number(request.nextUrl.searchParams.get("limit") || "20");
+  const limit = Number(request.nextUrl.searchParams.get("limit") || "10");
   const offset = Number(request.nextUrl.searchParams.get("offset") || "0");
 
   try {
-    const books = await fetchReadBooks(limit, offset);
-    return NextResponse.json(books);
+    const result = await fetchReadBooks(limit, offset);
+    return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to fetch";
     return NextResponse.json({ error: message }, { status: 502 });
