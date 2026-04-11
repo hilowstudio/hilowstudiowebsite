@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         transcript_url: body.transcriptUrl || null,
         processed: false,
       },
-      status: "captured",
+      status: "active",
     })
     .select()
     .single();

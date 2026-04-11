@@ -94,7 +94,7 @@ Provide:
             subjects: book.categories || [],
             cover_url: book.coverUrl,
           },
-          status: "captured",
+          status: "active",
         })
         .select()
         .single();

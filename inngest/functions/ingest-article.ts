@@ -58,7 +58,7 @@ export const ingestArticle = inngest.createFunction(
             key_takeaways: analysis.keyTakeaways,
             entities: analysis.entities,
           },
-          status: "captured",
+          status: "active",
         })
         .select()
         .single();
