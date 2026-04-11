@@ -8,23 +8,35 @@ export async function GET(request: NextRequest) {
   }
 
   const status = request.nextUrl.searchParams.get("status");
+  const source = request.nextUrl.searchParams.get("source");
+  const limit = Number(request.nextUrl.searchParams.get("limit") || "10");
+  const offset = Number(request.nextUrl.searchParams.get("offset") || "0");
+  const countOnly = request.nextUrl.searchParams.get("count") === "true";
 
   let query = supabase
     .from("content_ideas")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (status) {
     query = query.eq("status", status);
   }
+  if (source) {
+    query = query.eq("source", source);
+  }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  if (countOnly) {
+    return NextResponse.json({ count });
+  }
+
+  return NextResponse.json({ data: data || [], total: count || 0 });
 }
 
 export async function POST(request: NextRequest) {
@@ -41,10 +53,14 @@ export async function POST(request: NextRequest) {
     suggested_pillar,
     source_url,
     source_material,
+    source_metadata,
   } = body;
 
   if (!raw_insight) {
-    return NextResponse.json({ error: "Insight text is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Insight text is required" },
+      { status: 400 }
+    );
   }
 
   const { data, error } = await supabase
@@ -57,7 +73,8 @@ export async function POST(request: NextRequest) {
       suggested_pillar: suggested_pillar || null,
       source_url: source_url?.trim() || null,
       source_material: source_material?.trim() || null,
-      status: "captured",
+      source_metadata: source_metadata || {},
+      status: "active",
     })
     .select()
     .single();

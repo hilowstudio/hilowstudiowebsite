@@ -53,8 +53,8 @@ export async function POST(
     return NextResponse.json({ error: "Idea not found" }, { status: 404 });
   }
 
-  if (idea.status === "promoted") {
-    return NextResponse.json({ error: "Already promoted" }, { status: 400 });
+  if (idea.status === "hidden") {
+    return NextResponse.json({ error: "Source is hidden" }, { status: 400 });
   }
 
   const pillar = body.pillar ?? idea.suggested_pillar;
@@ -132,10 +132,13 @@ export async function POST(
     return NextResponse.json({ error: insertErr.message }, { status: 500 });
   }
 
-  // Mark idea as promoted
+  // Increment use count and track last generated post
   await supabase
     .from("content_ideas")
-    .update({ status: "promoted", promoted_post_id: post.id })
+    .update({
+      use_count: (idea.use_count || 0) + 1,
+      promoted_post_id: post.id,
+    })
     .eq("id", id);
 
   return NextResponse.json(post, { status: 201 });

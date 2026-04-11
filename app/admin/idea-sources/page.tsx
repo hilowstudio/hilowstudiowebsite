@@ -1,524 +1,72 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type {
   ContentIdea,
-  IdeaStatus,
-  HookType,
-  FunnelStage,
-  IdeaSource,
-  ContentPillar,
 } from "@/lib/types/database";
 import {
-  HOOK_TYPES,
-  FUNNEL_STAGES,
   IDEA_SOURCES,
-  CONTENT_PILLARS,
 } from "@/lib/content-strategy";
 import type { BookMetadata } from "@/lib/sources/google-books";
 import type { HardcoverBook } from "@/lib/sources/hardcover";
 import type { PodcastSearchResult } from "@/lib/sources/itunes";
 import type { FeedEpisode, ParsedFeed } from "@/lib/sources/rss";
 
-const statusTabs: { value: IdeaStatus | "all"; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "captured", label: "Captured" },
-  { value: "promoted", label: "Promoted" },
-  { value: "discarded", label: "Discarded" },
-];
-
-const statusColors: Record<IdeaStatus, string> = {
-  captured: "bg-clay-muted/20 text-clay",
-  promoted: "bg-moss/20 text-moss",
-  discarded: "bg-paper-muted text-ink-light",
-};
-
-const sourceColors: Partial<Record<string, string>> = {
+const sourceColors: Record<string, string> = {
   book: "bg-moss/15 text-moss",
   podcast: "bg-clay/15 text-clay",
   youtube: "bg-terracotta/15 text-terracotta",
   article: "bg-ink/10 text-ink",
+  personal: "bg-paper-muted text-ink-muted",
   external: "bg-paper-muted text-ink-muted",
 };
 
-// ─── Idea detail component ────────────────────────────────
-
-function IdeaSourceDetail({ idea }: { idea: ContentIdea }) {
-  const meta = idea.source_metadata;
-  const hasMeta = meta && Object.keys(meta).length > 0;
-  const hasBasic = idea.source_url || idea.source_material;
-  const [expanded, setExpanded] = useState(false);
-
-  if (!hasMeta && !hasBasic) return null;
-
-  const title = meta?.title as string | undefined;
-  const authors = meta?.authors as string[] | undefined;
-  const takeaways = meta?.key_takeaways as string[] | undefined;
-  const entities = meta?.entities as
-    | { name: string; type: string }[]
-    | undefined;
-  const sourceSystem = meta?.source_system as string | undefined;
-
-  const entityColors: Record<string, string> = {
-    PERSON: "bg-clay-muted/20 text-clay",
-    BOOK: "bg-moss/15 text-moss",
-    CONCEPT: "bg-ink/10 text-ink",
-    ORGANIZATION: "bg-terracotta/15 text-terracotta",
-    TECHNOLOGY: "bg-clay/15 text-clay",
-  };
-
-  return (
-    <div className="rounded-md border border-paper-muted bg-paper-warm/20 px-3 py-2 text-xs space-y-1.5">
-      {title && (
-        <p className="text-ink font-medium">
-          {title}
-          {authors && authors.length > 0 && (
-            <span className="text-ink-muted font-normal">
-              {" "}
-              by {authors.join(", ")}
-            </span>
-          )}
-        </p>
-      )}
-      {sourceSystem && (
-        <p className="text-ink-light">
-          via <span className="font-mono text-ink-muted">{sourceSystem}</span>
-        </p>
-      )}
-      {idea.source_url && (
-        <p className="truncate">
-          <span className="text-ink-muted">URL:</span>{" "}
-          <a
-            href={idea.source_url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-ink-light hover:underline"
-          >
-            {idea.source_url}
-          </a>
-        </p>
-      )}
-      {entities && entities.length > 0 && (
-        <div className="flex gap-1 flex-wrap">
-          {entities.slice(0, expanded ? undefined : 5).map((e, i) => (
-            <span
-              key={i}
-              className={`px-1.5 py-0.5 rounded-full ${entityColors[e.type] || "bg-paper-muted text-ink-muted"}`}
-            >
-              {e.name}
-            </span>
-          ))}
-          {!expanded && entities.length > 5 && (
-            <span className="text-ink-light">
-              +{entities.length - 5} more
-            </span>
-          )}
-        </div>
-      )}
-      {takeaways && takeaways.length > 0 && (
-        <div>
-          <p className="text-ink-muted mb-0.5">Key takeaways:</p>
-          <ul className="text-ink-light space-y-0.5 pl-3">
-            {takeaways
-              .slice(0, expanded ? undefined : 3)
-              .map((t, i) => (
-                <li key={i} className="list-disc">
-                  {t}
-                </li>
-              ))}
-            {!expanded && takeaways.length > 3 && (
-              <li className="list-none text-ink-light">
-                +{takeaways.length - 3} more
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-      {((takeaways && takeaways.length > 3) ||
-        (entities && entities.length > 5)) && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-ink-muted hover:text-ink transition-colors"
-        >
-          {expanded ? "Show less" : "Show more"}
-        </button>
-      )}
-    </div>
-  );
-}
+const PAGE_SIZE = 10;
 
 // ─── Main page ────────────────────────────────────────────
 
-type TopTab = "catalog" | "ingest";
-
-export default function IdeaSourcesPage() {
-  const [topTab, setTopTab] = useState<TopTab>("catalog");
-
+export default function SourceMaterialPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl text-ink">Idea Sources</h1>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setTopTab("catalog")}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-              topTab === "catalog"
-                ? "bg-ink text-paper"
-                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
-            }`}
-          >
-            Catalog
-          </button>
-          <button
-            onClick={() => setTopTab("ingest")}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-              topTab === "ingest"
-                ? "bg-ink text-paper"
-                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
-            }`}
-          >
-            Add Source
-          </button>
-        </div>
+    <div className="space-y-10">
+      <div>
+        <h1 className="font-serif text-2xl text-ink">Source Material</h1>
+        <p className="text-sm text-ink-muted mt-1">
+          Gather source material for content inspiration.
+        </p>
       </div>
 
-      {topTab === "catalog" && <CatalogTab />}
-      {topTab === "ingest" && <IngestTab />}
-    </div>
-  );
-}
-
-// ─── Catalog tab (ideas list + quick capture) ─────────────
-
-function CatalogTab() {
-  const [ideas, setIdeas] = useState<ContentIdea[]>([]);
-  const [filter, setFilter] = useState<IdeaStatus | "all">("all");
-  const [loading, setLoading] = useState(true);
-
-  // Quick capture form
-  const [insight, setInsight] = useState("");
-  const [source, setSource] = useState<IdeaSource>("personal");
-  const [suggestedHook, setSuggestedHook] = useState<HookType | "">("");
-  const [suggestedFunnel, setSuggestedFunnel] = useState<FunnelStage | "">("");
-  const [suggestedPillar, setSuggestedPillar] = useState<ContentPillar | "">(
-    ""
-  );
-  const [sourceUrl, setSourceUrl] = useState("");
-  const [sourceMaterial, setSourceMaterial] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  async function load() {
-    setLoading(true);
-    const url =
-      filter === "all"
-        ? "/api/admin/ideas"
-        : `/api/admin/ideas?status=${filter}`;
-    const res = await fetch(url);
-    if (res.ok) setIdeas(await res.json());
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
-
-  async function handleCapture() {
-    if (!insight.trim()) return;
-    setSaving(true);
-
-    const res = await fetch("/api/admin/ideas", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        raw_insight: insight,
-        source,
-        suggested_hook: suggestedHook || null,
-        suggested_funnel: suggestedFunnel || null,
-        suggested_pillar: suggestedPillar || null,
-        source_url: sourceUrl.trim() || null,
-        source_material: sourceMaterial.trim() || null,
-      }),
-    });
-
-    if (res.ok) {
-      setInsight("");
-      setSuggestedHook("");
-      setSuggestedFunnel("");
-      setSuggestedPillar("");
-      setSourceUrl("");
-      setSourceMaterial("");
-      load();
-    }
-    setSaving(false);
-  }
-
-  async function updateStatus(id: string, status: IdeaStatus) {
-    await fetch(`/api/admin/ideas/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    load();
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Quick capture */}
-      <section className="rounded-lg border border-paper-muted p-4 space-y-3">
-        <h2 className="text-xs text-ink-muted uppercase tracking-wide">
-          Capture an Insight
+      <section>
+        <h2 className="text-sm font-medium text-ink-muted uppercase tracking-wide mb-4">
+          Add Sources
         </h2>
-        <textarea
-          value={insight}
-          onChange={(e) => setInsight(e.target.value)}
-          rows={3}
-          placeholder="A raw thought, conversation excerpt, market observation..."
-          className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-clay resize-y"
-        />
-        <div className="flex gap-3 flex-wrap items-end">
-          <div>
-            <label className="text-xs text-ink-muted block mb-1">Source</label>
-            <select
-              value={source}
-              onChange={(e) => setSource(e.target.value as IdeaSource)}
-              className="px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-            >
-              {IDEA_SOURCES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-ink-muted block mb-1">
-              Hook (optional)
-            </label>
-            <select
-              value={suggestedHook}
-              onChange={(e) =>
-                setSuggestedHook(e.target.value as HookType | "")
-              }
-              className="px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-            >
-              <option value="">-</option>
-              {HOOK_TYPES.map((h) => (
-                <option key={h.value} value={h.value}>
-                  {h.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-ink-muted block mb-1">
-              Funnel (optional)
-            </label>
-            <select
-              value={suggestedFunnel}
-              onChange={(e) =>
-                setSuggestedFunnel(e.target.value as FunnelStage | "")
-              }
-              className="px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-            >
-              <option value="">-</option>
-              {FUNNEL_STAGES.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-ink-muted block mb-1">
-              Pillar (optional)
-            </label>
-            <select
-              value={suggestedPillar}
-              onChange={(e) =>
-                setSuggestedPillar(e.target.value as ContentPillar | "")
-              }
-              className="px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay max-w-[160px] truncate"
-            >
-              <option value="">-</option>
-              {CONTENT_PILLARS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.shortLabel}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            onClick={handleCapture}
-            disabled={saving || !insight.trim()}
-            className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Capture"}
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-ink-muted block mb-1">
-              Source URL (optional)
-            </label>
-            <input
-              type="url"
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-clay"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-ink-muted block mb-1">
-              Source material (optional)
-            </label>
-            <input
-              type="text"
-              value={sourceMaterial}
-              onChange={(e) => setSourceMaterial(e.target.value)}
-              placeholder="Quote, book ref, podcast summary..."
-              className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-clay"
-            />
-          </div>
-        </div>
+        <AddSources />
       </section>
 
-      {/* Status filter */}
-      <div className="flex gap-1">
-        {statusTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setFilter(tab.value)}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-              filter === tab.value
-                ? "bg-ink text-paper"
-                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Ideas list */}
-      {loading ? (
-        <p className="text-ink-light text-sm py-8">Loading...</p>
-      ) : ideas.length === 0 ? (
-        <p className="text-ink-light text-sm py-8">
-          No idea sources yet. Capture an insight above or add a source.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {ideas.map((idea) => (
-            <div
-              key={idea.id}
-              className="rounded-lg border border-paper-muted p-4 space-y-3"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <p className="text-sm text-ink flex-1">
-                  {idea.raw_insight}
-                </p>
-                <span
-                  className={`shrink-0 px-2 py-0.5 rounded-full text-xs ${statusColors[idea.status]}`}
-                >
-                  {idea.status}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    sourceColors[idea.source] ||
-                    "bg-paper-muted text-ink-muted"
-                  }`}
-                >
-                  {IDEA_SOURCES.find((s) => s.value === idea.source)
-                    ?.label || idea.source}
-                </span>
-                {idea.suggested_hook && (
-                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-paper-muted text-ink-muted">
-                    {idea.suggested_hook}
-                  </span>
-                )}
-                {idea.suggested_funnel && (
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      FUNNEL_STAGES.find(
-                        (f) => f.value === idea.suggested_funnel
-                      )?.colorClass || ""
-                    }`}
-                  >
-                    {idea.suggested_funnel.toUpperCase()}
-                  </span>
-                )}
-                {idea.suggested_pillar && (
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      CONTENT_PILLARS.find(
-                        (p) => p.value === idea.suggested_pillar
-                      )?.colorClass || ""
-                    }`}
-                  >
-                    {CONTENT_PILLARS.find(
-                      (p) => p.value === idea.suggested_pillar
-                    )?.shortLabel}
-                  </span>
-                )}
-                <span className="text-xs text-ink-light">
-                  {new Date(idea.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-              </div>
-
-              {/* Actions: catalog management only, no generation */}
-              {idea.status === "captured" && (
-                <div className="flex gap-2 flex-wrap">
-                  <button
-                    onClick={() => updateStatus(idea.id, "discarded")}
-                    className="px-3 py-1 rounded-md text-xs text-ink-light hover:text-terracotta hover:bg-terracotta/10 transition-colors ml-auto"
-                  >
-                    Discard
-                  </button>
-                </div>
-              )}
-
-              <IdeaSourceDetail idea={idea} />
-
-              {idea.promoted_post_id && (
-                <a
-                  href={`/admin/content/${idea.promoted_post_id}`}
-                  className="text-xs text-clay hover:underline"
-                >
-                  View draft &rarr;
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      <section>
+        <h2 className="text-sm font-medium text-ink-muted uppercase tracking-wide mb-4">
+          My Sources
+        </h2>
+        <MySources />
+      </section>
     </div>
   );
 }
 
-// ─── Ingest tab (articles, books, podcasts/youtube) ───────
+// ─── Add Sources ──────────────────────────────────────────
 
-type IngestMode = "articles" | "books" | "podcasts";
+type AddMode = "books" | "podcasts" | "articles";
 
-const ingestTabs: { value: IngestMode; label: string }[] = [
-  { value: "articles", label: "Articles" },
-  { value: "books", label: "Books" },
-  { value: "podcasts", label: "Podcasts & YouTube" },
-];
-
-function IngestTab() {
-  const [mode, setMode] = useState<IngestMode>("articles");
+function AddSources() {
+  const [mode, setMode] = useState<AddMode>("books");
 
   return (
     <div className="space-y-4">
       <div className="flex gap-1">
-        {ingestTabs.map((tab) => (
+        {([
+          { value: "books" as const, label: "Books" },
+          { value: "podcasts" as const, label: "Podcasts & YouTube" },
+          { value: "articles" as const, label: "Articles / URLs" },
+        ]).map((tab) => (
           <button
             key={tab.value}
             onClick={() => setMode(tab.value)}
@@ -533,16 +81,319 @@ function IngestTab() {
         ))}
       </div>
 
-      {mode === "articles" && <ArticleIngest />}
-      {mode === "books" && <BookIngest />}
-      {mode === "podcasts" && <PodcastIngest />}
+      {mode === "books" && <BookAdd />}
+      {mode === "podcasts" && <PodcastAdd />}
+      {mode === "articles" && <ArticleAdd />}
     </div>
   );
 }
 
-// ─── Article ingestion ────────────────────────────────────
+// ─── My Sources ───────────────────────────────────────────
 
-function ArticleIngest() {
+type SourceTab = "book" | "podcast" | "youtube" | "article" | "hidden";
+
+function MySources() {
+  const [tab, setTab] = useState<SourceTab>("book");
+  const [sources, setSources] = useState<ContentIdea[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [hiddenCount, setHiddenCount] = useState(0);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const isHidden = tab === "hidden";
+    const status = isHidden ? "hidden" : "active";
+    const sourceParam = isHidden ? "" : `&source=${tab}`;
+    const res = await fetch(
+      `/api/admin/ideas?status=${status}${sourceParam}&limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`,
+      { cache: "no-store" }
+    );
+    if (res.ok) {
+      const json = await res.json();
+      setSources(json.data);
+      setTotal(json.total);
+    }
+    setLoading(false);
+  }, [tab, page]);
+
+  // Load hidden count for badge
+  const loadHiddenCount = useCallback(async () => {
+    const res = await fetch(
+      "/api/admin/ideas?status=hidden&count=true",
+      { cache: "no-store" }
+    );
+    if (res.ok) {
+      const json = await res.json();
+      setHiddenCount(json.count || 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    loadHiddenCount();
+  }, [loadHiddenCount]);
+
+  async function hideSource(id: string) {
+    setActionLoading(id);
+    await fetch(`/api/admin/ideas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "hidden" }),
+    });
+    await load();
+    await loadHiddenCount();
+    setActionLoading(null);
+  }
+
+  async function unhideSource(id: string) {
+    setActionLoading(id);
+    await fetch(`/api/admin/ideas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "active" }),
+    });
+    await load();
+    await loadHiddenCount();
+    setActionLoading(null);
+  }
+
+  async function deleteSource(id: string) {
+    if (!confirm("Permanently delete this source? This cannot be undone."))
+      return;
+    setActionLoading(id);
+    await fetch(`/api/admin/ideas/${id}`, { method: "DELETE" });
+    await load();
+    await loadHiddenCount();
+    setActionLoading(null);
+  }
+
+  const tabs: { value: SourceTab; label: string }[] = [
+    { value: "book", label: "Books" },
+    { value: "podcast", label: "Podcasts" },
+    { value: "youtube", label: "YouTube" },
+    { value: "article", label: "Articles" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 flex-wrap">
+        {tabs.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => { setTab(t.value); setPage(0); }}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+              tab === t.value
+                ? "bg-ink text-paper"
+                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+        {hiddenCount > 0 && (
+          <button
+            onClick={() => { setTab("hidden"); setPage(0); }}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+              tab === "hidden"
+                ? "bg-ink text-paper"
+                : "text-ink-light hover:text-ink hover:bg-paper-warm"
+            }`}
+          >
+            Hidden ({hiddenCount})
+          </button>
+        )}
+      </div>
+
+      {tab === "hidden" && (
+        <p className="text-xs text-ink-muted bg-paper-warm/50 rounded-md px-3 py-2">
+          Hidden sources are excluded from the Content Generator but remain in
+          your account. You can unhide them at any time, or permanently delete
+          them here.
+        </p>
+      )}
+
+      {loading ? (
+        <p className="text-ink-light text-sm py-6">Loading...</p>
+      ) : sources.length === 0 ? (
+        <p className="text-ink-light text-sm py-6">
+          {tab === "hidden"
+            ? "No hidden sources."
+            : "No sources yet. Add some above."}
+        </p>
+      ) : (
+        <>
+          <p className="text-xs text-ink-muted">
+            {total} source{total !== 1 ? "s" : ""}. Showing{" "}
+            {page * PAGE_SIZE + 1}-
+            {Math.min((page + 1) * PAGE_SIZE, total)}.
+          </p>
+
+          <div className="space-y-2">
+            {sources.map((src) => {
+              const meta = src.source_metadata;
+              const title = (meta?.title as string) || null;
+              const authors = (meta?.authors as string[]) || null;
+              const coverUrl = (meta?.cover_url as string) || null;
+              const takeaways = (meta?.key_takeaways as string[]) || null;
+              const summary = (meta?.summary as string) || null;
+
+              return (
+                <div
+                  key={src.id}
+                  className="rounded-lg border border-paper-muted p-4 space-y-2"
+                >
+                  <div className="flex items-start gap-3">
+                    {coverUrl && (
+                      <img
+                        src={coverUrl}
+                        alt=""
+                        className="w-10 h-14 object-cover rounded shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          {title && (
+                            <p className="text-sm font-medium text-ink">
+                              {title}
+                              {authors && authors.length > 0 && (
+                                <span className="text-ink-muted font-normal">
+                                  {" "}by {authors.join(", ")}
+                                </span>
+                              )}
+                            </p>
+                          )}
+                          <p className="text-sm text-ink-muted line-clamp-2 mt-0.5">
+                            {summary || src.raw_insight}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {src.use_count > 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-moss/15 text-moss">
+                              Used {src.use_count}x
+                            </span>
+                          )}
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded-full ${
+                              sourceColors[src.source] || "bg-paper-muted text-ink-muted"
+                            }`}
+                          >
+                            {IDEA_SOURCES.find((s) => s.value === src.source)
+                              ?.label || src.source}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Takeaways preview */}
+                      {takeaways && takeaways.length > 0 && (
+                        <ul className="mt-1.5 text-xs text-ink-light space-y-0.5 pl-3">
+                          {takeaways.slice(0, 2).map((t, i) => (
+                            <li key={i} className="list-disc">
+                              {String(t)}
+                            </li>
+                          ))}
+                          {takeaways.length > 2 && (
+                            <li className="list-none text-ink-light">
+                              +{takeaways.length - 2} more
+                            </li>
+                          )}
+                        </ul>
+                      )}
+
+                      {src.source_url && (
+                        <p className="text-xs text-ink-light mt-1 truncate">
+                          <a
+                            href={src.source_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:underline"
+                          >
+                            {src.source_url}
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-paper-muted/50">
+                    <span className="text-xs text-ink-light mr-auto">
+                      {new Date(src.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                    {tab === "hidden" ? (
+                      <>
+                        <button
+                          onClick={() => unhideSource(src.id)}
+                          disabled={actionLoading === src.id}
+                          className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink hover:bg-paper-warm transition-colors disabled:opacity-50"
+                        >
+                          Unhide
+                        </button>
+                        <button
+                          onClick={() => deleteSource(src.id)}
+                          disabled={actionLoading === src.id}
+                          className="px-3 py-1 rounded-md text-xs text-terracotta hover:bg-terracotta/10 transition-colors disabled:opacity-50"
+                        >
+                          Delete permanently
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => hideSource(src.id)}
+                        disabled={actionLoading === src.id}
+                        className="px-3 py-1 rounded-md text-xs text-ink-light hover:text-ink hover:bg-paper-warm transition-colors disabled:opacity-50"
+                      >
+                        Hide source
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          {total > PAGE_SIZE && (
+            <div className="flex items-center justify-between pt-1">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
+                className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-ink-muted">
+                Page {page + 1} of {Math.ceil(total / PAGE_SIZE)}
+              </span>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={
+                  (page + 1) * PAGE_SIZE >= total || loading
+                }
+                className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Article add ──────────────────────────────────────────
+
+function ArticleAdd() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -561,7 +412,9 @@ function ArticleIngest() {
     });
 
     if (res.ok) {
-      setResult("Queued for processing. Check the Catalog tab shortly.");
+      setResult(
+        "Queued for processing. It will appear in My Sources shortly."
+      );
       setUrl("");
     } else {
       const data = await res.json();
@@ -571,10 +424,10 @@ function ArticleIngest() {
   }
 
   return (
-    <section className="space-y-4">
+    <div className="space-y-3">
       <p className="text-sm text-ink-muted">
-        Paste a URL. The AI will fetch the page, summarize it, and add it to
-        your idea source catalog.
+        Paste a URL. The AI will read the page, summarize it, and add it to
+        your sources.
       </p>
       <div className="flex gap-2">
         <input
@@ -591,19 +444,21 @@ function ArticleIngest() {
           disabled={loading || !url.trim()}
           className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
         >
-          {loading ? "Queuing..." : "Ingest"}
+          {loading ? "Queuing..." : "Add"}
         </button>
       </div>
       {result && <p className="text-sm text-moss">{result}</p>}
       {error && <p className="text-sm text-terracotta">{error}</p>}
-    </section>
+    </div>
   );
 }
 
-// ─── Book ingestion ───────────────────────────────────────
+// ─── Book add (Hardcover + Google Books) ──────────────────
 
-function BookIngest() {
-  const [bookMode, setBookMode] = useState<"hardcover" | "search">("hardcover");
+function BookAdd() {
+  const [bookMode, setBookMode] = useState<"hardcover" | "search">(
+    "hardcover"
+  );
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookMetadata[]>([]);
   const [hardcoverBooks, setHardcoverBooks] = useState<HardcoverBook[]>([]);
@@ -613,13 +468,12 @@ function BookIngest() {
   const [loadingHardcover, setLoadingHardcover] = useState(false);
   const [ingesting, setIngesting] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const PAGE_SIZE = 10;
 
-  async function loadHardcover(page: number) {
+  async function loadHardcover(pg: number) {
     setLoadingHardcover(true);
     setMessage(null);
     const res = await fetch(
-      `/api/admin/sources/hardcover?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`,
+      `/api/admin/sources/hardcover?limit=${PAGE_SIZE}&offset=${pg * PAGE_SIZE}`,
       { cache: "no-store" }
     );
     if (res.ok) {
@@ -661,8 +515,7 @@ function BookIngest() {
     description?: string | null;
     coverUrl?: string | null;
   }) {
-    const key = book.title;
-    setIngesting(key);
+    setIngesting(book.title);
     setMessage(null);
 
     const res = await fetch("/api/admin/sources/book/ingest", {
@@ -680,8 +533,27 @@ function BookIngest() {
     setIngesting(null);
   }
 
+  function BookCover({ url }: { url: string | null }) {
+    if (url) {
+      return (
+        <img
+          src={url}
+          alt=""
+          className="w-12 h-16 object-cover rounded shrink-0"
+        />
+      );
+    }
+    return (
+      <div className="w-12 h-16 rounded shrink-0 bg-paper-muted flex items-center justify-center">
+        <span className="text-ink-light text-xs leading-tight text-center px-0.5">
+          No cover
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <section className="space-y-4">
+    <div className="space-y-4">
       <div className="flex gap-2">
         <button
           onClick={() => setBookMode("hardcover")}
@@ -707,124 +579,116 @@ function BookIngest() {
 
       {message && <p className="text-sm text-moss">{message}</p>}
 
-      {/* Hardcover library */}
       {bookMode === "hardcover" && (
         <>
           <p className="text-sm text-ink-muted">
-            Books you've marked as "Read" on Hardcover. Select one to generate
-            an AI summary and add it to your catalog.
+            Books you marked as "Read" on Hardcover. Add any to your source
+            material.
           </p>
           {loadingHardcover ? (
-            <p className="text-ink-light text-sm py-4">
-              Loading your Hardcover library...
-            </p>
+            <p className="text-ink-light text-sm py-4">Loading...</p>
           ) : hardcoverBooks.length === 0 ? (
-            <p className="text-ink-light text-sm py-4">
-              No read books found. Mark books as "Read" on Hardcover to see
-              them here.
-            </p>
+            <p className="text-ink-light text-sm py-4">No read books found.</p>
           ) : (
             <div className="space-y-3">
               <p className="text-xs text-ink-muted">
-                {hardcoverTotal} books read. Showing {hardcoverPage * PAGE_SIZE + 1}
-                -{Math.min((hardcoverPage + 1) * PAGE_SIZE, hardcoverTotal)}.
+                {hardcoverTotal} books. Showing{" "}
+                {hardcoverPage * PAGE_SIZE + 1}-
+                {Math.min(
+                  (hardcoverPage + 1) * PAGE_SIZE,
+                  hardcoverTotal
+                )}
+                .
               </p>
               <div className="space-y-2">
-              {hardcoverBooks.map((book) => (
-                <div
-                  key={book.id}
-                  className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
-                >
-                  {book.coverUrl ? (
-                    <img
-                      src={book.coverUrl}
-                      alt=""
-                      className="w-12 h-16 object-cover rounded shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-16 rounded shrink-0 bg-paper-muted flex items-center justify-center">
-                      <span className="text-ink-light text-xs leading-tight text-center px-0.5">No cover</span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">
-                      {book.title}
-                    </p>
-                    {book.authors.length > 0 && (
-                      <p className="text-xs text-ink-muted">
-                        {book.authors.join(", ")}
+                {hardcoverBooks.map((book) => (
+                  <div
+                    key={book.id}
+                    className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
+                  >
+                    <BookCover url={book.coverUrl} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">
+                        {book.title}
                       </p>
-                    )}
-                    {book.description && (
-                      <p className="text-xs text-ink-light mt-1 line-clamp-2">
-                        {book.description}
-                      </p>
-                    )}
-                    <div className="flex gap-2 mt-1 text-xs text-ink-light">
-                      {book.rating && <span>Rating: {book.rating}/5</span>}
-                      {book.lastReadDate && (
-                        <span>
-                          Read{" "}
-                          {new Date(book.lastReadDate).toLocaleDateString(
-                            "en-US",
-                            { month: "short", year: "numeric" }
-                          )}
-                        </span>
+                      {book.authors.length > 0 && (
+                        <p className="text-xs text-ink-muted">
+                          {book.authors.join(", ")}
+                        </p>
                       )}
+                      {book.description && (
+                        <p className="text-xs text-ink-light mt-1 line-clamp-2">
+                          {book.description}
+                        </p>
+                      )}
+                      <div className="flex gap-2 mt-1 text-xs text-ink-light">
+                        {book.rating && <span>Rating: {book.rating}/5</span>}
+                        {book.lastReadDate && (
+                          <span>
+                            Read{" "}
+                            {new Date(
+                              book.lastReadDate
+                            ).toLocaleDateString("en-US", {
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={() =>
+                        handleIngestBook({
+                          title: book.title,
+                          authors: book.authors,
+                          description: book.description,
+                          coverUrl: book.coverUrl,
+                        })
+                      }
+                      disabled={ingesting === book.title}
+                      className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                    >
+                      {ingesting === book.title ? "Adding..." : "Add"}
+                    </button>
                   </div>
+                ))}
+              </div>
+              {hardcoverTotal > PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-1">
                   <button
                     onClick={() =>
-                      handleIngestBook({
-                        title: book.title,
-                        authors: book.authors,
-                        description: book.description,
-                        coverUrl: book.coverUrl,
-                      })
+                      setHardcoverPage((p) => Math.max(0, p - 1))
                     }
-                    disabled={ingesting === book.title}
-                    className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                    disabled={hardcoverPage === 0 || loadingHardcover}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
                   >
-                    {ingesting === book.title ? "Adding..." : "Add"}
+                    Previous
+                  </button>
+                  <span className="text-xs text-ink-muted">
+                    Page {hardcoverPage + 1} of{" "}
+                    {Math.ceil(hardcoverTotal / PAGE_SIZE)}
+                  </span>
+                  <button
+                    onClick={() => setHardcoverPage((p) => p + 1)}
+                    disabled={
+                      (hardcoverPage + 1) * PAGE_SIZE >= hardcoverTotal ||
+                      loadingHardcover
+                    }
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Next
                   </button>
                 </div>
-              ))}
-              </div>
-              {/* Pagination */}
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  onClick={() => setHardcoverPage((p) => Math.max(0, p - 1))}
-                  disabled={hardcoverPage === 0 || loadingHardcover}
-                  className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
-                >
-                  Previous
-                </button>
-                <span className="text-xs text-ink-muted">
-                  Page {hardcoverPage + 1} of{" "}
-                  {Math.ceil(hardcoverTotal / PAGE_SIZE)}
-                </span>
-                <button
-                  onClick={() => setHardcoverPage((p) => p + 1)}
-                  disabled={
-                    (hardcoverPage + 1) * PAGE_SIZE >= hardcoverTotal ||
-                    loadingHardcover
-                  }
-                  className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
-                >
-                  Next
-                </button>
-              </div>
+              )}
             </div>
           )}
         </>
       )}
 
-      {/* Google Books search */}
       {bookMode === "search" && (
         <>
           <p className="text-sm text-ink-muted">
-            Search Google Books. Select a title to generate an AI summary and
-            add it to your catalog.
+            Search Google Books to find and add source material.
           </p>
           <div className="flex gap-2">
             <input
@@ -853,17 +717,7 @@ function BookIngest() {
                     key={key}
                     className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
                   >
-                    {book.coverUrl ? (
-                      <img
-                        src={book.coverUrl}
-                        alt=""
-                        className="w-12 h-16 object-cover rounded shrink-0"
-                      />
-                    ) : (
-                      <div className="w-12 h-16 rounded shrink-0 bg-paper-muted flex items-center justify-center">
-                        <span className="text-ink-light text-xs leading-tight text-center px-0.5">No cover</span>
-                      </div>
-                    )}
+                    <BookCover url={book.coverUrl} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-ink truncate">
                         {book.title}
@@ -879,7 +733,9 @@ function BookIngest() {
                         </p>
                       )}
                       <div className="flex gap-2 mt-1 text-xs text-ink-light">
-                        {book.pageCount && <span>{book.pageCount} pages</span>}
+                        {book.pageCount && (
+                          <span>{book.pageCount} pages</span>
+                        )}
                         {book.publishedDate && (
                           <span>{book.publishedDate}</span>
                         )}
@@ -899,13 +755,13 @@ function BookIngest() {
           )}
         </>
       )}
-    </section>
+    </div>
   );
 }
 
-// ─── Podcast & YouTube ingestion ──────────────────────────
+// ─── Podcast & YouTube add ────────────────────────────────
 
-function PodcastIngest() {
+function PodcastAdd() {
   const [mode, setMode] = useState<"search" | "rss" | "youtube">("search");
   const [query, setQuery] = useState("");
   const [podcastResults, setPodcastResults] = useState<PodcastSearchResult[]>(
@@ -929,9 +785,7 @@ function PodcastIngest() {
     const res = await fetch(
       `/api/admin/sources/podcast/search?q=${encodeURIComponent(query)}`
     );
-    if (res.ok) {
-      setPodcastResults(await res.json());
-    }
+    if (res.ok) setPodcastResults(await res.json());
     setSearching(false);
   }
 
@@ -975,7 +829,7 @@ function PodcastIngest() {
       setMessage(
         data.queued
           ? `"${ep.title}" queued for transcription + AI analysis.`
-          : `"${ep.title}" already ingested.`
+          : `"${ep.title}" already added.`
       );
     } else {
       setMessage(data.error || "Failed to ingest");
@@ -991,10 +845,7 @@ function PodcastIngest() {
     const res = await fetch("/api/admin/sources/podcast/ingest", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: youtubeUrl,
-        youtubeUrl,
-      }),
+      body: JSON.stringify({ title: youtubeUrl, youtubeUrl }),
     });
 
     const data = await res.json();
@@ -1002,7 +853,7 @@ function PodcastIngest() {
       setMessage(
         data.queued
           ? "YouTube video queued for transcript + AI analysis."
-          : "Already ingested."
+          : "Already added."
       );
       setYoutubeUrl("");
     } else {
@@ -1012,15 +863,13 @@ function PodcastIngest() {
   }
 
   return (
-    <section className="space-y-4">
+    <div className="space-y-4">
       <div className="flex gap-2">
-        {(
-          [
-            { value: "search", label: "Search Podcasts" },
-            { value: "rss", label: "RSS Feed" },
-            { value: "youtube", label: "YouTube" },
-          ] as const
-        ).map((m) => (
+        {([
+          { value: "search" as const, label: "Search Podcasts" },
+          { value: "rss" as const, label: "RSS Feed" },
+          { value: "youtube" as const, label: "YouTube" },
+        ]).map((m) => (
           <button
             key={m.value}
             onClick={() => {
@@ -1142,7 +991,7 @@ function PodcastIngest() {
               disabled={ingesting === "youtube" || !youtubeUrl.trim()}
               className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
             >
-              {ingesting === "youtube" ? "Queuing..." : "Ingest"}
+              {ingesting === "youtube" ? "Queuing..." : "Add"}
             </button>
           </div>
         </div>
@@ -1179,7 +1028,11 @@ function PodcastIngest() {
                     <p className="text-xs text-ink-light">
                       {new Date(ep.publishedAt).toLocaleDateString(
                         "en-US",
-                        { month: "short", day: "numeric", year: "numeric" }
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
                       )}
                     </p>
                   )}
@@ -1193,13 +1046,13 @@ function PodcastIngest() {
                     ? "Queuing..."
                     : !ep.audioUrl
                       ? "No audio"
-                      : "Ingest"}
+                      : "Add"}
                 </button>
               </div>
             ))}
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       suggested_hook: (body.suggested_hook as HookType) || null,
       suggested_funnel: (body.suggested_funnel as FunnelStage) || null,
       suggested_pillar: (body.suggested_pillar as ContentPillar) || null,
-      status: "captured",
+      status: "active",
     })
     .select()
     .single();

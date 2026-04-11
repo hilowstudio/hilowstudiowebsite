@@ -42,7 +42,7 @@ export type HookType =
 
 export type FunnelStage = "tofu" | "mofu" | "bofu";
 
-export type IdeaStatus = "captured" | "promoted" | "discarded";
+export type IdeaStatus = "active" | "hidden";
 
 export type IdeaSource =
   | "call_notes"
@@ -142,6 +142,7 @@ export interface ContentIdea {
   source_material: string | null;
   source_metadata: Record<string, unknown>;
   status: IdeaStatus;
+  use_count: number;
   promoted_post_id: string | null;
   created_at: string;
   updated_at: string;

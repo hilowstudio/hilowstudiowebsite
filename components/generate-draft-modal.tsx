@@ -45,10 +45,10 @@ export function GenerateDraftModal({ open, onClose }: GenerateDraftModalProps) {
   useEffect(() => {
     if (!open) return;
     setLoadingIdeas(true);
-    fetch("/api/admin/ideas?status=captured")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: ContentIdea[]) => {
-        setIdeas(data);
+    fetch("/api/admin/ideas?status=active&limit=100&offset=0")
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((json: { data: ContentIdea[] }) => {
+        setIdeas(json.data);
         setLoadingIdeas(false);
       })
       .catch(() => setLoadingIdeas(false));
