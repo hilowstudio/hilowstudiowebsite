@@ -94,6 +94,16 @@ const styles = StyleSheet.create({
     height: 56,
     opacity: 0.7,
   },
+  logoBackdrop: {
+    position: "absolute",
+    top: 32,
+    right: 40,
+    width: 72,
+    height: 72,
+    backgroundColor: brand.paper,
+    borderRadius: 8,
+    opacity: 0.9,
+  },
   slideNumber: {
     position: "absolute",
     bottom: 48,
@@ -218,6 +228,7 @@ function CarouselDocument({ slides }: { slides: CarouselSlide[] }) {
           Page,
           { key: i, size: [1080, 1080], style: styles.titlePage },
           React.createElement(View, { style: styles.titleAccentBar }),
+          React.createElement(View, { style: styles.logoBackdrop }),
           React.createElement(Image, { src: logoPath, style: styles.logo }),
           React.createElement(
             Text,
@@ -244,6 +255,7 @@ function CarouselDocument({ slides }: { slides: CarouselSlide[] }) {
           Page,
           { key: i, size: [1080, 1080], style: styles.ctaPage },
           React.createElement(View, { style: styles.ctaAccentBar }),
+          React.createElement(View, { style: styles.logoBackdrop }),
           React.createElement(Image, { src: logoPath, style: styles.logo }),
           React.createElement(
             Text,

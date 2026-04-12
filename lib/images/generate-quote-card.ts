@@ -96,6 +96,16 @@ const styles = StyleSheet.create({
     height: 44,
     opacity: 0.6,
   },
+  logoBackdrop: {
+    position: "absolute",
+    bottom: 24,
+    right: 32,
+    width: 60,
+    height: 60,
+    backgroundColor: brand.paper,
+    borderRadius: 6,
+    opacity: 0.9,
+  },
   // Paper variant text
   quotePaper: {
     fontFamily: "Garamond",
@@ -170,6 +180,9 @@ function QuoteCardDocument({
         View,
         { style: isPaper ? styles.accentBarClay : styles.accentBarMoss }
       ),
+      !isPaper
+        ? React.createElement(View, { style: styles.logoBackdrop })
+        : null,
       React.createElement(Image, { src: logoPath, style: styles.logo }),
       React.createElement(
         Text,
