@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { ProcessingBanner } from "@/components/processing-banner";
 import type {
   ContentIdea,
 } from "@/lib/types/database";
@@ -449,7 +450,12 @@ function ArticleAdd() {
           {loading ? "Queuing..." : "Add"}
         </button>
       </div>
-      {result && <p className="text-sm text-moss">{result}</p>}
+      {result && (
+        <ProcessingBanner
+          message="Article queued for processing"
+          submessage="AI is reading and summarizing the page. It will appear in My Sources shortly."
+        />
+      )}
       {error && <p className="text-sm text-terracotta">{error}</p>}
     </div>
   );
@@ -579,7 +585,12 @@ function BookAdd() {
         </button>
       </div>
 
-      {message && <p className="text-sm text-moss">{message}</p>}
+      {message && (
+        <ProcessingBanner
+          message={message}
+          submessage="AI is generating a deep summary. It will appear in My Sources when complete."
+        />
+      )}
 
       {bookMode === "hardcover" && (
         <>
@@ -889,7 +900,12 @@ function PodcastAdd() {
         ))}
       </div>
 
-      {message && <p className="text-sm text-moss">{message}</p>}
+      {message && (
+        <ProcessingBanner
+          message={message}
+          submessage="Transcription and AI analysis are running in the background. Check My Sources shortly."
+        />
+      )}
 
       {mode === "search" && (
         <>

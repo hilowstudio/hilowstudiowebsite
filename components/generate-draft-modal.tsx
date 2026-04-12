@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/modal";
+import { ProcessingBanner } from "@/components/processing-banner";
 import {
   CONTENT_PILLARS,
   HOOK_TYPES,
@@ -414,6 +415,13 @@ export function GenerateDraftModal({ open, onClose }: GenerateDraftModalProps) {
             </div>
           )}
         </div>
+
+        {loading && (
+          <ProcessingBanner
+            message="Generating your draft..."
+            submessage="Claude is applying your voice rules, pillar framing, and source material to write a LinkedIn post."
+          />
+        )}
 
         {error && (
           <div className="rounded-md border border-terracotta/30 bg-terracotta/10 px-3 py-2 text-sm text-terracotta">

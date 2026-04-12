@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { ContentPost, PostType, HookType, FunnelStage, ContentPillar, VoiceGuide } from "@/lib/types/database";
 import { HOOK_TYPES, FUNNEL_STAGES, CONTENT_PILLARS, VOICE_CATEGORIES } from "@/lib/content-strategy";
 import { checkVoiceViolations, PERSONA_SIDEBAR_PRINCIPLES } from "@/lib/voice-persona";
 import { LinkedInPreview } from "@/components/linkedin-preview";
+import { ProcessingBanner } from "@/components/processing-banner";
 
 const postTypes: { value: PostType; label: string }[] = [
   { value: "text", label: "Text" },
@@ -30,10 +31,12 @@ export default function EditPostPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [generatingCarousel, setGeneratingCarousel] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
+  const [pendingJobs, setPendingJobs] = useState<string[]>([]); // descriptive labels
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Voice guide
   const [voiceEntries, setVoiceEntries] = useState<VoiceGuide[]>([]);
@@ -70,6 +73,43 @@ export default function EditPostPage() {
       .then(setVoiceEntries)
       .catch(() => {});
   }, []);
+
+  // Poll for background job results when jobs are pending
+  const refreshPost = useCallback(async () => {
+    const res = await fetch(`/api/admin/content/${id}`);
+    if (res.ok) {
+      const data: ContentPost = await res.json();
+      setPost(data);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (pendingJobs.length > 0) {
+      pollRef.current = setInterval(async () => {
+        await refreshPost();
+      }, 5000); // Poll every 5 seconds
+    } else if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [pendingJobs, refreshPost]);
+
+  // Auto-clear pending jobs when their results appear
+  useEffect(() => {
+    if (!post) return;
+    setPendingJobs((prev) => {
+      const next = prev.filter((job) => {
+        if (job === "carousel" && post.metadata?.carousel_pdf) return false;
+        if (job === "illustration" && post.metadata?.post_image && post.metadata?.post_image_format !== "pdf") return false;
+        if (job === "quote_card" && post.metadata?.post_image && post.metadata?.post_image_format === "pdf") return false;
+        return true;
+      });
+      return next.length === prev.length ? prev : next;
+    });
+  }, [post]);
 
   async function handleSave(status?: string) {
     setSaving(true);
@@ -319,6 +359,7 @@ export default function EditPostPage() {
                     });
                     if (res.ok) {
                       setError("");
+                      setPendingJobs((prev) => [...prev, "carousel"]);
                     } else {
                       const data = await res.json();
                       setError(data.error || "Carousel generation failed");
@@ -344,6 +385,12 @@ export default function EditPostPage() {
               )}
             </div>
           )}
+          {pendingJobs.includes("carousel") && (
+            <ProcessingBanner
+              message="Generating carousel PDF..."
+              submessage="AI is structuring your post into slides and rendering a branded PDF."
+            />
+          )}
 
           {/* Generate Image */}
           {isEditable && body.trim() && (
@@ -362,7 +409,9 @@ export default function EditPostPage() {
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ postId: id, type: "quote_card" }),
                     });
-                    if (!res.ok) {
+                    if (res.ok) {
+                      setPendingJobs((prev) => [...prev, "quote_card"]);
+                    } else {
                       const data = await res.json();
                       setError(data.error || "Quote card generation failed");
                     }
@@ -383,7 +432,9 @@ export default function EditPostPage() {
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ postId: id, type: "illustration" }),
                     });
-                    if (!res.ok) {
+                    if (res.ok) {
+                      setPendingJobs((prev) => [...prev, "illustration"]);
+                    } else {
                       const data = await res.json();
                       setError(data.error || "Illustration generation failed");
                     }
@@ -428,9 +479,18 @@ export default function EditPostPage() {
                   )}
                 </div>
               )}
-              <p className="text-xs text-ink-light">
-                Images are queued for background generation. Refresh after a few seconds to see results.
-              </p>
+              {pendingJobs.includes("quote_card") && (
+                <ProcessingBanner
+                  message="Generating quote card..."
+                  submessage="Extracting the strongest line from your post and rendering it on brand."
+                />
+              )}
+              {pendingJobs.includes("illustration") && (
+                <ProcessingBanner
+                  message="Generating illustration..."
+                  submessage="Claude is writing a visual prompt from your post, then Flux is rendering the image."
+                />
+              )}
             </div>
           )}
 
