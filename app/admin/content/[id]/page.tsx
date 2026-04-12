@@ -15,6 +15,51 @@ const postTypes: { value: PostType; label: string }[] = [
   { value: "article", label: "Article" },
 ];
 
+function PdfPreview({
+  base64,
+  label,
+  filename,
+  height,
+}: {
+  base64: string;
+  label: string;
+  filename: string;
+  height: number;
+}) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    setBlobUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [base64]);
+
+  if (!blobUrl) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-ink-muted">{label}</p>
+        <a
+          href={blobUrl}
+          download={filename}
+          className="px-3 py-1 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
+        >
+          Download
+        </a>
+      </div>
+      <iframe
+        src={blobUrl}
+        className="w-full rounded-lg border border-paper-muted bg-white"
+        style={{ height }}
+        title={`${label} Preview`}
+      />
+    </div>
+  );
+}
+
 export default function EditPostPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -416,46 +461,22 @@ export default function EditPostPage() {
 
               {/* Quote card result */}
               {typeof post.metadata?.post_image === "string" && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-ink-muted">Quote Card</p>
-                    <a
-                      href={`data:application/pdf;base64,${post.metadata.post_image as string}`}
-                      download="quote-card.pdf"
-                      className="px-3 py-1 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
-                    >
-                      Download
-                    </a>
-                  </div>
-                  <iframe
-                    src={`data:application/pdf;base64,${post.metadata.post_image as string}`}
-                    className="w-full rounded-lg border border-paper-muted bg-white"
-                    style={{ height: 400 }}
-                    title="Quote Card Preview"
-                  />
-                </div>
+                <PdfPreview
+                  base64={post.metadata.post_image as string}
+                  label="Quote Card"
+                  filename="quote-card.pdf"
+                  height={400}
+                />
               )}
 
               {/* Carousel result */}
               {typeof post.metadata?.carousel_pdf === "string" && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-ink-muted">Carousel PDF</p>
-                    <a
-                      href={`data:application/pdf;base64,${post.metadata.carousel_pdf as string}`}
-                      download={`${post.title || "carousel"}.pdf`}
-                      className="px-3 py-1 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
-                    >
-                      Download
-                    </a>
-                  </div>
-                  <iframe
-                    src={`data:application/pdf;base64,${post.metadata.carousel_pdf as string}`}
-                    className="w-full rounded-lg border border-paper-muted bg-white"
-                    style={{ height: 500 }}
-                    title="Carousel Preview"
-                  />
-                </div>
+                <PdfPreview
+                  base64={post.metadata.carousel_pdf as string}
+                  label="Carousel PDF"
+                  filename={`${post.title || "carousel"}.pdf`}
+                  height={500}
+                />
               )}
             </div>
           )}
