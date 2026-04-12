@@ -5,6 +5,7 @@ import {
   HOOK_TYPES,
   FUNNEL_STAGES,
 } from "@/lib/content-strategy";
+import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
 import type {
   ContentPillar,
   HookType,
@@ -51,7 +52,11 @@ function buildSystemPrompt(
   const hook = HOOK_TYPES.find((h) => h.value === hookValue)!;
   const funnel = FUNNEL_STAGES.find((f) => f.value === funnelValue)!;
 
-  return `${voice}
+  return `${PERSONA_SYSTEM_PROMPT}
+
+---
+
+${voice}
 
 ---
 
