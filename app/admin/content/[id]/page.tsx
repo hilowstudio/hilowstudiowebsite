@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import type { ContentPost, PostType, HookType, FunnelStage, ContentPillar, VoiceGuide } from "@/lib/types/database";
-import { HOOK_TYPES, FUNNEL_STAGES, CONTENT_PILLARS, VOICE_CATEGORIES } from "@/lib/content-strategy";
-import { checkVoiceViolations, PERSONA_SIDEBAR_PRINCIPLES } from "@/lib/voice-persona";
+import type { ContentPost, PostType, HookType, FunnelStage, ContentPillar } from "@/lib/types/database";
+import { HOOK_TYPES, FUNNEL_STAGES, CONTENT_PILLARS } from "@/lib/content-strategy";
+import { checkVoiceViolations } from "@/lib/voice-persona";
 import { LinkedInPreview } from "@/components/linkedin-preview";
 import { ProcessingBanner } from "@/components/processing-banner";
 
@@ -83,9 +83,6 @@ export default function EditPostPage() {
   const [error, setError] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Voice guide
-  const [voiceEntries, setVoiceEntries] = useState<VoiceGuide[]>([]);
-  const [showVoice, setShowVoice] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -112,12 +109,6 @@ export default function EditPostPage() {
     load();
   }, [id]);
 
-  useEffect(() => {
-    fetch("/api/admin/voice")
-      .then((r) => r.ok ? r.json() : [])
-      .then(setVoiceEntries)
-      .catch(() => {});
-  }, []);
 
   // Poll for background job results when jobs are pending
   const refreshPost = useCallback(async () => {
@@ -247,11 +238,6 @@ export default function EditPostPage() {
   if (!post) return <p className="text-terracotta text-sm py-8">Post not found.</p>;
 
   const isEditable = post.status === "draft" || post.status === "scheduled" || post.status === "failed";
-
-  const voiceGrouped = VOICE_CATEGORIES.map((cat) => ({
-    ...cat,
-    items: voiceEntries.filter((e) => e.category === cat.value),
-  })).filter((g) => g.items.length > 0);
 
   return (
     <div className="flex gap-6">
@@ -651,69 +637,6 @@ export default function EditPostPage() {
         </div>
       </div>
 
-      {/* Voice guide sidebar */}
-      {isEditable && (
-        <aside className="hidden lg:block w-72 shrink-0">
-          <button
-            onClick={() => setShowVoice(!showVoice)}
-            className="text-xs text-ink-muted uppercase tracking-wide hover:text-ink transition-colors mb-3"
-          >
-            {showVoice ? "Hide Voice Guide" : "Show Voice Guide"}
-          </button>
-          {showVoice && (
-            <div className="rounded-lg border border-paper-muted p-4 space-y-4 bg-paper-warm/30 sticky top-6">
-              <div>
-                <p className="text-xs text-ink-muted uppercase tracking-wide mb-2">Voice</p>
-                <div className="space-y-1">
-                  {PERSONA_SIDEBAR_PRINCIPLES[0].entries.map((e, i) => (
-                    <p key={i} className="text-xs text-ink leading-relaxed">• {e}</p>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-ink-muted uppercase tracking-wide mb-2">Banned</p>
-                <div className="space-y-1">
-                  {PERSONA_SIDEBAR_PRINCIPLES[1].entries.map((e, i) => (
-                    <p key={i} className="text-xs text-terracotta/80 leading-relaxed">✗ {e}</p>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-ink-muted uppercase tracking-wide mb-2">Style</p>
-                <div className="space-y-1">
-                  {PERSONA_SIDEBAR_PRINCIPLES[2].entries.map((e, i) => (
-                    <p key={i} className="text-xs text-ink leading-relaxed">• {e}</p>
-                  ))}
-                </div>
-              </div>
-              {voiceGrouped.length > 0 && (
-                <div className="border-t border-paper-muted pt-3">
-                  <p className="text-xs text-ink-muted uppercase tracking-wide mb-2">Your Additions</p>
-                  {voiceGrouped.map((group) => (
-                    <div key={group.value} className="mb-2">
-                      <p className="text-xs text-ink-muted mb-1">{group.label}</p>
-                      <div className="space-y-1">
-                        {group.items.map((entry) => (
-                          <p
-                            key={entry.id}
-                            className={`text-xs text-ink leading-relaxed ${
-                              group.value === "dont" ? "text-terracotta/80" : ""
-                            }`}
-                          >
-                            {group.value === "do" && "✓ "}
-                            {group.value === "dont" && "✗ "}
-                            {entry.content}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </aside>
-      )}
     </div>
   );
 }

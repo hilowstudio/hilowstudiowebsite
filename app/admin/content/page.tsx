@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GenerateDraftModal } from "@/components/generate-draft-modal";
 import type { ContentPost, PostStatus } from "@/lib/types/database";
 
 const statusTabs: { value: PostStatus | "all"; label: string }[] = [
@@ -25,7 +24,6 @@ export default function ContentPage() {
   const [posts, setPosts] = useState<ContentPost[]>([]);
   const [filter, setFilter] = useState<PostStatus | "all">("all");
   const [loading, setLoading] = useState(true);
-  const [generateOpen, setGenerateOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -45,26 +43,13 @@ export default function ContentPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl text-ink">Content</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setGenerateOpen(true)}
-            className="px-3 py-1.5 rounded-md border border-ink text-ink text-sm hover:bg-ink hover:text-paper transition-colors"
-          >
-            Generate draft
-          </button>
-          <Link
-            href="/admin/content/new"
-            className="px-3 py-1.5 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors"
-          >
-            New post
-          </Link>
-        </div>
+        <Link
+          href="/admin/content/new"
+          className="px-3 py-1.5 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors"
+        >
+          New post
+        </Link>
       </div>
-
-      <GenerateDraftModal
-        open={generateOpen}
-        onClose={() => setGenerateOpen(false)}
-      />
 
       {/* Status tabs */}
       <div className="flex gap-1">
@@ -107,16 +92,21 @@ export default function ContentPage() {
                   {post.body.length > 150 ? "..." : ""}
                 </p>
                 <div className="flex items-center gap-3 mt-2">
-                  <span className="text-xs text-ink-light">{post.post_type}</span>
+                  <span className="text-xs text-ink-light">
+                    {post.post_type}
+                  </span>
                   {post.scheduled_at && (
                     <span className="text-xs text-ink-light">
-                      {new Date(post.scheduled_at).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
+                      {new Date(post.scheduled_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        }
+                      )}
                     </span>
                   )}
                 </div>

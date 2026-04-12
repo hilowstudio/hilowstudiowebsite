@@ -1,356 +1,401 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { PostType, HookType, FunnelStage, ContentPillar, VoiceGuide } from "@/lib/types/database";
-import { HOOK_TYPES, FUNNEL_STAGES, CONTENT_PILLARS, VOICE_CATEGORIES } from "@/lib/content-strategy";
-import { checkVoiceViolations, PERSONA_SIDEBAR_PRINCIPLES } from "@/lib/voice-persona";
-
-const postTypes: { value: PostType; label: string }[] = [
-  { value: "text", label: "Text" },
-  { value: "carousel", label: "Carousel" },
-  { value: "poll", label: "Poll" },
-  { value: "article", label: "Article" },
-];
+import { ProcessingBanner } from "@/components/processing-banner";
+import {
+  CONTENT_PILLARS,
+  HOOK_TYPES,
+  FUNNEL_STAGES,
+  FLYWHEEL_TARGET,
+  IDEA_SOURCES,
+} from "@/lib/content-strategy";
+import type {
+  ContentIdea,
+  ContentPillar,
+  HookType,
+  FunnelStage,
+} from "@/lib/types/database";
 
 export default function NewPostPage() {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [postType, setPostType] = useState<PostType>("text");
-  const [scheduledAt, setScheduledAt] = useState("");
-  const [hookType, setHookType] = useState<HookType | "">("");
-  const [funnelStage, setFunnelStage] = useState<FunnelStage | "">("");
-  const [contentPillar, setContentPillar] = useState<ContentPillar | "">("");
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  // Voice guide panel
-  const [voiceEntries, setVoiceEntries] = useState<VoiceGuide[]>([]);
-  const [showVoice, setShowVoice] = useState(false);
+  const [mode, setMode] = useState<"source" | "scratch">("source");
+  const [ideas, setIdeas] = useState<ContentIdea[]>([]);
+  const [loadingIdeas, setLoadingIdeas] = useState(true);
+  const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
+  const [pillar, setPillar] = useState<ContentPillar>(CONTENT_PILLARS[0].value);
+  const [hookType, setHookType] = useState<HookType>(HOOK_TYPES[0].value);
+  const [funnelStage, setFunnelStage] = useState<FunnelStage>(
+    FUNNEL_STAGES[0].value
+  );
+  const [sourceMaterial, setSourceMaterial] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [ideaSearch, setIdeaSearch] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/voice")
-      .then((r) => r.ok ? r.json() : [])
-      .then(setVoiceEntries)
-      .catch(() => {});
+    setLoadingIdeas(true);
+    fetch("/api/admin/ideas?status=active&limit=100&offset=0")
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((json: { data: ContentIdea[] }) => {
+        setIdeas(json.data);
+        setLoadingIdeas(false);
+      })
+      .catch(() => setLoadingIdeas(false));
   }, []);
 
-  async function handleSave(status: "draft" | "scheduled") {
-    if (!body.trim()) {
-      setError("Post body is required");
-      return;
-    }
-
-    if (status === "scheduled" && !scheduledAt) {
-      setError("Select a publish date to schedule");
-      return;
-    }
-
-    setSaving(true);
-    setError("");
-
-    const res = await fetch("/api/admin/content", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: title || null,
-        body,
-        post_type: postType,
-        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
-        status,
-        hook_type: hookType || null,
-        funnel_stage: funnelStage || null,
-        content_pillar: contentPillar || null,
-      }),
-    });
-
-    if (res.ok) {
-      router.push("/admin/content");
-    } else {
-      const data = await res.json();
-      setError(data.error || "Failed to save");
-    }
-    setSaving(false);
+  function selectIdea(idea: ContentIdea) {
+    setSelectedIdea(idea);
+    if (idea.suggested_pillar) setPillar(idea.suggested_pillar);
+    if (idea.suggested_hook) setHookType(idea.suggested_hook);
+    if (idea.suggested_funnel) setFunnelStage(idea.suggested_funnel);
   }
 
-  const violations = useMemo(() => checkVoiceViolations(body), [body]);
+  const selectedPillar = CONTENT_PILLARS.find((p) => p.value === pillar)!;
+  const selectedHook = HOOK_TYPES.find((h) => h.value === hookType)!;
+  const selectedFunnel = FUNNEL_STAGES.find((f) => f.value === funnelStage)!;
 
-  const voiceGrouped = VOICE_CATEGORIES.map((cat) => ({
-    ...cat,
-    items: voiceEntries.filter((e) => e.category === cat.value),
-  })).filter((g) => g.items.length > 0);
+  const filteredIdeas = ideaSearch.trim()
+    ? ideas.filter(
+        (i) =>
+          i.raw_insight.toLowerCase().includes(ideaSearch.toLowerCase()) ||
+          ((i.source_metadata?.title as string) || "")
+            .toLowerCase()
+            .includes(ideaSearch.toLowerCase())
+      )
+    : ideas;
+
+  async function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      let res: Response;
+
+      if (mode === "source" && selectedIdea) {
+        res = await fetch(`/api/admin/ideas/${selectedIdea.id}/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pillar, hookType, funnelStage }),
+        });
+      } else {
+        res = await fetch("/api/admin/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pillar,
+            hookType,
+            funnelStage,
+            sourceMaterial: sourceMaterial.trim() || undefined,
+            sourceUrl: sourceUrl.trim() || undefined,
+          }),
+        });
+      }
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Generation failed");
+        setLoading(false);
+        return;
+      }
+
+      router.push(`/admin/content/${data.id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setError(message);
+      setLoading(false);
+    }
+  }
 
   return (
-    <div className="flex gap-6">
-      {/* Main editor */}
-      <div className="max-w-2xl flex-1 space-y-6">
-        <button
-          onClick={() => router.push("/admin/content")}
-          className="text-sm text-ink-light hover:text-ink transition-colors"
-        >
-          &larr; Content
-        </button>
+    <div className="max-w-2xl space-y-6">
+      <button
+        onClick={() => router.push("/admin/content")}
+        className="text-sm text-ink-light hover:text-ink transition-colors"
+      >
+        &larr; Content
+      </button>
 
-        <h1 className="font-serif text-2xl text-ink">New Post</h1>
+      <h1 className="font-serif text-2xl text-ink">New Post</h1>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs text-ink-muted uppercase tracking-wide block mb-1">
-              Title (optional)
+      <form onSubmit={handleGenerate} className="space-y-6">
+        {/* Mode toggle */}
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("source");
+              setSelectedIdea(null);
+            }}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+              mode === "source"
+                ? "bg-ink text-paper"
+                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+            }`}
+          >
+            From source material
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("scratch");
+              setSelectedIdea(null);
+            }}
+            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+              mode === "scratch"
+                ? "bg-ink text-paper"
+                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+            }`}
+          >
+            From scratch
+          </button>
+        </div>
+
+        {/* Source picker */}
+        {mode === "source" && (
+          <div className="space-y-3">
+            <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+              Select a source
             </label>
             <input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Internal reference title..."
-              className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-clay"
+              value={ideaSearch}
+              onChange={(e) => setIdeaSearch(e.target.value)}
+              placeholder="Search sources..."
+              className="w-full rounded-md border border-paper-muted bg-paper px-3 py-2 text-sm text-ink"
+              disabled={loading}
             />
-          </div>
-
-          <div>
-            <label className="text-xs text-ink-muted uppercase tracking-wide block mb-1">
-              Post Body *
-            </label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={10}
-              placeholder="Write your LinkedIn post..."
-              className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-clay resize-y font-mono"
-            />
-            <p className="text-xs text-ink-light mt-1">
-              {body.length} characters
-              {body.length > 0 && body.length < 900 && ". Aim for 900-1,500 for best reach"}
-              {body.length >= 900 && body.length <= 1500 && ". Sweet spot"}
-              {body.length > 1500 && ". Consider trimming"}
-            </p>
-            {violations.length > 0 && (
-              <div className="mt-2 rounded-md bg-terracotta/10 border border-terracotta/20 px-3 py-2">
-                <p className="text-xs text-terracotta font-medium">Voice check — banned words detected:</p>
-                <p className="text-xs text-terracotta/80 mt-0.5">
-                  {violations.map((v, i) => (
-                    <span key={v}>
-                      {i > 0 && " · "}
-                      <span className="font-mono">{v}</span>
-                    </span>
-                  ))}
+            <div className="max-h-64 overflow-y-auto space-y-1 rounded-md border border-paper-muted p-1">
+              {loadingIdeas ? (
+                <p className="text-xs text-ink-light p-3">Loading sources...</p>
+              ) : filteredIdeas.length === 0 ? (
+                <p className="text-xs text-ink-light p-3">
+                  No sources found. Add some in the Source Material tab.
                 </p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-4 flex-wrap">
-            <div>
-              <label className="text-xs text-ink-muted uppercase tracking-wide block mb-1">
-                Type
-              </label>
-              <select
-                value={postType}
-                onChange={(e) => setPostType(e.target.value as PostType)}
-                className="px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-              >
-                {postTypes.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs text-ink-muted uppercase tracking-wide block mb-1">
-                Schedule For
-              </label>
-              <input
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={(e) => setScheduledAt(e.target.value)}
-                className="px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-              />
-            </div>
-          </div>
-
-          {/* Hook type selector */}
-          <div>
-            <label className="text-xs text-ink-muted uppercase tracking-wide block mb-2">
-              Hook Type
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              {HOOK_TYPES.map((hook) => (
-                <button
-                  key={hook.value}
-                  type="button"
-                  onClick={() =>
-                    setHookType(hookType === hook.value ? "" : hook.value)
-                  }
-                  title={hook.description}
-                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    hookType === hook.value
-                      ? "bg-ink text-paper"
-                      : "text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm"
-                  }`}
-                >
-                  {hook.label}
-                </button>
-              ))}
-            </div>
-            {hookType && (
-              <p className="text-xs text-ink-light mt-1.5">
-                {HOOK_TYPES.find((h) => h.value === hookType)?.description}
-              </p>
-            )}
-          </div>
-
-          {/* Funnel stage selector */}
-          <div>
-            <label className="text-xs text-ink-muted uppercase tracking-wide block mb-2">
-              Funnel Stage
-            </label>
-            <div className="flex gap-2">
-              {FUNNEL_STAGES.map((stage) => (
-                <button
-                  key={stage.value}
-                  type="button"
-                  onClick={() =>
-                    setFunnelStage(funnelStage === stage.value ? "" : stage.value)
-                  }
-                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    funnelStage === stage.value
-                      ? "bg-ink text-paper"
-                      : "text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm"
-                  }`}
-                >
-                  {stage.label}
-                </button>
-              ))}
-            </div>
-            {funnelStage && (
-              <p className="text-xs text-ink-light mt-1.5">
-                {FUNNEL_STAGES.find((f) => f.value === funnelStage)?.description}
-              </p>
-            )}
-          </div>
-
-          {/* Content pillar selector */}
-          <div>
-            <label className="text-xs text-ink-muted uppercase tracking-wide block mb-2">
-              Content Pillar
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              {CONTENT_PILLARS.map((pillar) => (
-                <button
-                  key={pillar.value}
-                  type="button"
-                  onClick={() =>
-                    setContentPillar(contentPillar === pillar.value ? "" : pillar.value)
-                  }
-                  title={pillar.description}
-                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    contentPillar === pillar.value
-                      ? pillar.colorClass
-                      : "text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm"
-                  }`}
-                >
-                  {pillar.shortLabel}
-                </button>
-              ))}
-            </div>
-            {contentPillar && (
-              <p className="text-xs text-ink-light mt-1.5">
-                {CONTENT_PILLARS.find((p) => p.value === contentPillar)?.description}
-                <span className="ml-2 text-ink-muted">
-                  ({CONTENT_PILLARS.find((p) => p.value === contentPillar)?.funnelRole})
-                </span>
-              </p>
-            )}
-          </div>
-
-          {error && <p className="text-terracotta text-sm">{error}</p>}
-
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => handleSave("draft")}
-              disabled={saving}
-              className="px-4 py-2 rounded-md border border-paper-muted text-ink text-sm hover:bg-paper-warm transition-colors disabled:opacity-50"
-            >
-              Save Draft
-            </button>
-            <button
-              onClick={() => handleSave("scheduled")}
-              disabled={saving}
-              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Schedule"}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Voice guide sidebar */}
-      <aside className="hidden lg:block w-72 shrink-0">
-        <button
-          onClick={() => setShowVoice(!showVoice)}
-          className="text-xs text-ink-muted uppercase tracking-wide hover:text-ink transition-colors mb-3"
-        >
-          {showVoice ? "Hide Voice Guide" : "Show Voice Guide"}
-        </button>
-        {showVoice && (
-          <div className="rounded-lg border border-paper-muted p-4 space-y-4 bg-paper-warm/30 sticky top-6">
-            {/* Persona principles (always present) */}
-            <div>
-              <p className="text-xs text-ink-muted uppercase tracking-wide mb-2">Voice</p>
-              <div className="space-y-1">
-                {PERSONA_SIDEBAR_PRINCIPLES[0].entries.map((e, i) => (
-                  <p key={i} className="text-xs text-ink leading-relaxed">• {e}</p>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-ink-muted uppercase tracking-wide mb-2">Banned</p>
-              <div className="space-y-1">
-                {PERSONA_SIDEBAR_PRINCIPLES[1].entries.map((e, i) => (
-                  <p key={i} className="text-xs text-terracotta/80 leading-relaxed">✗ {e}</p>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-ink-muted uppercase tracking-wide mb-2">Style</p>
-              <div className="space-y-1">
-                {PERSONA_SIDEBAR_PRINCIPLES[2].entries.map((e, i) => (
-                  <p key={i} className="text-xs text-ink leading-relaxed">• {e}</p>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom voice guide entries */}
-            {voiceGrouped.length > 0 && (
-              <div className="border-t border-paper-muted pt-3">
-                <p className="text-xs text-ink-muted uppercase tracking-wide mb-2">Your Additions</p>
-                {voiceGrouped.map((group) => (
-                  <div key={group.value} className="mb-2">
-                    <p className="text-xs text-ink-muted mb-1">{group.label}</p>
-                    <div className="space-y-1">
-                      {group.items.map((entry) => (
-                        <p
-                          key={entry.id}
-                          className={`text-xs text-ink leading-relaxed ${
-                            group.value === "dont" ? "text-terracotta/80" : ""
+              ) : (
+                filteredIdeas.map((idea) => {
+                  const meta = idea.source_metadata;
+                  const title = (meta?.title as string) || null;
+                  return (
+                    <button
+                      key={idea.id}
+                      type="button"
+                      onClick={() => selectIdea(idea)}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                        selectedIdea?.id === idea.id
+                          ? "bg-ink/10 border border-ink/20"
+                          : "hover:bg-paper-warm"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`shrink-0 text-xs px-1.5 py-0.5 rounded-full ${
+                            ({
+                              book: "bg-moss/15 text-moss",
+                              podcast: "bg-clay/15 text-clay",
+                              youtube: "bg-terracotta/15 text-terracotta",
+                              article: "bg-ink/10 text-ink",
+                            } as Record<string, string>)[idea.source] ||
+                            "bg-paper-muted text-ink-muted"
                           }`}
                         >
-                          {group.value === "do" && "✓ "}
-                          {group.value === "dont" && "✗ "}
-                          {entry.content}
-                        </p>
+                          {IDEA_SOURCES.find((s) => s.value === idea.source)
+                            ?.label || idea.source}
+                        </span>
+                        <span className="text-ink truncate text-xs">
+                          {title || idea.raw_insight.slice(0, 80)}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            {selectedIdea && (
+              <div className="rounded-md bg-paper-warm/40 border border-paper-muted px-3 py-3 text-xs text-ink-muted">
+                <p className="text-ink text-sm mb-1">
+                  {selectedIdea.raw_insight.slice(0, 300)}
+                  {selectedIdea.raw_insight.length > 300 ? "..." : ""}
+                </p>
+                {Array.isArray(selectedIdea.source_metadata?.key_takeaways) && (
+                  <ul className="mt-1.5 space-y-0.5 pl-3">
+                    {(selectedIdea.source_metadata.key_takeaways as string[])
+                      .slice(0, 3)
+                      .map((t, i) => (
+                        <li key={i} className="list-disc">
+                          {String(t)}
+                        </li>
                       ))}
-                    </div>
-                  </div>
-                ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>
         )}
-      </aside>
+
+        {/* Scratch mode */}
+        {mode === "scratch" && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+                Source material (optional)
+              </label>
+              <textarea
+                value={sourceMaterial}
+                onChange={(e) => setSourceMaterial(e.target.value)}
+                rows={5}
+                placeholder="Paste a quote, idea, book reference, or excerpt. Leave empty to generate from scratch."
+                className="mt-1 w-full rounded-md border border-paper-muted bg-paper px-3 py-2 text-sm text-ink resize-none"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+                Source URL (optional)
+              </label>
+              <input
+                type="url"
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                placeholder="https://..."
+                className="mt-1 w-full rounded-md border border-paper-muted bg-paper px-3 py-2 text-sm text-ink"
+                disabled={loading}
+              />
+              <p className="text-xs text-ink-light mt-1">
+                The AI will fetch and read the page during generation.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Content pillar */}
+        <div>
+          <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+            Content Pillar
+          </label>
+          <select
+            value={pillar}
+            onChange={(e) => setPillar(e.target.value as ContentPillar)}
+            className="mt-1 w-full rounded-md border border-paper-muted bg-paper px-3 py-2 text-sm text-ink"
+            disabled={loading}
+          >
+            {CONTENT_PILLARS.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <div
+            className={`mt-2 rounded-md px-3 py-2 text-xs ${selectedPillar.colorClass}`}
+          >
+            <p>{selectedPillar.description}</p>
+            <p className="mt-1 opacity-70">
+              Funnel role: {selectedPillar.funnelRole}
+            </p>
+          </div>
+        </div>
+
+        {/* Hook type + Funnel stage */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+              Hook type
+            </label>
+            <select
+              value={hookType}
+              onChange={(e) => setHookType(e.target.value as HookType)}
+              className="mt-1 w-full rounded-md border border-paper-muted bg-paper px-3 py-2 text-sm text-ink"
+              disabled={loading}
+            >
+              {HOOK_TYPES.map((h) => (
+                <option key={h.value} value={h.value}>
+                  {h.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs text-ink-muted px-1">
+              {selectedHook.description}
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+              Funnel stage
+            </label>
+            <select
+              value={funnelStage}
+              onChange={(e) => setFunnelStage(e.target.value as FunnelStage)}
+              className="mt-1 w-full rounded-md border border-paper-muted bg-paper px-3 py-2 text-sm text-ink"
+              disabled={loading}
+            >
+              {FUNNEL_STAGES.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+            <div
+              className={`mt-2 rounded-md px-2 py-1.5 text-xs ${selectedFunnel.colorClass}`}
+            >
+              <p>{selectedFunnel.description}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Flywheel cadence */}
+        <div className="rounded-md border border-paper-muted bg-paper-warm/30 px-3 py-2">
+          <p className="text-xs font-medium text-ink-muted uppercase tracking-wide mb-1">
+            Weekly flywheel target
+          </p>
+          <div className="flex gap-4 text-xs text-ink">
+            {FUNNEL_STAGES.map((f) => (
+              <span
+                key={f.value}
+                className={
+                  funnelStage === f.value ? "font-bold" : "opacity-60"
+                }
+              >
+                {f.label}: {FLYWHEEL_TARGET[f.value]}/wk
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Processing / Error */}
+        {loading && (
+          <ProcessingBanner
+            message="Generating your draft..."
+            submessage="Claude is applying your voice rules, pillar framing, and source material to write a LinkedIn post."
+          />
+        )}
+
+        {error && (
+          <div className="rounded-md border border-terracotta/30 bg-terracotta/10 px-3 py-2 text-sm text-terracotta">
+            {error}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => router.push("/admin/content")}
+            disabled={loading}
+            className="px-4 py-2 rounded-md text-sm text-ink-muted hover:text-ink disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading || (mode === "source" && !selectedIdea)}
+            className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+          >
+            {loading ? "Generating..." : "Generate Draft"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

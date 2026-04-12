@@ -4,12 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", exact: true },
-  { href: "/admin/contacts", label: "Pipeline", exact: false },
+  { href: "/admin/voice", label: "Voice", exact: false },
+  { href: "/admin/idea-sources", label: "Source Material", exact: false },
   { href: "/admin/content", label: "Content", exact: true },
   { href: "/admin/content/calendar", label: "Calendar", exact: true },
-  { href: "/admin/idea-sources", label: "Source Material", exact: false },
-  { href: "/admin/voice", label: "Voice", exact: false },
   { href: "/admin/analytics", label: "Analytics", exact: false },
 ];
 
