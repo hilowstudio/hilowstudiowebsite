@@ -4,69 +4,191 @@ import {
   Page,
   Text,
   View,
+  Image,
+  Font,
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
 import type { CarouselSlide } from "./slides-from-post";
+import path from "path";
+
+// ─── Register EB Garamond (serif, closest free Garamond) ──
+Font.register({
+  family: "Garamond",
+  fonts: [
+    {
+      src: "https://fonts.gstatic.com/s/ebgaramond/v28/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-6_RkC49_S6w.ttf",
+      fontWeight: "normal",
+    },
+    {
+      src: "https://fonts.gstatic.com/s/ebgaramond/v28/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-2fRkC49_S6w.ttf",
+      fontWeight: "bold",
+    },
+    {
+      src: "https://fonts.gstatic.com/s/ebgaramond/v28/SlGFmQSNjdsmc35JDF1K5GRwSDw_ZgPJtWoGPg-3Yg.ttf",
+      fontStyle: "italic",
+    },
+  ],
+});
+
+// Disable hyphenation for clean word wrapping
+Font.registerHyphenationCallback((word) => [word]);
+
+// ─── Brand tokens (hex equivalents of oklch from globals.css) ─────
+const brand = {
+  paper: "#F9F6F1",
+  paperWarm: "#EFE9DF",
+  paperMuted: "#E5E0D8",
+  ink: "#292524",
+  inkMuted: "#57534E",
+  inkLight: "#78716C",
+  clay: "#9A6B4A",
+  clayMuted: "#B08E74",
+  moss: "#4A7252",
+  terracotta: "#B05A3C",
+};
+
+// Logo path (resolved at build time from public/)
+const logoPath = path.join(process.cwd(), "public", "hilow.png");
+
+// ─── Styles (1080x1080 square, 1.25 Major Third, 4px rhythm) ─────
 
 const styles = StyleSheet.create({
+  // ── Content slides (paper background) ──
   page: {
     width: 1080,
     height: 1080,
-    backgroundColor: "#FAF8F5", // paper
-    padding: 80,
+    backgroundColor: brand.paper,
+    padding: 96,
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
   },
   heading: {
-    fontSize: 48,
+    fontFamily: "Garamond",
+    fontSize: 44,
     fontWeight: "bold",
-    color: "#1C1917", // ink
+    color: brand.ink,
     marginBottom: 32,
     lineHeight: 1.2,
   },
   body: {
+    fontFamily: "Garamond",
     fontSize: 28,
-    color: "#57534E", // ink-muted
-    lineHeight: 1.5,
+    color: brand.inkMuted,
+    lineHeight: 1.6,
+  },
+  accentBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 6,
+    backgroundColor: brand.clay,
+  },
+  logo: {
+    position: "absolute",
+    top: 40,
+    right: 48,
+    width: 56,
+    height: 56,
+    opacity: 0.7,
   },
   slideNumber: {
     position: "absolute",
-    bottom: 40,
-    right: 60,
-    fontSize: 18,
-    color: "#A8A29E", // ink-light
+    bottom: 48,
+    right: 64,
+    fontFamily: "Garamond",
+    fontSize: 16,
+    color: brand.inkLight,
+    letterSpacing: 1,
   },
+  divider: {
+    width: 64,
+    height: 3,
+    backgroundColor: brand.clayMuted,
+    marginBottom: 28,
+    borderRadius: 2,
+  },
+
+  // ── Title slide (first, ink background) ──
+  titlePage: {
+    width: 1080,
+    height: 1080,
+    backgroundColor: brand.ink,
+    padding: 96,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+  titleHeading: {
+    fontFamily: "Garamond",
+    fontSize: 55,
+    fontWeight: "bold",
+    color: brand.paper,
+    lineHeight: 1.2,
+    marginBottom: 32,
+  },
+  titleBody: {
+    fontFamily: "Garamond",
+    fontSize: 28,
+    color: brand.paperMuted,
+    lineHeight: 1.6,
+  },
+  titleAccentBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 6,
+    backgroundColor: brand.moss,
+  },
+
+  // ── CTA slide (last, ink background, centered) ──
   ctaPage: {
     width: 1080,
     height: 1080,
-    backgroundColor: "#1C1917", // ink
-    padding: 80,
+    backgroundColor: brand.ink,
+    padding: 96,
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
   },
   ctaHeading: {
-    fontSize: 52,
+    fontFamily: "Garamond",
+    fontSize: 48,
     fontWeight: "bold",
-    color: "#FAF8F5", // paper
+    color: brand.paper,
     textAlign: "center",
     marginBottom: 24,
+    lineHeight: 1.2,
   },
   ctaBody: {
+    fontFamily: "Garamond",
     fontSize: 28,
-    color: "#D6D3D1", // paper-muted
+    color: brand.paperMuted,
     textAlign: "center",
+    lineHeight: 1.6,
+  },
+  ctaDivider: {
+    width: 80,
+    height: 3,
+    backgroundColor: brand.clay,
+    marginBottom: 28,
+    borderRadius: 2,
+  },
+  ctaAccentBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 6,
+    backgroundColor: brand.terracotta,
   },
 });
 
-function CarouselDocument({
-  slides,
-}: {
-  slides: CarouselSlide[];
-}) {
+function CarouselDocument({ slides }: { slides: CarouselSlide[] }) {
   const isLastSlideCta =
     slides.length > 1 &&
     /follow|connect|subscribe|learn more|link|comment/i.test(
@@ -79,30 +201,78 @@ function CarouselDocument({
     Document,
     null,
     slides.map((slide, i) => {
+      const isFirst = i === 0;
       const isLast = i === slides.length - 1;
       const isCta = isLast && isLastSlideCta;
 
+      // Title slide
+      if (isFirst) {
+        return React.createElement(
+          Page,
+          { key: i, size: [1080, 1080], style: styles.titlePage },
+          React.createElement(View, { style: styles.titleAccentBar }),
+          React.createElement(Image, { src: logoPath, style: styles.logo }),
+          React.createElement(
+            Text,
+            { style: styles.titleHeading },
+            slide.heading
+          ),
+          React.createElement(
+            Text,
+            { style: styles.titleBody },
+            slide.body
+          ),
+          React.createElement(
+            Text,
+            { style: styles.slideNumber },
+            `${i + 1} / ${slides.length}`
+          )
+        );
+      }
+
+      // CTA slide
+      if (isCta) {
+        return React.createElement(
+          Page,
+          { key: i, size: [1080, 1080], style: styles.ctaPage },
+          React.createElement(View, { style: styles.ctaAccentBar }),
+          React.createElement(Image, { src: logoPath, style: styles.logo }),
+          React.createElement(
+            Text,
+            { style: styles.ctaHeading },
+            slide.heading
+          ),
+          React.createElement(View, { style: styles.ctaDivider }),
+          React.createElement(
+            Text,
+            { style: styles.ctaBody },
+            slide.body
+          ),
+          React.createElement(
+            Text,
+            { style: styles.slideNumber },
+            `${i + 1} / ${slides.length}`
+          )
+        );
+      }
+
+      // Content slides
       return React.createElement(
         Page,
-        {
-          key: i,
-          size: [1080, 1080],
-          style: isCta ? styles.ctaPage : styles.page,
-        },
+        { key: i, size: [1080, 1080], style: styles.page },
+        React.createElement(View, { style: styles.accentBar }),
+        React.createElement(Image, { src: logoPath, style: styles.logo }),
         React.createElement(
           Text,
-          { style: isCta ? styles.ctaHeading : styles.heading },
+          { style: styles.heading },
           slide.heading
         ),
-        React.createElement(
-          Text,
-          { style: isCta ? styles.ctaBody : styles.body },
-          slide.body
-        ),
+        React.createElement(View, { style: styles.divider }),
+        React.createElement(Text, { style: styles.body }, slide.body),
         React.createElement(
           Text,
           { style: styles.slideNumber },
-          `${i + 1}/${slides.length}`
+          `${i + 1} / ${slides.length}`
         )
       );
     })
