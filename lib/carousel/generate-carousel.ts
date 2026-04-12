@@ -129,6 +129,13 @@ const styles = StyleSheet.create({
     lineHeight: 1.2,
     marginBottom: 32,
   },
+  titleDivider: {
+    width: 64,
+    height: 3,
+    backgroundColor: brand.moss,
+    marginBottom: 28,
+    borderRadius: 2,
+  },
   titleBody: {
     fontFamily: "Garamond",
     fontSize: 28,
@@ -217,6 +224,7 @@ function CarouselDocument({ slides }: { slides: CarouselSlide[] }) {
             { style: styles.titleHeading },
             slide.heading
           ),
+          React.createElement(View, { style: styles.titleDivider }),
           React.createElement(
             Text,
             { style: styles.titleBody },
