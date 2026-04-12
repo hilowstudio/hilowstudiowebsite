@@ -5,6 +5,7 @@ import { ingestBook } from "@/inngest/functions/ingest-book";
 import { processEpisode } from "@/inngest/functions/process-episode";
 import { postFirstComment } from "@/inngest/functions/post-first-comment";
 import { generateCarousel } from "@/inngest/functions/generate-carousel";
+import { generateImage } from "@/inngest/functions/generate-image";
 import { checkRepurpose } from "@/inngest/functions/check-repurpose";
 
 export const { GET, POST, PUT } = serve({
@@ -15,6 +16,7 @@ export const { GET, POST, PUT } = serve({
     processEpisode,
     postFirstComment,
     generateCarousel,
+    generateImage,
     checkRepurpose,
   ],
 });

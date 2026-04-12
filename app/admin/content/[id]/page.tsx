@@ -29,6 +29,7 @@ export default function EditPostPage() {
   const [firstCommentDelay, setFirstCommentDelay] = useState(2);
   const [showPreview, setShowPreview] = useState(false);
   const [generatingCarousel, setGeneratingCarousel] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -341,6 +342,95 @@ export default function EditPostPage() {
                   Download PDF
                 </a>
               )}
+            </div>
+          )}
+
+          {/* Generate Image */}
+          {isEditable && body.trim() && (
+            <div className="rounded-lg border border-paper-muted p-4 space-y-3">
+              <label className="text-xs text-ink-muted uppercase tracking-wide block">
+                Post Image
+              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setGeneratingImage(true);
+                    setError("");
+                    const res = await fetch("/api/admin/content/image", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ postId: id, type: "quote_card" }),
+                    });
+                    if (!res.ok) {
+                      const data = await res.json();
+                      setError(data.error || "Quote card generation failed");
+                    }
+                    setGeneratingImage(false);
+                  }}
+                  disabled={generatingImage}
+                  className="px-3 py-1.5 rounded-md border border-clay text-clay text-xs hover:bg-clay hover:text-paper transition-colors disabled:opacity-50"
+                >
+                  {generatingImage ? "Generating..." : "Generate Quote Card"}
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setGeneratingImage(true);
+                    setError("");
+                    const res = await fetch("/api/admin/content/image", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ postId: id, type: "illustration" }),
+                    });
+                    if (!res.ok) {
+                      const data = await res.json();
+                      setError(data.error || "Illustration generation failed");
+                    }
+                    setGeneratingImage(false);
+                  }}
+                  disabled={generatingImage}
+                  className="px-3 py-1.5 rounded-md border border-moss text-moss text-xs hover:bg-moss hover:text-paper transition-colors disabled:opacity-50"
+                >
+                  {generatingImage ? "Generating..." : "Generate Illustration"}
+                </button>
+              </div>
+              {typeof post.metadata?.post_image === "string" && (
+                <div className="space-y-2">
+                  <p className="text-xs text-ink-muted">
+                    Generated {(post.metadata.post_image_type as string) || "image"}
+                    {post.metadata.post_image_format === "pdf" ? " (PDF)" : ""}
+                  </p>
+                  {post.metadata.post_image_format === "pdf" ? (
+                    <a
+                      href={`data:application/pdf;base64,${post.metadata.post_image as string}`}
+                      download="quote-card.pdf"
+                      className="inline-block px-3 py-1.5 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
+                    >
+                      Download Quote Card
+                    </a>
+                  ) : (
+                    <div>
+                      <img
+                        src={`data:image/${(post.metadata.post_image_format as string) || "png"};base64,${post.metadata.post_image as string}`}
+                        alt="Generated illustration"
+                        className="rounded-lg border border-paper-muted max-w-full"
+                        style={{ maxHeight: 300 }}
+                      />
+                      <a
+                        href={`data:image/${(post.metadata.post_image_format as string) || "png"};base64,${post.metadata.post_image as string}`}
+                        download={`${post.title || "illustration"}.${(post.metadata.post_image_format as string) || "png"}`}
+                        className="inline-block mt-2 px-3 py-1.5 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+              <p className="text-xs text-ink-light">
+                Images are queued for background generation. Refresh after a few seconds to see results.
+              </p>
             </div>
           )}
 

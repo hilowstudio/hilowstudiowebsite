@@ -5,7 +5,9 @@ import { inngest } from "@/lib/inngest/client";
 import {
   publishTextPost,
   publishDocumentPost,
+  publishImagePost,
   uploadDocument,
+  uploadImage,
   LinkedInNotConnectedError,
   LinkedInTokenExpiredError,
 } from "@/lib/linkedin";
@@ -79,6 +81,18 @@ export async function POST(
         documentUrn,
         post.title || "Carousel"
       );
+    } else if (
+      post.metadata?.post_image &&
+      post.metadata?.post_image_format !== "pdf"
+    ) {
+      // Post with AI-generated illustration
+      const imgBuffer = Buffer.from(
+        post.metadata.post_image as string,
+        "base64"
+      );
+      const format = (post.metadata.post_image_format as string) || "png";
+      const imageUrn = await uploadImage(imgBuffer, `image/${format}`);
+      result = await publishImagePost(post.body, imageUrn);
     } else {
       result = await publishTextPost(post.body);
     }

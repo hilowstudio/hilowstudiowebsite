@@ -137,6 +137,119 @@ export async function publishDocumentPost(
   return { id: res.headers.get("x-restli-id") || "" };
 }
 
+export async function publishImagePost(
+  text: string,
+  imageUrn: string
+): Promise<LinkedInPostResult> {
+  const connection = await getActiveConnection();
+
+  const res = await fetch(`${LINKEDIN_API}/posts`, {
+    method: "POST",
+    headers: linkedInHeaders(connection.access_token),
+    body: JSON.stringify({
+      author: connection.person_urn,
+      commentary: text,
+      visibility: "PUBLIC",
+      distribution: {
+        feedDistribution: "MAIN_FEED",
+        targetEntities: [],
+        thirdPartyDistributionChannels: [],
+      },
+      content: {
+        media: {
+          id: imageUrn,
+        },
+      },
+      lifecycleState: "PUBLISHED",
+      isReshareDisabledByAuthor: false,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    if (res.status === 401) await markNeedsReauth(connection.id);
+    throw new Error(`LinkedIn API error (${res.status}): ${body}`);
+  }
+
+  return { id: res.headers.get("x-restli-id") || "" };
+}
+
+// ─── Image upload (Images API, v2 assets) ─────────────────
+
+export async function uploadImage(
+  imageBuffer: Buffer,
+  contentType: string = "image/png"
+): Promise<string> {
+  const connection = await getActiveConnection();
+
+  // Register upload via v2 assets API (works with w_member_social)
+  const initRes = await fetch(
+    "https://api.linkedin.com/v2/assets?action=registerUpload",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${connection.access_token}`,
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0",
+      },
+      body: JSON.stringify({
+        registerUploadRequest: {
+          recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+          owner: connection.person_urn,
+          serviceRelationships: [
+            {
+              relationshipType: "OWNER",
+              identifier: "urn:li:userGeneratedContent",
+            },
+          ],
+        },
+      }),
+    }
+  );
+
+  if (!initRes.ok) {
+    const body = await initRes.text();
+    if (initRes.status === 401) await markNeedsReauth(connection.id);
+    throw new Error(`LinkedIn image init error (${initRes.status}): ${body}`);
+  }
+
+  const initData = (await initRes.json()) as {
+    value: {
+      uploadMechanism: {
+        "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest": {
+          uploadUrl: string;
+        };
+      };
+      asset: string;
+    };
+  };
+
+  const uploadUrl =
+    initData.value.uploadMechanism[
+      "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
+    ].uploadUrl;
+  const assetUrn = initData.value.asset;
+
+  // Upload the image binary
+  const uploadRes = await fetch(uploadUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${connection.access_token}`,
+      "Content-Type": contentType,
+    },
+    body: new Uint8Array(imageBuffer),
+  });
+
+  if (!uploadRes.ok) {
+    const body = await uploadRes.text();
+    throw new Error(
+      `LinkedIn image upload error (${uploadRes.status}): ${body}`
+    );
+  }
+
+  return assetUrn;
+}
+
 // ─── Document upload (Documents API) ──────────────────────
 
 export async function uploadDocument(
