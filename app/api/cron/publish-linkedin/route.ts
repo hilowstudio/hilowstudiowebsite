@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCronSecret } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
-import { publishTextPost } from "@/lib/linkedin";
+import { inngest } from "@/lib/inngest/client";
+import { publishTextPost, publishDocumentPost, uploadDocument } from "@/lib/linkedin";
 
 export async function POST(request: NextRequest) {
   if (!verifyCronSecret(request)) {
@@ -39,7 +40,15 @@ export async function POST(request: NextRequest) {
       .eq("status", "scheduled");
 
     try {
-      const result = await publishTextPost(post.body);
+      let result;
+
+      if (post.post_type === "carousel" && post.metadata?.carousel_pdf) {
+        const pdfBuffer = Buffer.from(post.metadata.carousel_pdf as string, "base64");
+        const documentUrn = await uploadDocument(pdfBuffer, post.title || "Carousel");
+        result = await publishDocumentPost(post.body, documentUrn, post.title || "Carousel");
+      } else {
+        result = await publishTextPost(post.body);
+      }
 
       await supabase
         .from("content_posts")
@@ -49,6 +58,19 @@ export async function POST(request: NextRequest) {
           linkedin_post_id: result.id,
         })
         .eq("id", post.id);
+
+      // Schedule first comment if configured
+      if (post.first_comment && result.id) {
+        await inngest.send({
+          name: "linkedin/first-comment.schedule",
+          data: {
+            postId: post.id,
+            postUrn: result.id,
+            comment: post.first_comment,
+            delayMinutes: post.first_comment_delay_minutes || 2,
+          },
+        });
+      }
 
       published++;
     } catch (err) {

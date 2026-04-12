@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 
-const LINKEDIN_UGC_POSTS_URL = "https://api.linkedin.com/v2/ugcPosts";
+const LINKEDIN_API = "https://api.linkedin.com/rest";
+const LINKEDIN_VERSION = "202603";
 
 export class LinkedInNotConnectedError extends Error {
   constructor() {
@@ -51,45 +52,172 @@ async function markNeedsReauth(connectionId: string) {
     .eq("id", connectionId);
 }
 
-interface LinkedInPostResult {
+function linkedInHeaders(accessToken: string) {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+    "X-Restli-Protocol-Version": "2.0.0",
+    "LinkedIn-Version": LINKEDIN_VERSION,
+  };
+}
+
+// ─── Post creation (Posts API) ────────────────────────────
+
+export interface LinkedInPostResult {
   id: string;
 }
 
-export async function publishTextPost(text: string): Promise<LinkedInPostResult> {
+export async function publishTextPost(
+  text: string
+): Promise<LinkedInPostResult> {
   const connection = await getActiveConnection();
 
-  const res = await fetch(LINKEDIN_UGC_POSTS_URL, {
+  const res = await fetch(`${LINKEDIN_API}/posts`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${connection.access_token}`,
-      "Content-Type": "application/json",
-      "X-Restli-Protocol-Version": "2.0.0",
-    },
+    headers: linkedInHeaders(connection.access_token),
     body: JSON.stringify({
       author: connection.person_urn,
+      commentary: text,
+      visibility: "PUBLIC",
+      distribution: {
+        feedDistribution: "MAIN_FEED",
+        targetEntities: [],
+        thirdPartyDistributionChannels: [],
+      },
       lifecycleState: "PUBLISHED",
-      specificContent: {
-        "com.linkedin.ugc.ShareContent": {
-          shareCommentary: { text },
-          shareMediaCategory: "NONE",
-        },
-      },
-      visibility: {
-        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
-      },
+      isReshareDisabledByAuthor: false,
     }),
   });
 
   if (!res.ok) {
     const body = await res.text();
-    if (res.status === 401) {
-      await markNeedsReauth(connection.id);
-    }
+    if (res.status === 401) await markNeedsReauth(connection.id);
     throw new Error(`LinkedIn API error (${res.status}): ${body}`);
   }
 
-  // LinkedIn returns the newly created post ID in the x-restli-id header
-  const postId = res.headers.get("x-restli-id") || "";
+  return { id: res.headers.get("x-restli-id") || "" };
+}
 
-  return { id: postId };
+export async function publishDocumentPost(
+  text: string,
+  documentUrn: string,
+  title: string
+): Promise<LinkedInPostResult> {
+  const connection = await getActiveConnection();
+
+  const res = await fetch(`${LINKEDIN_API}/posts`, {
+    method: "POST",
+    headers: linkedInHeaders(connection.access_token),
+    body: JSON.stringify({
+      author: connection.person_urn,
+      commentary: text,
+      visibility: "PUBLIC",
+      distribution: {
+        feedDistribution: "MAIN_FEED",
+        targetEntities: [],
+        thirdPartyDistributionChannels: [],
+      },
+      content: {
+        media: {
+          title,
+          id: documentUrn,
+        },
+      },
+      lifecycleState: "PUBLISHED",
+      isReshareDisabledByAuthor: false,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    if (res.status === 401) await markNeedsReauth(connection.id);
+    throw new Error(`LinkedIn API error (${res.status}): ${body}`);
+  }
+
+  return { id: res.headers.get("x-restli-id") || "" };
+}
+
+// ─── Document upload (Documents API) ──────────────────────
+
+export async function uploadDocument(
+  pdfBuffer: Buffer,
+  title: string
+): Promise<string> {
+  const connection = await getActiveConnection();
+
+  // Step 1: Initialize upload
+  const initRes = await fetch(
+    `${LINKEDIN_API}/documents?action=initializeUpload`,
+    {
+      method: "POST",
+      headers: linkedInHeaders(connection.access_token),
+      body: JSON.stringify({
+        initializeUploadRequest: {
+          owner: connection.person_urn,
+        },
+      }),
+    }
+  );
+
+  if (!initRes.ok) {
+    const body = await initRes.text();
+    if (initRes.status === 401) await markNeedsReauth(connection.id);
+    throw new Error(
+      `LinkedIn document init error (${initRes.status}): ${body}`
+    );
+  }
+
+  const initData = (await initRes.json()) as {
+    value: { uploadUrl: string; document: string };
+  };
+  const { uploadUrl, document: documentUrn } = initData.value;
+
+  // Step 2: Upload the PDF binary
+  const uploadRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${connection.access_token}`,
+      "Content-Type": "application/pdf",
+    },
+    body: new Uint8Array(pdfBuffer),
+  });
+
+  if (!uploadRes.ok) {
+    const body = await uploadRes.text();
+    throw new Error(
+      `LinkedIn document upload error (${uploadRes.status}): ${body}`
+    );
+  }
+
+  return documentUrn;
+}
+
+// ─── Comments (Social Actions API) ────────────────────────
+
+export async function postComment(
+  postUrn: string,
+  commentText: string
+): Promise<string> {
+  const connection = await getActiveConnection();
+
+  const res = await fetch(
+    `${LINKEDIN_API}/socialActions/${encodeURIComponent(postUrn)}/comments`,
+    {
+      method: "POST",
+      headers: linkedInHeaders(connection.access_token),
+      body: JSON.stringify({
+        actor: connection.person_urn,
+        object: postUrn,
+        message: { text: commentText },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const body = await res.text();
+    if (res.status === 401) await markNeedsReauth(connection.id);
+    throw new Error(`LinkedIn comment error (${res.status}): ${body}`);
+  }
+
+  return res.headers.get("x-restli-id") || "";
 }

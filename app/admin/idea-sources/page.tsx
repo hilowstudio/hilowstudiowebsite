@@ -17,6 +17,7 @@ const sourceColors: Record<string, string> = {
   podcast: "bg-clay/15 text-clay",
   youtube: "bg-terracotta/15 text-terracotta",
   article: "bg-ink/10 text-ink",
+  repurpose: "bg-clay-muted/20 text-clay",
   personal: "bg-paper-muted text-ink-muted",
   external: "bg-paper-muted text-ink-muted",
 };
@@ -90,7 +91,7 @@ function AddSources() {
 
 // ─── My Sources ───────────────────────────────────────────
 
-type SourceTab = "book" | "podcast" | "youtube" | "article" | "hidden";
+type SourceTab = "book" | "podcast" | "youtube" | "article" | "repurpose" | "hidden";
 
 function MySources() {
   const [tab, setTab] = useState<SourceTab>("book");
@@ -177,6 +178,7 @@ function MySources() {
     { value: "podcast", label: "Podcasts" },
     { value: "youtube", label: "YouTube" },
     { value: "article", label: "Articles" },
+    { value: "repurpose", label: "Repurpose" },
   ];
 
   return (

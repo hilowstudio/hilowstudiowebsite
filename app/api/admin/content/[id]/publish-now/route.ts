@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticatedRequest } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
+import { inngest } from "@/lib/inngest/client";
 import {
   publishTextPost,
+  publishDocumentPost,
+  uploadDocument,
   LinkedInNotConnectedError,
   LinkedInTokenExpiredError,
 } from "@/lib/linkedin";
@@ -59,7 +62,26 @@ export async function POST(
   }
 
   try {
-    const result = await publishTextPost(post.body);
+    let result;
+
+    // If carousel with a generated PDF, attempt document upload + document post
+    if (
+      post.post_type === "carousel" &&
+      post.metadata?.carousel_pdf
+    ) {
+      const pdfBuffer = Buffer.from(
+        post.metadata.carousel_pdf as string,
+        "base64"
+      );
+      const documentUrn = await uploadDocument(pdfBuffer, post.title || "Carousel");
+      result = await publishDocumentPost(
+        post.body,
+        documentUrn,
+        post.title || "Carousel"
+      );
+    } else {
+      result = await publishTextPost(post.body);
+    }
 
     const { data: updated, error: updateErr } = await supabase
       .from("content_posts")
@@ -76,6 +98,19 @@ export async function POST(
     if (updateErr) {
       console.error("Failed to mark post as published:", updateErr);
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    }
+
+    // Schedule first comment if configured
+    if (post.first_comment && result.id) {
+      await inngest.send({
+        name: "linkedin/first-comment.schedule",
+        data: {
+          postId: id,
+          postUrn: result.id,
+          comment: post.first_comment,
+          delayMinutes: post.first_comment_delay_minutes || 2,
+        },
+      });
     }
 
     return NextResponse.json(updated, { status: 200 });

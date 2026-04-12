@@ -44,8 +44,15 @@ export const IDEA_SOURCES: { value: IdeaSource; label: string }[] = [
   { value: "podcast", label: "Podcast" },
   { value: "youtube", label: "YouTube" },
   { value: "article", label: "Article" },
+  { value: "repurpose", label: "Repurpose" },
   { value: "external", label: "External" },
 ];
+
+export const REPURPOSE_THRESHOLDS = {
+  min_impressions: 1000,
+  min_engagement_rate: 0.03, // 3% (likes+comments+shares)/impressions
+  min_age_days: 60,
+} as const;
 
 export const VOICE_CATEGORIES: { value: VoiceCategory; label: string }[] = [
   { value: "principle", label: "Guiding Principle" },

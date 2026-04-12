@@ -54,6 +54,7 @@ export type IdeaSource =
   | "podcast"
   | "youtube"
   | "article"
+  | "repurpose"
   | "external";
 
 export type VoiceCategory = "principle" | "do" | "dont" | "reference_post";
@@ -115,6 +116,9 @@ export interface ContentPost {
   status: PostStatus;
   linkedin_post_id: string | null;
   error_message: string | null;
+  first_comment: string | null;
+  first_comment_delay_minutes: number;
+  first_comment_posted: boolean;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import type { ContentPost, PostType, HookType, FunnelStage, ContentPillar, VoiceGuide } from "@/lib/types/database";
 import { HOOK_TYPES, FUNNEL_STAGES, CONTENT_PILLARS, VOICE_CATEGORIES } from "@/lib/content-strategy";
 import { checkVoiceViolations, PERSONA_SIDEBAR_PRINCIPLES } from "@/lib/voice-persona";
+import { LinkedInPreview } from "@/components/linkedin-preview";
 
 const postTypes: { value: PostType; label: string }[] = [
   { value: "text", label: "Text" },
@@ -24,6 +25,10 @@ export default function EditPostPage() {
   const [hookType, setHookType] = useState<HookType | "">("");
   const [funnelStage, setFunnelStage] = useState<FunnelStage | "">("");
   const [contentPillar, setContentPillar] = useState<ContentPillar | "">("");
+  const [firstComment, setFirstComment] = useState("");
+  const [firstCommentDelay, setFirstCommentDelay] = useState(2);
+  const [showPreview, setShowPreview] = useState(false);
+  const [generatingCarousel, setGeneratingCarousel] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -45,6 +50,8 @@ export default function EditPostPage() {
         setHookType(data.hook_type || "");
         setFunnelStage(data.funnel_stage || "");
         setContentPillar(data.content_pillar || "");
+        setFirstComment(data.first_comment || "");
+        setFirstCommentDelay(data.first_comment_delay_minutes || 2);
         if (data.scheduled_at) {
           setScheduledAt(
             new Date(data.scheduled_at).toISOString().slice(0, 16)
@@ -75,6 +82,8 @@ export default function EditPostPage() {
       hook_type: hookType || null,
       funnel_stage: funnelStage || null,
       content_pillar: contentPillar || null,
+      first_comment: firstComment || null,
+      first_comment_delay_minutes: firstCommentDelay,
     };
     if (status) updates.status = status;
 
@@ -110,6 +119,8 @@ export default function EditPostPage() {
         hook_type: hookType || null,
         funnel_stage: funnelStage || null,
         content_pillar: contentPillar || null,
+        first_comment: firstComment || null,
+        first_comment_delay_minutes: firstCommentDelay,
       }),
     });
 
@@ -233,6 +244,105 @@ export default function EditPostPage() {
               </div>
             )}
           </div>
+
+          {/* LinkedIn Preview */}
+          {isEditable && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowPreview(!showPreview)}
+                className="text-xs text-ink-muted uppercase tracking-wide hover:text-ink transition-colors"
+              >
+                {showPreview ? "Hide LinkedIn Preview" : "Show LinkedIn Preview"}
+              </button>
+              {showPreview && (
+                <div className="mt-2">
+                  <LinkedInPreview body={body} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* First Comment */}
+          {isEditable && (
+            <div className="rounded-lg border border-paper-muted p-4 space-y-3">
+              <label className="text-xs text-ink-muted uppercase tracking-wide block">
+                First Comment (auto-posted after publishing)
+              </label>
+              <textarea
+                value={firstComment}
+                onChange={(e) => setFirstComment(e.target.value)}
+                rows={3}
+                placeholder="Add a link or CTA here. LinkedIn penalizes links in the main body, so put them in the first comment instead."
+                className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-clay resize-y"
+              />
+              {firstComment && (
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-ink-muted">Post after</label>
+                  <select
+                    value={firstCommentDelay}
+                    onChange={(e) => setFirstCommentDelay(Number(e.target.value))}
+                    className="px-2 py-1 rounded-md border border-paper-muted bg-paper-warm text-ink text-xs"
+                  >
+                    {[1, 2, 3, 4, 5].map((m) => (
+                      <option key={m} value={m}>
+                        {m} min{m > 1 ? "s" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Generate Carousel */}
+          {isEditable && body.trim() && (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  setGeneratingCarousel(true);
+                  setError("");
+                  try {
+                    // Save first
+                    await fetch(`/api/admin/content/${id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ body, title: title || null }),
+                    });
+                    // Trigger carousel generation
+                    const res = await fetch("/api/admin/content/carousel", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ postId: id }),
+                    });
+                    if (res.ok) {
+                      setError("");
+                    } else {
+                      const data = await res.json();
+                      setError(data.error || "Carousel generation failed");
+                    }
+                  } catch {
+                    setError("Carousel generation failed");
+                  }
+                  setGeneratingCarousel(false);
+                }}
+                disabled={generatingCarousel}
+                className="px-3 py-1.5 rounded-md border border-clay text-clay text-xs hover:bg-clay hover:text-paper transition-colors disabled:opacity-50"
+              >
+                {generatingCarousel ? "Generating carousel..." : "Generate Carousel PDF"}
+              </button>
+              {typeof post.metadata?.carousel_pdf === "string" && (
+                <a
+                  href={`data:application/pdf;base64,${post.metadata.carousel_pdf as string}`}
+                  download={`${post.title || "carousel"}.pdf`}
+                  className="px-3 py-1.5 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
+                >
+                  Download PDF
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-4 flex-wrap">
             <div>
