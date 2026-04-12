@@ -89,7 +89,7 @@ export async function generatePostIllustration(
 
   return {
     base64: imageBuffer.toString("base64"),
-    mediaType: "image/png",
+    mediaType: "image/jpeg",
     prompt: imagePrompt,
   };
 }

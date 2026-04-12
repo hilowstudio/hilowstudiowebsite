@@ -27,6 +27,17 @@ export async function generateWithFlux(prompt: string): Promise<Buffer> {
     throw new Error(`Cloudflare AI error (${res.status}): ${body}`);
   }
 
-  const buffer = Buffer.from(await res.arrayBuffer());
-  return buffer;
+  // Cloudflare returns JSON: { "result": { "image": "<base64>" }, "success": true }
+  const json = (await res.json()) as {
+    result?: { image?: string };
+    success?: boolean;
+    errors?: { message: string }[];
+  };
+
+  if (!json.success || !json.result?.image) {
+    const errMsg = json.errors?.[0]?.message || "No image in response";
+    throw new Error(`Cloudflare AI error: ${errMsg}`);
+  }
+
+  return Buffer.from(json.result.image, "base64");
 }
