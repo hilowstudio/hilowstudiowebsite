@@ -17,15 +17,15 @@ Font.register({
   family: "Garamond",
   fonts: [
     {
-      src: "https://fonts.gstatic.com/s/ebgaramond/v28/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-6_RkC49_S6w.ttf",
+      src: "https://fonts.gstatic.com/s/ebgaramond/v32/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-6_RUAw.ttf",
       fontWeight: "normal",
     },
     {
-      src: "https://fonts.gstatic.com/s/ebgaramond/v28/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-2fRkC49_S6w.ttf",
+      src: "https://fonts.gstatic.com/s/ebgaramond/v32/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-DPNUAw.ttf",
       fontWeight: "bold",
     },
     {
-      src: "https://fonts.gstatic.com/s/ebgaramond/v28/SlGFmQSNjdsmc35JDF1K5GRwSDw_ZgPJtWoGPg-3Yg.ttf",
+      src: "https://fonts.gstatic.com/s/ebgaramond/v32/SlGFmQSNjdsmc35JDF1K5GRwUjcdlttVFm-rI7e8QI96.ttf",
       fontStyle: "italic",
     },
   ],
