@@ -103,8 +103,7 @@ export default function EditPostPage() {
     setPendingJobs((prev) => {
       const next = prev.filter((job) => {
         if (job === "carousel" && post.metadata?.carousel_pdf) return false;
-        if (job === "illustration" && post.metadata?.post_image && post.metadata?.post_image_format !== "pdf") return false;
-        if (job === "quote_card" && post.metadata?.post_image && post.metadata?.post_image_format === "pdf") return false;
+        if (job === "quote_card" && post.metadata?.post_image) return false;
         return true;
       });
       return next.length === prev.length ? prev : next;
@@ -336,67 +335,11 @@ export default function EditPostPage() {
             </div>
           )}
 
-          {/* Generate Carousel */}
-          {isEditable && body.trim() && (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={async () => {
-                  setGeneratingCarousel(true);
-                  setError("");
-                  try {
-                    // Save first
-                    await fetch(`/api/admin/content/${id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ body, title: title || null }),
-                    });
-                    // Trigger carousel generation
-                    const res = await fetch("/api/admin/content/carousel", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ postId: id }),
-                    });
-                    if (res.ok) {
-                      setError("");
-                      setPendingJobs((prev) => [...prev, "carousel"]);
-                    } else {
-                      const data = await res.json();
-                      setError(data.error || "Carousel generation failed");
-                    }
-                  } catch {
-                    setError("Carousel generation failed");
-                  }
-                  setGeneratingCarousel(false);
-                }}
-                disabled={generatingCarousel}
-                className="px-3 py-1.5 rounded-md border border-clay text-clay text-xs hover:bg-clay hover:text-paper transition-colors disabled:opacity-50"
-              >
-                {generatingCarousel ? "Generating carousel..." : "Generate Carousel PDF"}
-              </button>
-              {typeof post.metadata?.carousel_pdf === "string" && (
-                <a
-                  href={`data:application/pdf;base64,${post.metadata.carousel_pdf as string}`}
-                  download={`${post.title || "carousel"}.pdf`}
-                  className="px-3 py-1.5 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
-                >
-                  Download PDF
-                </a>
-              )}
-            </div>
-          )}
-          {pendingJobs.includes("carousel") && (
-            <ProcessingBanner
-              message="Generating carousel PDF..."
-              submessage="AI is structuring your post into slides and rendering a branded PDF."
-            />
-          )}
-
-          {/* Generate Image */}
+          {/* Visual Asset (Quote Card or Carousel) */}
           {isEditable && body.trim() && (
             <div className="rounded-lg border border-paper-muted p-4 space-y-3">
               <label className="text-xs text-ink-muted uppercase tracking-wide block">
-                Post Image
+                Visual Asset
               </label>
               <div className="flex items-center gap-2 flex-wrap">
                 <button
@@ -417,79 +360,102 @@ export default function EditPostPage() {
                     }
                     setGeneratingImage(false);
                   }}
-                  disabled={generatingImage}
+                  disabled={generatingImage || generatingCarousel}
                   className="px-3 py-1.5 rounded-md border border-clay text-clay text-xs hover:bg-clay hover:text-paper transition-colors disabled:opacity-50"
                 >
-                  {generatingImage ? "Generating..." : "Generate Quote Card"}
+                  {generatingImage ? "Generating..." : "Quote Card"}
                 </button>
                 <button
                   type="button"
                   onClick={async () => {
-                    setGeneratingImage(true);
+                    setGeneratingCarousel(true);
                     setError("");
-                    const res = await fetch("/api/admin/content/image", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ postId: id, type: "illustration" }),
-                    });
-                    if (res.ok) {
-                      setPendingJobs((prev) => [...prev, "illustration"]);
-                    } else {
-                      const data = await res.json();
-                      setError(data.error || "Illustration generation failed");
+                    try {
+                      await fetch(`/api/admin/content/${id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ body, title: title || null }),
+                      });
+                      const res = await fetch("/api/admin/content/carousel", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ postId: id }),
+                      });
+                      if (res.ok) {
+                        setError("");
+                        setPendingJobs((prev) => [...prev, "carousel"]);
+                      } else {
+                        const data = await res.json();
+                        setError(data.error || "Carousel generation failed");
+                      }
+                    } catch {
+                      setError("Carousel generation failed");
                     }
-                    setGeneratingImage(false);
+                    setGeneratingCarousel(false);
                   }}
-                  disabled={generatingImage}
-                  className="px-3 py-1.5 rounded-md border border-moss text-moss text-xs hover:bg-moss hover:text-paper transition-colors disabled:opacity-50"
+                  disabled={generatingCarousel || generatingImage}
+                  className="px-3 py-1.5 rounded-md border border-clay text-clay text-xs hover:bg-clay hover:text-paper transition-colors disabled:opacity-50"
                 >
-                  {generatingImage ? "Generating..." : "Generate Illustration"}
+                  {generatingCarousel ? "Generating..." : "Carousel PDF"}
                 </button>
               </div>
-              {typeof post.metadata?.post_image === "string" && (
-                <div className="space-y-2">
-                  <p className="text-xs text-ink-muted">
-                    Generated {(post.metadata.post_image_type as string) || "image"}
-                    {post.metadata.post_image_format === "pdf" ? " (PDF)" : ""}
-                  </p>
-                  {post.metadata.post_image_format === "pdf" ? (
-                    <a
-                      href={`data:application/pdf;base64,${post.metadata.post_image as string}`}
-                      download="quote-card.pdf"
-                      className="inline-block px-3 py-1.5 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
-                    >
-                      Download Quote Card
-                    </a>
-                  ) : (
-                    <div>
-                      <img
-                        src={`data:image/${(post.metadata.post_image_format as string) || "png"};base64,${post.metadata.post_image as string}`}
-                        alt="Generated illustration"
-                        className="rounded-lg border border-paper-muted max-w-full"
-                        style={{ maxHeight: 300 }}
-                      />
-                      <a
-                        href={`data:image/${(post.metadata.post_image_format as string) || "png"};base64,${post.metadata.post_image as string}`}
-                        download={`${post.title || "illustration"}.${(post.metadata.post_image_format as string) || "png"}`}
-                        className="inline-block mt-2 px-3 py-1.5 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
-                      >
-                        Download
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )}
+
+              {/* Processing banners */}
               {pendingJobs.includes("quote_card") && (
                 <ProcessingBanner
                   message="Generating quote card..."
                   submessage="Extracting the strongest line from your post and rendering it on brand."
                 />
               )}
-              {pendingJobs.includes("illustration") && (
+              {pendingJobs.includes("carousel") && (
                 <ProcessingBanner
-                  message="Generating illustration..."
-                  submessage="Claude is writing a visual prompt from your post, then Flux is rendering the image."
+                  message="Generating carousel PDF..."
+                  submessage="AI is structuring your post into slides and rendering a branded PDF."
                 />
+              )}
+
+              {/* Quote card result */}
+              {typeof post.metadata?.post_image === "string" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-ink-muted">Quote Card</p>
+                    <a
+                      href={`data:application/pdf;base64,${post.metadata.post_image as string}`}
+                      download="quote-card.pdf"
+                      className="px-3 py-1 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
+                    >
+                      Download
+                    </a>
+                  </div>
+                  <iframe
+                    src={`data:application/pdf;base64,${post.metadata.post_image as string}`}
+                    className="w-full rounded-lg border border-paper-muted bg-white"
+                    style={{ height: 400 }}
+                    title="Quote Card Preview"
+                  />
+                </div>
+              )}
+
+              {/* Carousel result */}
+              {typeof post.metadata?.carousel_pdf === "string" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-ink-muted">Carousel PDF</p>
+                    <a
+                      href={`data:application/pdf;base64,${post.metadata.carousel_pdf as string}`}
+                      download={`${post.title || "carousel"}.pdf`}
+                      className="px-3 py-1 rounded-md bg-moss/15 text-moss text-xs hover:bg-moss/25 transition-colors"
+                    >
+                      Download
+                    </a>
+                  </div>
+                  <iframe
+                    src={`data:application/pdf;base64,${post.metadata.carousel_pdf as string}`}
+                    className="w-full rounded-lg border border-paper-muted bg-white"
+                    style={{ height: 500 }}
+                    title="Carousel Preview"
+                  />
+                </div>
               )}
             </div>
           )}

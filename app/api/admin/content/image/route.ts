@@ -8,9 +8,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { postId, type } = (await request.json()) as {
+  const { postId } = (await request.json()) as {
     postId: string;
-    type: "quote_card" | "illustration";
   };
 
   if (!postId) {
@@ -30,7 +29,7 @@ export async function POST(request: NextRequest) {
 
   await inngest.send({
     name: "content/image.generate",
-    data: { postId, type: type || "illustration" },
+    data: { postId },
   });
 
   return NextResponse.json({ queued: true }, { status: 202 });
