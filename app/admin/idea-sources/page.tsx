@@ -2,16 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { ProcessingBanner } from "@/components/processing-banner";
-import type {
-  ContentIdea,
-} from "@/lib/types/database";
-import {
-  IDEA_SOURCES,
-} from "@/lib/content-strategy";
+import type { ContentIdea } from "@/lib/types/database";
+import { IDEA_SOURCES } from "@/lib/content-strategy";
 import type { BookMetadata } from "@/lib/sources/google-books";
 import type { HardcoverBook } from "@/lib/sources/hardcover";
 import type { PodcastSearchResult } from "@/lib/sources/itunes";
-import type { FeedEpisode, ParsedFeed } from "@/lib/sources/rss";
 
 const sourceColors: Record<string, string> = {
   book: "bg-moss/15 text-moss",
@@ -23,13 +18,17 @@ const sourceColors: Record<string, string> = {
   external: "bg-paper-muted text-ink-muted",
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 // ─── Main page ────────────────────────────────────────────
 
+type TopView = "add" | "my";
+
 export default function SourceMaterialPage() {
+  const [view, setView] = useState<TopView>("add");
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div>
         <h1 className="font-serif text-2xl text-ink">Source Material</h1>
         <p className="text-sm text-ink-muted mt-1">
@@ -37,26 +36,38 @@ export default function SourceMaterialPage() {
         </p>
       </div>
 
-      <section>
-        <h2 className="text-sm font-medium text-ink-muted uppercase tracking-wide mb-4">
+      <div className="flex gap-1">
+        <button
+          onClick={() => setView("add")}
+          className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+            view === "add"
+              ? "bg-ink text-paper"
+              : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+          }`}
+        >
           Add Sources
-        </h2>
-        <AddSources />
-      </section>
-
-      <section>
-        <h2 className="text-sm font-medium text-ink-muted uppercase tracking-wide mb-4">
+        </button>
+        <button
+          onClick={() => setView("my")}
+          className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+            view === "my"
+              ? "bg-ink text-paper"
+              : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+          }`}
+        >
           My Sources
-        </h2>
-        <MySources />
-      </section>
+        </button>
+      </div>
+
+      {view === "add" && <AddSources />}
+      {view === "my" && <MySources />}
     </div>
   );
 }
 
 // ─── Add Sources ──────────────────────────────────────────
 
-type AddMode = "books" | "podcasts" | "articles";
+type AddMode = "books" | "podcasts" | "youtube" | "articles";
 
 function AddSources() {
   const [mode, setMode] = useState<AddMode>("books");
@@ -66,7 +77,8 @@ function AddSources() {
       <div className="flex gap-1">
         {([
           { value: "books" as const, label: "Books" },
-          { value: "podcasts" as const, label: "Podcasts & YouTube" },
+          { value: "podcasts" as const, label: "Podcasts" },
+          { value: "youtube" as const, label: "YouTube" },
           { value: "articles" as const, label: "Articles / URLs" },
         ]).map((tab) => (
           <button
@@ -85,6 +97,7 @@ function AddSources() {
 
       {mode === "books" && <BookAdd />}
       {mode === "podcasts" && <PodcastAdd />}
+      {mode === "youtube" && <YouTubeAdd />}
       {mode === "articles" && <ArticleAdd />}
     </div>
   );
@@ -120,12 +133,10 @@ function MySources() {
     setLoading(false);
   }, [tab, page]);
 
-  // Load hidden count for badge
   const loadHiddenCount = useCallback(async () => {
-    const res = await fetch(
-      "/api/admin/ideas?status=hidden&count=true",
-      { cache: "no-store" }
-    );
+    const res = await fetch("/api/admin/ideas?status=hidden&count=true", {
+      cache: "no-store",
+    });
     if (res.ok) {
       const json = await res.json();
       setHiddenCount(json.count || 0);
@@ -188,7 +199,10 @@ function MySources() {
         {tabs.map((t) => (
           <button
             key={t.value}
-            onClick={() => { setTab(t.value); setPage(0); }}
+            onClick={() => {
+              setTab(t.value);
+              setPage(0);
+            }}
             className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
               tab === t.value
                 ? "bg-ink text-paper"
@@ -200,7 +214,10 @@ function MySources() {
         ))}
         {hiddenCount > 0 && (
           <button
-            onClick={() => { setTab("hidden"); setPage(0); }}
+            onClick={() => {
+              setTab("hidden");
+              setPage(0);
+            }}
             className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
               tab === "hidden"
                 ? "bg-ink text-paper"
@@ -266,7 +283,8 @@ function MySources() {
                               {title}
                               {authors && authors.length > 0 && (
                                 <span className="text-ink-muted font-normal">
-                                  {" "}by {authors.join(", ")}
+                                  {" "}
+                                  by {authors.join(", ")}
                                 </span>
                               )}
                             </p>
@@ -283,16 +301,17 @@ function MySources() {
                           )}
                           <span
                             className={`text-xs px-1.5 py-0.5 rounded-full ${
-                              sourceColors[src.source] || "bg-paper-muted text-ink-muted"
+                              sourceColors[src.source] ||
+                              "bg-paper-muted text-ink-muted"
                             }`}
                           >
-                            {IDEA_SOURCES.find((s) => s.value === src.source)
-                              ?.label || src.source}
+                            {IDEA_SOURCES.find(
+                              (s) => s.value === src.source
+                            )?.label || src.source}
                           </span>
                         </div>
                       </div>
 
-                      {/* Takeaways preview */}
                       {takeaways && takeaways.length > 0 && (
                         <ul className="mt-1.5 text-xs text-ink-light space-y-0.5 pl-3">
                           {takeaways.slice(0, 2).map((t, i) => (
@@ -323,7 +342,6 @@ function MySources() {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center justify-end gap-2 pt-1 border-t border-paper-muted/50">
                     <span className="text-xs text-ink-light mr-auto">
                       {new Date(src.created_at).toLocaleDateString("en-US", {
@@ -364,7 +382,6 @@ function MySources() {
             })}
           </div>
 
-          {/* Pagination */}
           {total > PAGE_SIZE && (
             <div className="flex items-center justify-between pt-1">
               <button
@@ -379,9 +396,7 @@ function MySources() {
               </span>
               <button
                 onClick={() => setPage((p) => p + 1)}
-                disabled={
-                  (page + 1) * PAGE_SIZE >= total || loading
-                }
+                disabled={(page + 1) * PAGE_SIZE >= total || loading}
                 className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
               >
                 Next
@@ -415,9 +430,7 @@ function ArticleAdd() {
     });
 
     if (res.ok) {
-      setResult(
-        "Queued for processing. It will appear in My Sources shortly."
-      );
+      setResult("Queued");
       setUrl("");
     } else {
       const data = await res.json();
@@ -461,14 +474,13 @@ function ArticleAdd() {
   );
 }
 
-// ─── Book add (Hardcover + Google Books) ──────────────────
+// ─── Book add (Google Books default, Hardcover second) ────
 
 function BookAdd() {
-  const [bookMode, setBookMode] = useState<"hardcover" | "search">(
-    "hardcover"
-  );
+  const [bookMode, setBookMode] = useState<"search" | "hardcover">("search");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookMetadata[]>([]);
+  const [resultPage, setResultPage] = useState(0);
   const [hardcoverBooks, setHardcoverBooks] = useState<HardcoverBook[]>([]);
   const [hardcoverTotal, setHardcoverTotal] = useState(0);
   const [hardcoverPage, setHardcoverPage] = useState(0);
@@ -506,6 +518,7 @@ function BookAdd() {
     if (!query.trim()) return;
     setSearching(true);
     setResults([]);
+    setResultPage(0);
     setMessage(null);
 
     const res = await fetch(
@@ -560,19 +573,16 @@ function BookAdd() {
     );
   }
 
+  // Paginated Google Books results
+  const pagedResults = results.slice(
+    resultPage * PAGE_SIZE,
+    (resultPage + 1) * PAGE_SIZE
+  );
+  const totalResultPages = Math.ceil(results.length / PAGE_SIZE);
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        <button
-          onClick={() => setBookMode("hardcover")}
-          className={`px-3 py-1 rounded-md text-xs transition-colors ${
-            bookMode === "hardcover"
-              ? "bg-clay text-paper"
-              : "text-ink-muted border border-paper-muted hover:text-ink"
-          }`}
-        >
-          My Hardcover Library
-        </button>
         <button
           onClick={() => setBookMode("search")}
           className={`px-3 py-1 rounded-md text-xs transition-colors ${
@@ -583,6 +593,16 @@ function BookAdd() {
         >
           Search Google Books
         </button>
+        <button
+          onClick={() => setBookMode("hardcover")}
+          className={`px-3 py-1 rounded-md text-xs transition-colors ${
+            bookMode === "hardcover"
+              ? "bg-clay text-paper"
+              : "text-ink-muted border border-paper-muted hover:text-ink"
+          }`}
+        >
+          My Hardcover Library
+        </button>
       </div>
 
       {message && (
@@ -592,6 +612,102 @@ function BookAdd() {
         />
       )}
 
+      {/* Google Books search */}
+      {bookMode === "search" && (
+        <>
+          <p className="text-sm text-ink-muted">
+            Search Google Books to find and add source material.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by title, author, or ISBN..."
+              className="flex-1 px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
+              disabled={searching}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={searching || !query.trim()}
+              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+            >
+              {searching ? "Searching..." : "Search"}
+            </button>
+          </div>
+          {pagedResults.length > 0 && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                {pagedResults.map((book) => {
+                  const key = book.isbn || book.title;
+                  return (
+                    <div
+                      key={key}
+                      className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
+                    >
+                      <BookCover url={book.coverUrl} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-ink truncate">
+                          {book.title}
+                        </p>
+                        {book.authors.length > 0 && (
+                          <p className="text-xs text-ink-muted">
+                            {book.authors.join(", ")}
+                          </p>
+                        )}
+                        {book.description && (
+                          <p className="text-xs text-ink-light mt-1 line-clamp-2">
+                            {book.description}
+                          </p>
+                        )}
+                        <div className="flex gap-2 mt-1 text-xs text-ink-light">
+                          {book.pageCount && (
+                            <span>{book.pageCount} pages</span>
+                          )}
+                          {book.publishedDate && (
+                            <span>{book.publishedDate}</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleIngestBook(book)}
+                        disabled={ingesting === key}
+                        className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                      >
+                        {ingesting === key ? "Adding..." : "Add"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              {totalResultPages > 1 && (
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    onClick={() => setResultPage((p) => Math.max(0, p - 1))}
+                    disabled={resultPage === 0}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs text-ink-muted">
+                    Page {resultPage + 1} of {totalResultPages}
+                  </span>
+                  <button
+                    onClick={() => setResultPage((p) => p + 1)}
+                    disabled={resultPage + 1 >= totalResultPages}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Hardcover library */}
       {bookMode === "hardcover" && (
         <>
           <p className="text-sm text-ink-muted">
@@ -639,12 +755,10 @@ function BookAdd() {
                         {book.lastReadDate && (
                           <span>
                             Read{" "}
-                            {new Date(
-                              book.lastReadDate
-                            ).toLocaleDateString("en-US", {
-                              month: "short",
-                              year: "numeric",
-                            })}
+                            {new Date(book.lastReadDate).toLocaleDateString(
+                              "en-US",
+                              { month: "short", year: "numeric" }
+                            )}
                           </span>
                         )}
                       </div>
@@ -697,130 +811,60 @@ function BookAdd() {
           )}
         </>
       )}
-
-      {bookMode === "search" && (
-        <>
-          <p className="text-sm text-ink-muted">
-            Search Google Books to find and add source material.
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by title, author, or ISBN..."
-              className="flex-1 px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-              disabled={searching}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <button
-              onClick={handleSearch}
-              disabled={searching || !query.trim()}
-              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
-            >
-              {searching ? "Searching..." : "Search"}
-            </button>
-          </div>
-          {results.length > 0 && (
-            <div className="space-y-2">
-              {results.map((book) => {
-                const key = book.isbn || book.title;
-                return (
-                  <div
-                    key={key}
-                    className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
-                  >
-                    <BookCover url={book.coverUrl} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">
-                        {book.title}
-                      </p>
-                      {book.authors.length > 0 && (
-                        <p className="text-xs text-ink-muted">
-                          {book.authors.join(", ")}
-                        </p>
-                      )}
-                      {book.description && (
-                        <p className="text-xs text-ink-light mt-1 line-clamp-2">
-                          {book.description}
-                        </p>
-                      )}
-                      <div className="flex gap-2 mt-1 text-xs text-ink-light">
-                        {book.pageCount && (
-                          <span>{book.pageCount} pages</span>
-                        )}
-                        {book.publishedDate && (
-                          <span>{book.publishedDate}</span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleIngestBook(book)}
-                      disabled={ingesting === key}
-                      className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
-                    >
-                      {ingesting === key ? "Adding..." : "Add"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }
 
-// ─── Podcast & YouTube add ────────────────────────────────
+// ─── Podcast add (iTunes search only) ─────────────────────
 
 function PodcastAdd() {
-  const [mode, setMode] = useState<"search" | "rss" | "youtube">("search");
   const [query, setQuery] = useState("");
-  const [podcastResults, setPodcastResults] = useState<PodcastSearchResult[]>(
-    []
-  );
-  const [feed, setFeed] = useState<ParsedFeed | null>(null);
-  const [feedUrl, setFeedUrl] = useState("");
-  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [results, setResults] = useState<PodcastSearchResult[]>([]);
+  const [resultPage, setResultPage] = useState(0);
   const [searching, setSearching] = useState(false);
-  const [loadingFeed, setLoadingFeed] = useState(false);
+  const [selectedPodcast, setSelectedPodcast] = useState<PodcastSearchResult | null>(null);
+  const [episodes, setEpisodes] = useState<{ title: string; audioUrl: string | null; publishedAt: string | null; guid: string; transcriptUrl: string | null }[]>([]);
+  const [episodePage, setEpisodePage] = useState(0);
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const [ingesting, setIngesting] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function handlePodcastSearch() {
+  async function handleSearch() {
     if (!query.trim()) return;
     setSearching(true);
-    setPodcastResults([]);
-    setFeed(null);
+    setResults([]);
+    setResultPage(0);
+    setSelectedPodcast(null);
+    setEpisodes([]);
     setMessage(null);
 
     const res = await fetch(
       `/api/admin/sources/podcast/search?q=${encodeURIComponent(query)}`
     );
-    if (res.ok) setPodcastResults(await res.json());
+    if (res.ok) setResults(await res.json());
     setSearching(false);
   }
 
-  async function handleLoadFeed(url: string) {
-    setLoadingFeed(true);
-    setFeed(null);
+  async function handleSelectPodcast(pod: PodcastSearchResult) {
+    setSelectedPodcast(pod);
+    setLoadingEpisodes(true);
+    setEpisodePage(0);
     setMessage(null);
 
     const res = await fetch(
-      `/api/admin/sources/podcast/feed?url=${encodeURIComponent(url)}`
+      `/api/admin/sources/podcast/feed?url=${encodeURIComponent(pod.feedUrl)}`
     );
     if (res.ok) {
-      setFeed(await res.json());
-      setFeedUrl(url);
+      const feed = await res.json();
+      setEpisodes(feed.episodes || []);
     } else {
       const data = await res.json();
-      setMessage(data.error || "Failed to load feed");
+      setMessage(data.error || "Failed to load episodes");
     }
-    setLoadingFeed(false);
+    setLoadingEpisodes(false);
   }
 
-  async function handleIngestEpisode(ep: FeedEpisode) {
+  async function handleIngestEpisode(ep: { title: string; audioUrl: string | null; publishedAt: string | null; guid: string; transcriptUrl: string | null }) {
     setIngesting(ep.guid);
     setMessage(null);
 
@@ -830,9 +874,8 @@ function PodcastAdd() {
       body: JSON.stringify({
         title: ep.title,
         audioUrl: ep.audioUrl,
-        description: ep.description,
         publishedAt: ep.publishedAt,
-        feedTitle: feed?.title,
+        feedTitle: selectedPodcast?.title,
         transcriptUrl: ep.transcriptUrl,
       }),
     });
@@ -850,10 +893,273 @@ function PodcastAdd() {
     setIngesting(null);
   }
 
-  async function handleYouTubeIngest() {
-    if (!youtubeUrl.trim()) return;
-    setIngesting("youtube");
+  const pagedResults = results.slice(
+    resultPage * PAGE_SIZE,
+    (resultPage + 1) * PAGE_SIZE
+  );
+  const totalResultPages = Math.ceil(results.length / PAGE_SIZE);
+
+  const pagedEpisodes = episodes.slice(
+    episodePage * PAGE_SIZE,
+    (episodePage + 1) * PAGE_SIZE
+  );
+  const totalEpisodePages = Math.ceil(episodes.length / PAGE_SIZE);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-ink-muted">
+        Search for podcasts on iTunes, then select episodes to transcribe and
+        analyze.
+      </p>
+
+      {message && (
+        <ProcessingBanner
+          message={message}
+          submessage="Transcription and AI analysis are running in the background. Check My Sources shortly."
+        />
+      )}
+
+      {!selectedPodcast && (
+        <>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search podcasts..."
+              className="flex-1 px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
+              disabled={searching}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={searching || !query.trim()}
+              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+            >
+              {searching ? "Searching..." : "Search"}
+            </button>
+          </div>
+
+          {pagedResults.length > 0 && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                {pagedResults.map((pod) => (
+                  <div
+                    key={pod.feedUrl}
+                    className="flex items-center gap-3 rounded-lg border border-paper-muted p-3"
+                  >
+                    {pod.image && (
+                      <img
+                        src={pod.image}
+                        alt=""
+                        className="w-10 h-10 rounded shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">
+                        {pod.title}
+                      </p>
+                      <p className="text-xs text-ink-muted">{pod.author}</p>
+                    </div>
+                    <button
+                      onClick={() => handleSelectPodcast(pod)}
+                      disabled={loadingEpisodes}
+                      className="shrink-0 px-3 py-1 rounded-md border border-ink text-ink text-xs hover:bg-ink hover:text-paper transition-colors disabled:opacity-50"
+                    >
+                      View Episodes
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {totalResultPages > 1 && (
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    onClick={() => setResultPage((p) => Math.max(0, p - 1))}
+                    disabled={resultPage === 0}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs text-ink-muted">
+                    Page {resultPage + 1} of {totalResultPages}
+                  </span>
+                  <button
+                    onClick={() => setResultPage((p) => p + 1)}
+                    disabled={resultPage + 1 >= totalResultPages}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Episode list */}
+      {selectedPodcast && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-ink">
+                {selectedPodcast.title}
+              </p>
+              <p className="text-xs text-ink-muted">
+                {episodes.length} episodes
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedPodcast(null);
+                setEpisodes([]);
+              }}
+              className="text-xs text-ink-muted hover:text-ink"
+            >
+              Back
+            </button>
+          </div>
+          {loadingEpisodes ? (
+            <p className="text-ink-light text-sm py-4">Loading episodes...</p>
+          ) : (
+            <>
+              <div className="space-y-1">
+                {pagedEpisodes.map((ep) => (
+                  <div
+                    key={ep.guid}
+                    className="flex items-center justify-between gap-3 rounded-md border border-paper-muted px-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-ink truncate">{ep.title}</p>
+                      {ep.publishedAt && (
+                        <p className="text-xs text-ink-light">
+                          {new Date(ep.publishedAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            }
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleIngestEpisode(ep)}
+                      disabled={ingesting === ep.guid || !ep.audioUrl}
+                      className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                    >
+                      {ingesting === ep.guid
+                        ? "Queuing..."
+                        : !ep.audioUrl
+                          ? "No audio"
+                          : "Add"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {totalEpisodePages > 1 && (
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    onClick={() =>
+                      setEpisodePage((p) => Math.max(0, p - 1))
+                    }
+                    disabled={episodePage === 0}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs text-ink-muted">
+                    Page {episodePage + 1} of {totalEpisodePages}
+                  </span>
+                  <button
+                    onClick={() => setEpisodePage((p) => p + 1)}
+                    disabled={episodePage + 1 >= totalEpisodePages}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── YouTube add ──────────────────────────────────────────
+
+interface YouTubeResult {
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  thumbnail: string | null;
+  publishedAt: string | null;
+}
+
+function YouTubeAdd() {
+  const [ytMode, setYtMode] = useState<"search" | "url">("search");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<YouTubeResult[]>([]);
+  const [resultPage, setResultPage] = useState(0);
+  const [searching, setSearching] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [ingesting, setIngesting] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSearch() {
+    if (!query.trim()) return;
+    setSearching(true);
+    setResults([]);
+    setResultPage(0);
     setMessage(null);
+    setError(null);
+
+    const res = await fetch(
+      `/api/admin/sources/youtube/search?q=${encodeURIComponent(query)}`
+    );
+    if (res.ok) {
+      setResults(await res.json());
+    } else {
+      const data = await res.json();
+      setError(data.error || "Search failed");
+    }
+    setSearching(false);
+  }
+
+  async function handleIngestVideo(videoId: string, title: string) {
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    setIngesting(videoId);
+    setMessage(null);
+    setError(null);
+
+    const res = await fetch("/api/admin/sources/podcast/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, youtubeUrl: url }),
+    });
+
+    const data = await res.json();
+    if (res.ok || res.status === 200) {
+      setMessage(
+        data.queued
+          ? `"${title}" queued for transcript + AI analysis.`
+          : "Already added."
+      );
+    } else {
+      setError(data.error || "Failed to ingest");
+    }
+    setIngesting(null);
+  }
+
+  async function handleIngestUrl() {
+    if (!youtubeUrl.trim()) return;
+    setIngesting("url");
+    setMessage(null);
+    setError(null);
 
     const res = await fetch("/api/admin/sources/podcast/ingest", {
       method: "POST",
@@ -863,134 +1169,149 @@ function PodcastAdd() {
 
     const data = await res.json();
     if (res.ok || res.status === 200) {
-      setMessage(
-        data.queued
-          ? "YouTube video queued for transcript + AI analysis."
-          : "Already added."
-      );
+      setMessage(data.queued ? "Video queued." : "Already added.");
       setYoutubeUrl("");
     } else {
-      setMessage(data.error || "Failed to ingest");
+      setError(data.error || "Failed to ingest");
     }
     setIngesting(null);
   }
 
+  const pagedResults = results.slice(
+    resultPage * PAGE_SIZE,
+    (resultPage + 1) * PAGE_SIZE
+  );
+  const totalResultPages = Math.ceil(results.length / PAGE_SIZE);
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        {([
-          { value: "search" as const, label: "Search Podcasts" },
-          { value: "rss" as const, label: "RSS Feed" },
-          { value: "youtube" as const, label: "YouTube" },
-        ]).map((m) => (
-          <button
-            key={m.value}
-            onClick={() => {
-              setMode(m.value);
-              setMessage(null);
-            }}
-            className={`px-3 py-1 rounded-md text-xs transition-colors ${
-              mode === m.value
-                ? "bg-clay text-paper"
-                : "text-ink-muted border border-paper-muted hover:text-ink"
-            }`}
-          >
-            {m.label}
-          </button>
-        ))}
+        <button
+          onClick={() => setYtMode("search")}
+          className={`px-3 py-1 rounded-md text-xs transition-colors ${
+            ytMode === "search"
+              ? "bg-clay text-paper"
+              : "text-ink-muted border border-paper-muted hover:text-ink"
+          }`}
+        >
+          Search YouTube
+        </button>
+        <button
+          onClick={() => setYtMode("url")}
+          className={`px-3 py-1 rounded-md text-xs transition-colors ${
+            ytMode === "url"
+              ? "bg-clay text-paper"
+              : "text-ink-muted border border-paper-muted hover:text-ink"
+          }`}
+        >
+          Paste URL
+        </button>
       </div>
 
       {message && (
         <ProcessingBanner
-          message={message}
-          submessage="Transcription and AI analysis are running in the background. Check My Sources shortly."
+          message="YouTube video queued"
+          submessage="Transcript extraction and AI analysis are running in the background."
         />
       )}
+      {error && <p className="text-sm text-terracotta">{error}</p>}
 
-      {mode === "search" && (
+      {ytMode === "search" && (
         <>
           <div className="flex gap-2">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search podcasts on iTunes..."
+              placeholder="Search YouTube videos..."
               className="flex-1 px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
               disabled={searching}
-              onKeyDown={(e) =>
-                e.key === "Enter" && handlePodcastSearch()
-              }
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             />
             <button
-              onClick={handlePodcastSearch}
+              onClick={handleSearch}
               disabled={searching || !query.trim()}
               className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
             >
               {searching ? "Searching..." : "Search"}
             </button>
           </div>
-          {podcastResults.length > 0 && !feed && (
-            <div className="space-y-2">
-              {podcastResults.map((pod) => (
-                <div
-                  key={pod.feedUrl}
-                  className="flex items-center gap-3 rounded-lg border border-paper-muted p-3"
-                >
-                  {pod.image && (
-                    <img
-                      src={pod.image}
-                      alt=""
-                      className="w-10 h-10 rounded shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">
-                      {pod.title}
-                    </p>
-                    <p className="text-xs text-ink-muted">{pod.author}</p>
-                  </div>
-                  <button
-                    onClick={() => handleLoadFeed(pod.feedUrl)}
-                    disabled={loadingFeed}
-                    className="shrink-0 px-3 py-1 rounded-md border border-ink text-ink text-xs hover:bg-ink hover:text-paper transition-colors disabled:opacity-50"
+
+          {pagedResults.length > 0 && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                {pagedResults.map((vid) => (
+                  <div
+                    key={vid.videoId}
+                    className="flex items-start gap-3 rounded-lg border border-paper-muted p-3"
                   >
-                    {loadingFeed ? "Loading..." : "View Episodes"}
+                    {vid.thumbnail && (
+                      <img
+                        src={vid.thumbnail}
+                        alt=""
+                        className="w-28 h-16 object-cover rounded shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink line-clamp-2">
+                        {vid.title}
+                      </p>
+                      <p className="text-xs text-ink-muted mt-0.5">
+                        {vid.channelTitle}
+                      </p>
+                      {vid.publishedAt && (
+                        <p className="text-xs text-ink-light mt-0.5">
+                          {new Date(vid.publishedAt).toLocaleDateString(
+                            "en-US",
+                            { month: "short", day: "numeric", year: "numeric" }
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() =>
+                        handleIngestVideo(vid.videoId, vid.title)
+                      }
+                      disabled={ingesting === vid.videoId}
+                      className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                    >
+                      {ingesting === vid.videoId ? "Adding..." : "Add"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {totalResultPages > 1 && (
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    onClick={() =>
+                      setResultPage((p) => Math.max(0, p - 1))
+                    }
+                    disabled={resultPage === 0}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs text-ink-muted">
+                    Page {resultPage + 1} of {totalResultPages}
+                  </span>
+                  <button
+                    onClick={() => setResultPage((p) => p + 1)}
+                    disabled={resultPage + 1 >= totalResultPages}
+                    className="px-3 py-1 rounded-md border border-paper-muted text-xs text-ink-muted hover:text-ink disabled:opacity-30"
+                  >
+                    Next
                   </button>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </>
       )}
 
-      {mode === "rss" && !feed && (
-        <div className="flex gap-2">
-          <input
-            type="url"
-            value={feedUrl}
-            onChange={(e) => setFeedUrl(e.target.value)}
-            placeholder="Paste RSS feed URL..."
-            className="flex-1 px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-            disabled={loadingFeed}
-            onKeyDown={(e) =>
-              e.key === "Enter" && handleLoadFeed(feedUrl)
-            }
-          />
-          <button
-            onClick={() => handleLoadFeed(feedUrl)}
-            disabled={loadingFeed || !feedUrl.trim()}
-            className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
-          >
-            {loadingFeed ? "Loading..." : "Load Feed"}
-          </button>
-        </div>
-      )}
-
-      {mode === "youtube" && (
-        <div>
-          <p className="text-sm text-ink-muted mb-2">
-            Paste a YouTube video URL. The transcript will be extracted and
-            analyzed.
+      {ytMode === "url" && (
+        <div className="space-y-2">
+          <p className="text-sm text-ink-muted">
+            Paste a YouTube video URL directly.
           </p>
           <div className="flex gap-2">
             <input
@@ -999,75 +1320,16 @@ function PodcastAdd() {
               onChange={(e) => setYoutubeUrl(e.target.value)}
               placeholder="https://youtube.com/watch?v=..."
               className="flex-1 px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay"
-              disabled={ingesting === "youtube"}
-              onKeyDown={(e) =>
-                e.key === "Enter" && handleYouTubeIngest()
-              }
+              disabled={ingesting === "url"}
+              onKeyDown={(e) => e.key === "Enter" && handleIngestUrl()}
             />
             <button
-              onClick={handleYouTubeIngest}
-              disabled={ingesting === "youtube" || !youtubeUrl.trim()}
+              onClick={handleIngestUrl}
+              disabled={ingesting === "url" || !youtubeUrl.trim()}
               className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
             >
-              {ingesting === "youtube" ? "Queuing..." : "Add"}
+              {ingesting === "url" ? "Queuing..." : "Add"}
             </button>
-          </div>
-        </div>
-      )}
-
-      {feed && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-ink">{feed.title}</p>
-              <p className="text-xs text-ink-muted">
-                {feed.episodes.length} episodes
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setFeed(null);
-                setPodcastResults([]);
-              }}
-              className="text-xs text-ink-muted hover:text-ink"
-            >
-              Back
-            </button>
-          </div>
-          <div className="space-y-1">
-            {feed.episodes.map((ep) => (
-              <div
-                key={ep.guid}
-                className="flex items-center justify-between gap-3 rounded-md border border-paper-muted px-3 py-2"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-ink truncate">{ep.title}</p>
-                  {ep.publishedAt && (
-                    <p className="text-xs text-ink-light">
-                      {new Date(ep.publishedAt).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        }
-                      )}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleIngestEpisode(ep)}
-                  disabled={ingesting === ep.guid || !ep.audioUrl}
-                  className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
-                >
-                  {ingesting === ep.guid
-                    ? "Queuing..."
-                    : !ep.audioUrl
-                      ? "No audio"
-                      : "Add"}
-                </button>
-              </div>
-            ))}
           </div>
         </div>
       )}
