@@ -5,6 +5,7 @@ import type { VoiceGuide, VoiceCategory } from "@/lib/types/database";
 import { VOICE_CATEGORIES, HOOK_TYPES, FUNNEL_STAGES } from "@/lib/content-strategy";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
 import { PillarWizard } from "@/components/pillar-wizard";
+import { VoiceWizard } from "@/components/voice-wizard";
 import type { ContentPillarRow } from "@/lib/types/database";
 
 export default function VoiceGuidePage() {
@@ -23,6 +24,7 @@ export default function VoiceGuidePage() {
   // Persona copy state
   const [personaCopied, setPersonaCopied] = useState(false);
   const [showPersona, setShowPersona] = useState(false);
+  const [showVoiceWizard, setShowVoiceWizard] = useState(false);
 
   // Content pillars
   const [pillars, setPillars] = useState<ContentPillarRow[]>([]);
@@ -139,15 +141,16 @@ export default function VoiceGuidePage() {
         </p>
       </div>
 
-      {/* AI Persona */}
+      {/* Voice Persona */}
       <section className="rounded-lg border border-paper-muted p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xs text-ink-muted uppercase tracking-wide">
-              AI Persona — The Calm Integrator
+              Voice Persona
             </h2>
             <p className="text-xs text-ink-light mt-0.5">
-              System prompt for Claude. Paste this when generating content in your voice.
+              The system prompt that captures your authentic voice. Guides all
+              AI-generated content.
             </p>
           </div>
           <div className="flex gap-2">
@@ -155,24 +158,48 @@ export default function VoiceGuidePage() {
               onClick={() => setShowPersona(!showPersona)}
               className="px-3 py-1.5 rounded-md text-xs text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm transition-colors"
             >
-              {showPersona ? "Hide" : "View"}
+              {showPersona ? "Hide" : "View Current"}
             </button>
             <button
               onClick={async () => {
-                await navigator.clipboard.writeText(PERSONA_SYSTEM_PROMPT);
+                // Copy the DB version if available, fall back to code version
+                const principle = entries.find(
+                  (e) => e.category === "principle"
+                );
+                const text = principle?.content || PERSONA_SYSTEM_PROMPT;
+                await navigator.clipboard.writeText(text);
                 setPersonaCopied(true);
                 setTimeout(() => setPersonaCopied(false), 2000);
               }}
+              className="px-3 py-1.5 rounded-md text-xs text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm transition-colors"
+            >
+              {personaCopied ? "Copied" : "Copy"}
+            </button>
+            <button
+              onClick={() => setShowVoiceWizard(!showVoiceWizard)}
               className="px-3 py-1.5 rounded-md text-xs bg-clay text-paper hover:bg-clay/90 transition-colors"
             >
-              {personaCopied ? "Copied" : "Copy System Prompt"}
+              {showVoiceWizard
+                ? "Hide Wizard"
+                : entries.some((e) => e.category === "principle")
+                  ? "Regenerate Voice"
+                  : "Create Your Voice"}
             </button>
           </div>
         </div>
-        {showPersona && (
+        {showPersona && !showVoiceWizard && (
           <pre className="text-xs text-ink font-mono whitespace-pre-wrap bg-paper-warm rounded-md p-4 max-h-96 overflow-y-auto border border-paper-muted">
-            {PERSONA_SYSTEM_PROMPT}
+            {entries.find((e) => e.category === "principle")?.content ||
+              PERSONA_SYSTEM_PROMPT}
           </pre>
+        )}
+        {showVoiceWizard && (
+          <VoiceWizard
+            onComplete={() => {
+              setShowVoiceWizard(false);
+              load();
+            }}
+          />
         )}
       </section>
 
