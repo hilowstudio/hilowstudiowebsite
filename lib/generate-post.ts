@@ -1,10 +1,10 @@
 import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
 import { supabase } from "@/lib/supabase";
 import {
-  CONTENT_PILLARS,
   HOOK_TYPES,
   FUNNEL_STAGES,
 } from "@/lib/content-strategy";
+import { getContentPillars } from "@/lib/pillars";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
 import type {
   ContentPillar,
@@ -44,11 +44,12 @@ async function fetchVoicePrinciple(): Promise<string> {
 
 function buildSystemPrompt(
   voice: string,
-  pillarValue: ContentPillar,
+  pillarLabel: string,
+  pillarDescription: string,
+  pillarFunnelRole: string,
   hookValue: HookType,
   funnelValue: FunnelStage
 ): string {
-  const pillar = CONTENT_PILLARS.find((p) => p.value === pillarValue)!;
   const hook = HOOK_TYPES.find((h) => h.value === hookValue)!;
   const funnel = FUNNEL_STAGES.find((f) => f.value === funnelValue)!;
 
@@ -62,9 +63,9 @@ ${voice}
 
 ## This Specific Post
 
-**Content pillar:** ${pillar.label}
-${pillar.description}
-Funnel role for this pillar: ${pillar.funnelRole}
+**Content pillar:** ${pillarLabel}
+${pillarDescription}
+Funnel role for this pillar: ${pillarFunnelRole}
 
 **Hook type:** ${hook.label} — ${hook.description}
 
@@ -146,9 +147,13 @@ export async function generatePostDraft(
   input: GenerateInput
 ): Promise<string> {
   const voice = await fetchVoicePrinciple();
+  const pillars = await getContentPillars();
+  const pillar = pillars.find((p) => p.slug === input.pillar);
   const systemPrompt = buildSystemPrompt(
     voice,
-    input.pillar,
+    pillar?.label || input.pillar,
+    pillar?.description || "",
+    pillar?.funnel_role || "",
     input.hookType,
     input.funnelStage
   );

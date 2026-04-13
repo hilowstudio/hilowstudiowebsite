@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { ContentPost, PostType, HookType, FunnelStage, ContentPillar } from "@/lib/types/database";
-import { HOOK_TYPES, FUNNEL_STAGES, CONTENT_PILLARS } from "@/lib/content-strategy";
+import { HOOK_TYPES, FUNNEL_STAGES } from "@/lib/content-strategy";
+import type { ContentPillarRow } from "@/lib/types/database";
 import { checkVoiceViolations } from "@/lib/voice-persona";
 import { LinkedInPreview } from "@/components/linkedin-preview";
 import { ProcessingBanner } from "@/components/processing-banner";
@@ -74,6 +75,8 @@ export default function EditPostPage() {
   const [firstComment, setFirstComment] = useState("");
   const [firstCommentDelay, setFirstCommentDelay] = useState(2);
   const [showPreview, setShowPreview] = useState(false);
+  const [enabledHooks, setEnabledHooks] = useState<Set<string>>(new Set());
+  const [dbPillars, setDbPillars] = useState<ContentPillarRow[]>([]);
   const [generatingCarousel, setGeneratingCarousel] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [pendingJobs, setPendingJobs] = useState<string[]>([]); // descriptive labels
@@ -109,6 +112,19 @@ export default function EditPostPage() {
     load();
   }, [id]);
 
+
+  useEffect(() => {
+    fetch("/api/admin/settings/hooks")
+      .then((r) => (r.ok ? r.json() : { enabledHooks: [] }))
+      .then((json: { enabledHooks: string[] }) => {
+        setEnabledHooks(new Set(json.enabledHooks));
+      })
+      .catch(() => {});
+    fetch("/api/admin/pillars")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setDbPillars)
+      .catch(() => {});
+  }, []);
 
   // Poll for background job results when jobs are pending
   const refreshPost = useCallback(async () => {
@@ -378,10 +394,16 @@ export default function EditPostPage() {
                   onClick={async () => {
                     setGeneratingImage(true);
                     setError("");
+                    // Save current body first so the Inngest function reads the latest text
+                    await fetch(`/api/admin/content/${id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ body, title: title || null }),
+                    });
                     const res = await fetch("/api/admin/content/image", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ postId: id, type: "quote_card" }),
+                      body: JSON.stringify({ postId: id }),
                     });
                     if (res.ok) {
                       setPendingJobs((prev) => [...prev, "quote_card"]);
@@ -506,7 +528,9 @@ export default function EditPostPage() {
               Hook Type
             </label>
             <div className="flex gap-2 flex-wrap">
-              {HOOK_TYPES.map((hook) => (
+              {HOOK_TYPES.filter(
+                (h) => enabledHooks.size === 0 || enabledHooks.has(h.value)
+              ).map((hook) => (
                 <button
                   key={hook.value}
                   type="button"
@@ -517,7 +541,7 @@ export default function EditPostPage() {
                   title={hook.description}
                   className={`px-3 py-1.5 rounded-md text-sm transition-colors disabled:opacity-60 ${
                     hookType === hook.value
-                      ? "bg-ink text-paper"
+                      ? "bg-clay text-paper"
                       : "text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm"
                   }`}
                 >
@@ -548,7 +572,7 @@ export default function EditPostPage() {
                   }
                   className={`px-3 py-1.5 rounded-md text-sm transition-colors disabled:opacity-60 ${
                     funnelStage === stage.value
-                      ? "bg-ink text-paper"
+                      ? "bg-clay text-paper"
                       : "text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm"
                   }`}
                 >
@@ -569,30 +593,30 @@ export default function EditPostPage() {
               Content Pillar
             </label>
             <div className="flex gap-2 flex-wrap">
-              {CONTENT_PILLARS.map((pillar) => (
+              {dbPillars.map((pillar) => (
                 <button
-                  key={pillar.value}
+                  key={pillar.slug}
                   type="button"
                   disabled={!isEditable}
                   onClick={() =>
-                    setContentPillar(contentPillar === pillar.value ? "" : pillar.value)
+                    setContentPillar(contentPillar === pillar.slug ? "" : pillar.slug)
                   }
                   title={pillar.description}
                   className={`px-3 py-1.5 rounded-md text-sm transition-colors disabled:opacity-60 ${
-                    contentPillar === pillar.value
-                      ? pillar.colorClass
+                    contentPillar === pillar.slug
+                      ? pillar.color_class
                       : "text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm"
                   }`}
                 >
-                  {pillar.shortLabel}
+                  {pillar.short_label}
                 </button>
               ))}
             </div>
             {contentPillar && (
               <p className="text-xs text-ink-light mt-1.5">
-                {CONTENT_PILLARS.find((p) => p.value === contentPillar)?.description}
+                {dbPillars.find((p) => p.slug === contentPillar)?.description}
                 <span className="ml-2 text-ink-muted">
-                  ({CONTENT_PILLARS.find((p) => p.value === contentPillar)?.funnelRole})
+                  ({dbPillars.find((p) => p.slug === contentPillar)?.funnel_role})
                 </span>
               </p>
             )}
@@ -621,7 +645,7 @@ export default function EditPostPage() {
               <button
                 onClick={handlePublishNow}
                 disabled={saving || publishing || !body.trim()}
-                className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
               >
                 {publishing ? "Publishing..." : "Post now"}
               </button>

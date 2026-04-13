@@ -4,17 +4,17 @@ import { isAuthenticatedRequest } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 import { generatePostDraft, assembleSourceContext, VoiceGuideMissingError } from "@/lib/generate-post";
 import {
-  CONTENT_PILLARS,
   HOOK_TYPES,
   FUNNEL_STAGES,
 } from "@/lib/content-strategy";
+import { getContentPillars } from "@/lib/pillars";
 import type {
   ContentPillar,
   HookType,
   FunnelStage,
 } from "@/lib/types/database";
 
-const PILLAR_VALUES = new Set(CONTENT_PILLARS.map((p) => p.value));
+// Dynamic pillar validation from DB
 const HOOK_VALUES = new Set(HOOK_TYPES.map((h) => h.value));
 const FUNNEL_VALUES = new Set(FUNNEL_STAGES.map((f) => f.value));
 
@@ -61,7 +61,9 @@ export async function POST(
   const hookType = body.hookType ?? idea.suggested_hook;
   const funnelStage = body.funnelStage ?? idea.suggested_funnel;
 
-  if (!pillar || !PILLAR_VALUES.has(pillar as ContentPillar)) {
+  const dbPillars = await getContentPillars();
+  const PILLAR_SLUGS = new Set(dbPillars.map((p) => p.slug));
+  if (!pillar || !PILLAR_SLUGS.has(pillar as string)) {
     return NextResponse.json(
       { error: "Missing or invalid pillar (set suggested_pillar on the idea or pass pillar in the request body)" },
       { status: 400 }
@@ -70,6 +72,15 @@ export async function POST(
   if (!hookType || !HOOK_VALUES.has(hookType as HookType)) {
     return NextResponse.json(
       { error: "Missing or invalid hookType (set suggested_hook on the idea or pass hookType in the request body)" },
+      { status: 400 }
+    );
+  }
+  const humanOnlyHooks = new Set(
+    HOOK_TYPES.filter((h) => h.humanOnly).map((h) => h.value)
+  );
+  if (humanOnlyHooks.has(hookType as HookType)) {
+    return NextResponse.json(
+      { error: "Story and Vulnerable hooks are reserved for human-authored posts" },
       { status: 400 }
     );
   }

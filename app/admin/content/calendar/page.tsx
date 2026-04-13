@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import type { ContentPost, FunnelStage, ContentPillar } from "@/lib/types/database";
-import { FUNNEL_STAGES, FLYWHEEL_TARGET, getISOWeek, CONTENT_PILLARS } from "@/lib/content-strategy";
+import type { ContentPost, FunnelStage, ContentPillar, ContentPillarRow } from "@/lib/types/database";
+import { FUNNEL_STAGES, FLYWHEEL_TARGET, getISOWeek } from "@/lib/content-strategy";
 
 interface CalendarData {
   scheduled: ContentPost[];
@@ -21,6 +21,14 @@ function getFunnelColor(stage: FunnelStage | null): string {
 export default function CalendarPage() {
   const [data, setData] = useState<CalendarData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dbPillars, setDbPillars] = useState<ContentPillarRow[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/pillars")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setDbPillars)
+      .catch(() => {});
+  }, []);
   const [currentWeek, setCurrentWeek] = useState(() => {
     const now = new Date();
     return getISOWeek(now);
@@ -100,7 +108,7 @@ export default function CalendarPage() {
         <h1 className="font-serif text-2xl text-ink">Content Calendar</h1>
         <Link
           href="/admin/content/new"
-          className="px-3 py-1.5 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors"
+          className="px-3 py-1.5 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors"
         >
           New post
         </Link>
@@ -194,9 +202,9 @@ export default function CalendarPage() {
                       )}
                       {post.content_pillar && (
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                          CONTENT_PILLARS.find((p) => p.value === post.content_pillar)?.colorClass || ""
+                          dbPillars.find((p) => p.slug === post.content_pillar)?.color_class || ""
                         }`}>
-                          {CONTENT_PILLARS.find((p) => p.value === post.content_pillar)?.shortLabel}
+                          {dbPillars.find((p) => p.slug === post.content_pillar)?.short_label}
                         </span>
                       )}
                       {post.hook_type && (
@@ -238,9 +246,9 @@ export default function CalendarPage() {
                     )}
                     {post.content_pillar && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        CONTENT_PILLARS.find((p) => p.value === post.content_pillar)?.colorClass || ""
+                        dbPillars.find((p) => p.slug === post.content_pillar)?.color_class || ""
                       }`}>
-                        {CONTENT_PILLARS.find((p) => p.value === post.content_pillar)?.shortLabel}
+                        {dbPillars.find((p) => p.slug === post.content_pillar)?.short_label}
                       </span>
                     )}
                     {post.hook_type && (

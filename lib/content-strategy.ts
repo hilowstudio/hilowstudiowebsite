@@ -1,14 +1,49 @@
 import type { HookType, FunnelStage, IdeaSource, VoiceCategory, ContentPillar } from "@/lib/types/database";
 
-export const HOOK_TYPES: { value: HookType; label: string; description: string }[] = [
-  { value: "contrarian", label: "Contrarian", description: "Challenge conventional wisdom" },
-  { value: "story", label: "Story", description: "Personal narrative or anecdote" },
-  { value: "stat", label: "Stat / Data", description: "Lead with a surprising number" },
-  { value: "question", label: "Question", description: "Provocative question to the reader" },
-  { value: "how_to", label: "How-To", description: "Step-by-step tactical advice" },
-  { value: "listicle", label: "Listicle", description: "Numbered value items" },
-  { value: "framework", label: "Framework", description: "Introduce a mental model" },
-  { value: "vulnerable", label: "Vulnerable", description: "Honest, raw reflection" },
+export const HOOK_TYPES: {
+  value: HookType;
+  label: string;
+  description: string;
+  funnel: FunnelStage;
+  humanOnly?: boolean;
+}[] = [
+  // ── ToFu: Awareness & Reach ──
+  { value: "contrarian", label: "Contrarian", description: "Grabs attention by challenging norms and conventional wisdom.", funnel: "tofu" },
+  { value: "data_backed", label: "Data-Backed", description: "Uses a surprising stat or data point to stop the scroll.", funnel: "tofu" },
+  { value: "vulnerability_story", label: "Vulnerability / Story", description: "Builds immediate human connection through personal narrative.", funnel: "tofu", humanOnly: true },
+  { value: "curiosity_gap", label: "Curiosity Gap", description: "Leverages human psychology to drive clicks and read-more expansions.", funnel: "tofu" },
+  { value: "bold_claim", label: "Bold Claim", description: "Provokes intrigue and forces readers to see if you can defend your stance.", funnel: "tofu" },
+  { value: "question", label: "Question", description: "Engages readers by instantly making them think about themselves.", funnel: "tofu" },
+  { value: "myth_busting", label: "Myth-Busting", description: "Re-educates the market and positions you as a fresh voice.", funnel: "tofu" },
+  { value: "tribal", label: "Us vs. Them (Tribal)", description: "Builds immediate community and loyalty by polarizing an audience.", funnel: "tofu" },
+  { value: "paradox", label: "Paradox", description: "Creates cognitive dissonance that forces the scroll to stop.", funnel: "tofu" },
+  { value: "quote_wisdom", label: "Quote / Wisdom", description: "Borrows authority from a recognized source to capture new readers.", funnel: "tofu" },
+  { value: "name_drop", label: "Name-Drop", description: "Uses established, recognizable names to capture broad interest.", funnel: "tofu" },
+  { value: "observation_trend", label: "Observation / Trend", description: "Appeals to the desire to stay updated and ahead of the curve.", funnel: "tofu" },
+  { value: "empathy_validation", label: "Empathy / Validation", description: "Connects deeply by making the reader feel seen and understood.", funnel: "tofu" },
+  { value: "david_goliath", label: "David vs. Goliath", description: "Tells an underdog story that is universally appealing.", funnel: "tofu" },
+  { value: "hyperbolic", label: "Hyperbolic", description: "Uses extreme language strictly to command attention in a crowded feed.", funnel: "tofu" },
+
+  // ── MoFu: Consideration & Authority ──
+  { value: "warning_mistake", label: "Warning / Mistake", description: "Agitates a known problem for readers already aware of their pain points.", funnel: "mofu" },
+  { value: "how_to", label: "Actionable How-To", description: "Delivers pure value, moving readers from awareness to seeing you as a resource.", funnel: "mofu" },
+  { value: "number_list", label: "Number / List", description: "Promises structured, educational content that is easy to consume.", funnel: "mofu" },
+  { value: "behind_scenes", label: "Behind the Scenes", description: "Deepens the relationship by showing the messy or unpolished reality.", funnel: "mofu", humanOnly: true },
+  { value: "framework", label: "Framework / System", description: "Shifts you from a commentator to an expert by showcasing proprietary methods.", funnel: "mofu" },
+  { value: "steal_my", label: '"Steal My..."', description: "Acts as a trust-building exercise by giving away high-value assets.", funnel: "mofu" },
+  { value: "milestone_lesson", label: "Milestone / Lesson", description: "Nurtures the audience by showing your growth and sharing educational takeaways.", funnel: "mofu", humanOnly: true },
+  { value: "what_if", label: '"What If" (Future-Pacing)', description: "Gets warm audiences to visualize a better state, moving them closer to a solution.", funnel: "mofu" },
+  { value: "ultra_specific", label: "Ultra-Specific", description: "Filters out the broad audience to speak directly to your ideal reader.", funnel: "mofu" },
+  { value: "proof_of_work", label: "Proof of Work", description: "Proves your dedication and research capabilities, cementing authority.", funnel: "mofu" },
+  { value: "negative_command", label: "Negative Command", description: "Shows authoritative leadership by telling an audience exactly what to stop doing.", funnel: "mofu" },
+  { value: "i_was_wrong", label: '"I Was Wrong"', description: "Builds deep trust through humility and self-awareness.", funnel: "mofu", humanOnly: true },
+  { value: "secret_truth", label: "Secret / Hidden Truth", description: "Rewards your existing audience with insider knowledge.", funnel: "mofu" },
+  { value: "letter_younger_self", label: "Letter to My Younger Self", description: "Builds mentorship-style authority by reflecting on the journey.", funnel: "mofu", humanOnly: true },
+
+  // ── BoFu: Conversion & Decision ──
+  { value: "transformation", label: "Transformation", description: "Shows a definitive before-and-after, providing ultimate proof your methods work.", funnel: "bofu" },
+  { value: "case_study", label: "Case Study / Teardown", description: "Delivers hard evidence of success for high-intent prospects.", funnel: "bofu" },
+  { value: "time_frame", label: "Time-Frame", description: "Injects urgency and efficiency to push hesitant prospects to take action.", funnel: "bofu" },
 ];
 
 export const FUNNEL_STAGES: { value: FunnelStage; label: string; description: string; colorClass: string }[] = [

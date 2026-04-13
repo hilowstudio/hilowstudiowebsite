@@ -31,14 +31,41 @@ export type PostStatus =
   | "failed";
 
 export type HookType =
+  // ToFu
   | "contrarian"
-  | "story"
-  | "stat"
+  | "data_backed"
+  | "vulnerability_story"
+  | "curiosity_gap"
+  | "bold_claim"
   | "question"
+  | "myth_busting"
+  | "tribal"
+  | "paradox"
+  | "quote_wisdom"
+  | "name_drop"
+  | "observation_trend"
+  | "empathy_validation"
+  | "david_goliath"
+  | "hyperbolic"
+  // MoFu
+  | "warning_mistake"
   | "how_to"
-  | "listicle"
+  | "number_list"
+  | "behind_scenes"
   | "framework"
-  | "vulnerable";
+  | "steal_my"
+  | "milestone_lesson"
+  | "what_if"
+  | "ultra_specific"
+  | "proof_of_work"
+  | "negative_command"
+  | "i_was_wrong"
+  | "secret_truth"
+  | "letter_younger_self"
+  // BoFu
+  | "transformation"
+  | "case_study"
+  | "time_frame";
 
 export type FunnelStage = "tofu" | "mofu" | "bofu";
 
@@ -59,12 +86,21 @@ export type IdeaSource =
 
 export type VoiceCategory = "principle" | "do" | "dont" | "reference_post";
 
-export type ContentPillar =
-  | "calm_tech"
-  | "adhd_operator"
-  | "ai_for_operators"
-  | "own_your_stack"
-  | "cost_of_the_mask";
+/** User-defined content pillar slug. Stored in the content_pillars DB table. */
+export type ContentPillar = string;
+
+export interface ContentPillarRow {
+  id: string;
+  slug: string;
+  label: string;
+  short_label: string;
+  description: string;
+  funnel_role: string;
+  color_class: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Contact {
   id: string;

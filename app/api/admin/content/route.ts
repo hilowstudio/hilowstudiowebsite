@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { title, body: postBody, post_type, scheduled_at, status, hook_type, funnel_stage, content_pillar } = body;
 
-  if (!postBody) {
+  if (!postBody && status !== "draft") {
     return NextResponse.json({ error: "Post body is required" }, { status: 400 });
   }
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     .from("content_posts")
     .insert({
       title: title || null,
-      body: postBody,
+      body: postBody || "",
       post_type: post_type || "text",
       scheduled_at: scheduled_at || null,
       status: status || "draft",

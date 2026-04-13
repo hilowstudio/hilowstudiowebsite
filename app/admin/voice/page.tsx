@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import type { VoiceGuide, VoiceCategory } from "@/lib/types/database";
-import { VOICE_CATEGORIES } from "@/lib/content-strategy";
+import { VOICE_CATEGORIES, HOOK_TYPES, FUNNEL_STAGES } from "@/lib/content-strategy";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
+import { PillarWizard } from "@/components/pillar-wizard";
+import type { ContentPillarRow } from "@/lib/types/database";
 
 export default function VoiceGuidePage() {
   const [entries, setEntries] = useState<VoiceGuide[]>([]);
@@ -21,6 +23,56 @@ export default function VoiceGuidePage() {
   // Persona copy state
   const [personaCopied, setPersonaCopied] = useState(false);
   const [showPersona, setShowPersona] = useState(false);
+
+  // Content pillars
+  const [pillars, setPillars] = useState<ContentPillarRow[]>([]);
+  const [showPillarWizard, setShowPillarWizard] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/pillars")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setPillars)
+      .catch(() => {});
+  }, []);
+
+  // Hook preferences
+  const [enabledHooks, setEnabledHooks] = useState<Set<string>>(new Set());
+  const [hooksLoaded, setHooksLoaded] = useState(false);
+  const [savingHooks, setSavingHooks] = useState(false);
+  const [showHooks, setShowHooks] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/settings/hooks")
+      .then((r) => (r.ok ? r.json() : { enabledHooks: [] }))
+      .then((json: { enabledHooks: string[] }) => {
+        setEnabledHooks(new Set(json.enabledHooks));
+        setHooksLoaded(true);
+      })
+      .catch(() => setHooksLoaded(true));
+  }, []);
+
+  function toggleHook(hookValue: string) {
+    setEnabledHooks((prev) => {
+      const next = new Set(prev);
+      if (next.has(hookValue)) {
+        next.delete(hookValue);
+      } else {
+        next.add(hookValue);
+      }
+      return next;
+    });
+  }
+
+  async function saveHooks() {
+    setSavingHooks(true);
+    await fetch("/api/admin/settings/hooks", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabledHooks: Array.from(enabledHooks) }),
+    });
+    setSavingHooks(false);
+    setShowHooks(false);
+  }
 
   async function load() {
     setLoading(true);
@@ -111,7 +163,7 @@ export default function VoiceGuidePage() {
                 setPersonaCopied(true);
                 setTimeout(() => setPersonaCopied(false), 2000);
               }}
-              className="px-3 py-1.5 rounded-md text-xs bg-ink text-paper hover:bg-ink-muted transition-colors"
+              className="px-3 py-1.5 rounded-md text-xs bg-clay text-paper hover:bg-clay/90 transition-colors"
             >
               {personaCopied ? "Copied" : "Copy System Prompt"}
             </button>
@@ -121,6 +173,158 @@ export default function VoiceGuidePage() {
           <pre className="text-xs text-ink font-mono whitespace-pre-wrap bg-paper-warm rounded-md p-4 max-h-96 overflow-y-auto border border-paper-muted">
             {PERSONA_SYSTEM_PROMPT}
           </pre>
+        )}
+      </section>
+
+      {/* Content Pillars */}
+      <section className="rounded-lg border border-paper-muted p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xs text-ink-muted uppercase tracking-wide">
+              Content Pillars
+            </h2>
+            <p className="text-xs text-ink-light mt-0.5">
+              {pillars.length > 0
+                ? `${pillars.length} pillars defined`
+                : "No pillars defined yet"}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowPillarWizard(!showPillarWizard)}
+            className="px-3 py-1.5 rounded-md text-xs text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm transition-colors"
+          >
+            {showPillarWizard
+              ? "Hide"
+              : pillars.length > 0
+                ? "Redefine Pillars"
+                : "Set Up Pillars"}
+          </button>
+        </div>
+
+        {!showPillarWizard && pillars.length > 0 && (
+          <div className="space-y-2">
+            {pillars.map((p) => (
+              <div
+                key={p.id}
+                className={`rounded-md px-3 py-2 ${p.color_class}`}
+              >
+                <p className="text-sm font-medium">{p.label}</p>
+                <p className="text-xs opacity-80 mt-0.5">{p.description}</p>
+                <p className="text-xs opacity-60 mt-0.5">
+                  Funnel role: {p.funnel_role}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showPillarWizard && (
+          <PillarWizard
+            onComplete={() => {
+              setShowPillarWizard(false);
+              fetch("/api/admin/pillars")
+                .then((r) => (r.ok ? r.json() : []))
+                .then(setPillars)
+                .catch(() => {});
+            }}
+          />
+        )}
+      </section>
+
+      {/* Hook Type Preferences */}
+      <section className="rounded-lg border border-paper-muted p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xs text-ink-muted uppercase tracking-wide">
+              Hook Types
+            </h2>
+            <p className="text-xs text-ink-light mt-0.5">
+              {enabledHooks.size} of {HOOK_TYPES.length} enabled
+            </p>
+          </div>
+          <button
+            onClick={() => setShowHooks(!showHooks)}
+            className="px-3 py-1.5 rounded-md text-xs text-ink-muted border border-paper-muted hover:text-ink hover:bg-paper-warm transition-colors"
+          >
+            {showHooks ? "Hide" : "Configure"}
+          </button>
+        </div>
+
+        {showHooks && hooksLoaded && (
+          <div className="space-y-5">
+            <div className="rounded-md bg-paper-warm/50 px-3 py-3 space-y-2">
+              <p className="text-sm text-ink">
+                These are proven rhetorical devices employed by professional copywriters to
+                capture the attention of an audience. Select the <strong>7 hooks</strong> that
+                best represent your authentic brand and style of writing.
+              </p>
+              <p className="text-xs text-ink-muted">
+                Hook types are subservient to your authentic voice and personality.
+                Attention does not equal trust. Your voice rules always take precedence
+                over any hook pattern.
+              </p>
+            </div>
+
+            {FUNNEL_STAGES.map((stage) => {
+              const stageHooks = HOOK_TYPES.filter((h) => h.funnel === stage.value);
+              return (
+                <div key={stage.value}>
+                  <h3 className="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">
+                    {stage.label}
+                    <span className="font-normal text-ink-light ml-1">
+                      {stage.description}
+                    </span>
+                  </h3>
+                  <div className="space-y-1">
+                    {stageHooks.map((hook) => (
+                      <label
+                        key={hook.value}
+                        className={`flex items-start gap-3 rounded-md px-3 py-2 cursor-pointer transition-colors ${
+                          enabledHooks.has(hook.value)
+                            ? "bg-clay/5 border border-clay/20"
+                            : "hover:bg-paper-warm border border-transparent"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={enabledHooks.has(hook.value)}
+                          onChange={() => toggleHook(hook.value)}
+                          className="mt-0.5 shrink-0 accent-clay"
+                        />
+                        <div>
+                          <span className="text-sm text-ink font-medium">
+                            {hook.label}
+                          </span>
+                          {hook.humanOnly && (
+                            <span className="ml-1.5 text-xs text-ink-light">(human-only)</span>
+                          )}
+                          <p className="text-xs text-ink-muted mt-0.5">
+                            {hook.description}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="flex items-center justify-between pt-2 border-t border-paper-muted">
+              <p className="text-xs text-ink-muted">
+                {enabledHooks.size} selected
+                {enabledHooks.size !== 7 && (
+                  <span className="text-clay ml-1">(7 recommended)</span>
+                )}
+              </p>
+              <button
+                onClick={saveHooks}
+                disabled={savingHooks}
+                className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
+              >
+                {savingHooks ? "Saving..." : "Save Hook Preferences"}
+              </button>
+            </div>
+          </div>
         )}
       </section>
 
@@ -161,7 +365,7 @@ export default function VoiceGuidePage() {
         <button
           onClick={handleAdd}
           disabled={saving || !newContent.trim()}
-          className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+          className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
         >
           {saving ? "Saving..." : "Add"}
         </button>
@@ -199,7 +403,7 @@ export default function VoiceGuidePage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleUpdate(entry.id)}
-                            className="px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors"
+                            className="px-3 py-1 rounded-md bg-clay text-paper text-xs hover:bg-clay/90 transition-colors"
                           >
                             Save
                           </button>

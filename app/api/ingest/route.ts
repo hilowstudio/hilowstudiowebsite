@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { IDEA_SOURCES, CONTENT_PILLARS, HOOK_TYPES, FUNNEL_STAGES } from "@/lib/content-strategy";
+import { IDEA_SOURCES, HOOK_TYPES, FUNNEL_STAGES } from "@/lib/content-strategy";
+import { getContentPillars } from "@/lib/pillars";
 import type { IdeaSource, ContentPillar, HookType, FunnelStage } from "@/lib/types/database";
 
 const VALID_SOURCES = new Set(IDEA_SOURCES.map((s) => s.value));
-const VALID_PILLARS = new Set(CONTENT_PILLARS.map((p) => p.value));
+// Pillar validation done dynamically inside handler
 const VALID_HOOKS = new Set(HOOK_TYPES.map((h) => h.value));
 const VALID_FUNNELS = new Set(FUNNEL_STAGES.map((f) => f.value));
 
@@ -61,8 +62,12 @@ export async function POST(request: NextRequest) {
   if (body.suggested_funnel && !VALID_FUNNELS.has(body.suggested_funnel as FunnelStage)) {
     return NextResponse.json({ error: "Invalid suggested_funnel" }, { status: 400 });
   }
-  if (body.suggested_pillar && !VALID_PILLARS.has(body.suggested_pillar as ContentPillar)) {
-    return NextResponse.json({ error: "Invalid suggested_pillar" }, { status: 400 });
+  if (body.suggested_pillar) {
+    const dbPillars = await getContentPillars();
+    const validPillarSlugs = new Set(dbPillars.map((p) => p.slug));
+    if (!validPillarSlugs.has(body.suggested_pillar as string)) {
+      return NextResponse.json({ error: "Invalid suggested_pillar" }, { status: 400 });
+    }
   }
 
   // Idempotency: if source_metadata.external_id is provided, check for duplicates

@@ -22,38 +22,37 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-paper">
-      <nav className="border-b border-paper-muted px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <span className="font-serif text-lg text-ink">Hi Low Admin</span>
-          <div className="flex gap-1 overflow-x-auto">
-            {navItems.map((item) => {
-              const isActive = item.exact
-                  ? pathname === item.href
-                  : pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-1.5 rounded-md text-sm transition-colors whitespace-nowrap ${
-                    isActive
-                      ? "bg-ink text-paper"
-                      : "text-ink-muted hover:text-ink hover:bg-paper-warm"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
+      <nav className="border-b border-paper-muted">
+        <div className="px-6 pt-4 pb-2 text-center relative">
+          <span className="font-serif text-lg text-ink">Linkedin Content Manager</span>
+          <button
+            onClick={handleLogout}
+            className="absolute right-6 top-4 text-sm text-ink-light hover:text-ink transition-colors"
+          >
+            Sign out
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-ink-light hover:text-ink transition-colors"
-        >
-          Sign out
-        </button>
+        <div className="flex justify-center -mb-px">
+          {navItems.map((item) => {
+            const isActive = item.exact
+              ? pathname === item.href
+              : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-5 py-2.5 text-sm transition-colors whitespace-nowrap border-b-2 ${isActive
+                    ? "border-clay text-clay font-medium"
+                    : "border-transparent text-ink-muted hover:text-ink hover:border-clay-muted"
+                  }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
-      <main className="p-6 max-w-6xl mx-auto">{children}</main>
+      <main className="p-6 max-w-3xl mx-auto">{children}</main>
     </div>
   );
 }

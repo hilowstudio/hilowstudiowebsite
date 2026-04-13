@@ -129,7 +129,7 @@ export default async function AdminDashboard() {
         </div>
         <a
           href="/api/auth/linkedin/start"
-          className="shrink-0 rounded-md bg-ink text-paper px-3 py-1.5 text-xs font-medium hover:bg-ink/90"
+          className="shrink-0 rounded-md bg-clay text-paper px-3 py-1.5 text-xs font-medium hover:bg-clay/90"
         >
           {linkedin.kind === "connected" ? "Reconnect" : "Connect LinkedIn"}
         </a>

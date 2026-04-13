@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import type { ContentPost, LinkedinMetrics, HookType, FunnelStage, ContentPillar } from "@/lib/types/database";
-import { HOOK_TYPES, FUNNEL_STAGES, CONTENT_PILLARS } from "@/lib/content-strategy";
+import type { ContentPost, LinkedinMetrics, HookType, FunnelStage, ContentPillar, ContentPillarRow } from "@/lib/types/database";
+import { HOOK_TYPES, FUNNEL_STAGES } from "@/lib/content-strategy";
 
 interface EnrichedPost extends ContentPost {
   metrics: LinkedinMetrics | null;
@@ -30,6 +30,14 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [dbPillars, setDbPillars] = useState<ContentPillarRow[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/pillars")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setDbPillars)
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -154,7 +162,7 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {Object.entries(aggregations.byPillar).map(([pillar, agg]) => {
               if (!agg || agg.count === 0) return null;
-              const pillarDef = CONTENT_PILLARS.find((p) => p.value === pillar);
+              const pillarDef = dbPillars.find((p) => p.slug === pillar);
               return (
                 <div
                   key={pillar}
@@ -163,10 +171,10 @@ export default function AnalyticsPage() {
                   <div className="flex items-center gap-2 mb-3">
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs ${
-                        pillarDef?.colorClass || "bg-paper-muted text-ink-muted"
+                        pillarDef?.color_class || "bg-paper-muted text-ink-muted"
                       }`}
                     >
-                      {pillarDef?.shortLabel || pillar}
+                      {pillarDef?.short_label || pillar}
                     </span>
                     <span className="text-xs text-ink-light">
                       {agg.count} post{agg.count !== 1 ? "s" : ""}
@@ -269,10 +277,10 @@ export default function AnalyticsPage() {
                       {post.content_pillar && (
                         <span
                           className={`text-xs px-1.5 py-0.5 rounded-full ${
-                            CONTENT_PILLARS.find((p) => p.value === post.content_pillar)?.colorClass || ""
+                            dbPillars.find((p) => p.slug === post.content_pillar)?.color_class || ""
                           }`}
                         >
-                          {CONTENT_PILLARS.find((p) => p.value === post.content_pillar)?.shortLabel}
+                          {dbPillars.find((p) => p.slug === post.content_pillar)?.short_label}
                         </span>
                       )}
                       <span className="text-xs text-ink-light">

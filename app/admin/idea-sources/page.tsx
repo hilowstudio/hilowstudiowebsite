@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { BookOpen, RssSimple, YoutubeLogo, Globe } from "@phosphor-icons/react";
 import { ProcessingBanner } from "@/components/processing-banner";
 import type { ContentIdea } from "@/lib/types/database";
 import { IDEA_SOURCES } from "@/lib/content-strategy";
@@ -36,65 +37,77 @@ export default function SourceMaterialPage() {
         </p>
       </div>
 
-      <div className="flex gap-1">
+      <div className="flex justify-center border-b border-paper-muted -mb-px">
         <button
           onClick={() => setView("add")}
-          className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+          className={`px-5 py-2.5 text-sm transition-colors border-b-2 ${
             view === "add"
-              ? "bg-ink text-paper"
-              : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+              ? "border-clay text-clay font-medium"
+              : "border-transparent text-ink-muted hover:text-ink hover:border-clay-muted"
           }`}
         >
           Add Sources
         </button>
         <button
           onClick={() => setView("my")}
-          className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+          className={`px-5 py-2.5 text-sm transition-colors border-b-2 ${
             view === "my"
-              ? "bg-ink text-paper"
-              : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+              ? "border-clay text-clay font-medium"
+              : "border-transparent text-ink-muted hover:text-ink hover:border-clay-muted"
           }`}
         >
           My Sources
         </button>
       </div>
 
-      {view === "add" && <AddSources />}
-      {view === "my" && <MySources />}
+      <div className="pt-4">
+        {view === "add" && <AddSources />}
+        {view === "my" && <MySources />}
+      </div>
     </div>
   );
 }
 
 // ─── Add Sources ──────────────────────────────────────────
 
-type AddMode = "books" | "podcasts" | "youtube" | "articles";
+type AddMode = "books" | "podcasts" | "youtube" | "articles" | null;
+
+const addCards = [
+  { value: "books" as const, label: "Add Book", icon: BookOpen, description: "Search Google Books or your Hardcover library" },
+  { value: "podcasts" as const, label: "Add Podcast", icon: RssSimple, description: "Search iTunes for podcast episodes" },
+  { value: "youtube" as const, label: "Add Video", icon: YoutubeLogo, description: "Search YouTube or paste a video URL" },
+  { value: "articles" as const, label: "Add Article", icon: Globe, description: "Paste a URL to summarize any web page" },
+];
 
 function AddSources() {
-  const [mode, setMode] = useState<AddMode>("books");
+  const [mode, setMode] = useState<AddMode>(null);
 
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-1">
-        {([
-          { value: "books" as const, label: "Books" },
-          { value: "podcasts" as const, label: "Podcasts" },
-          { value: "youtube" as const, label: "YouTube" },
-          { value: "articles" as const, label: "Articles / URLs" },
-        ]).map((tab) => (
+  if (mode === null) {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {addCards.map((card) => (
           <button
-            key={tab.value}
-            onClick={() => setMode(tab.value)}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-              mode === tab.value
-                ? "bg-ink text-paper"
-                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
-            }`}
+            key={card.value}
+            onClick={() => setMode(card.value)}
+            className="flex flex-col items-center gap-2 rounded-lg border border-paper-muted p-6 text-center hover:bg-paper-warm hover:border-clay-muted transition-colors"
           >
-            {tab.label}
+            <card.icon size={28} weight="regular" className="text-clay" />
+            <span className="text-sm font-medium text-ink">{card.label}</span>
+            <span className="text-xs text-ink-muted">{card.description}</span>
           </button>
         ))}
       </div>
+    );
+  }
 
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={() => setMode(null)}
+        className="text-sm text-ink-light hover:text-ink transition-colors"
+      >
+        &larr; Back
+      </button>
       {mode === "books" && <BookAdd />}
       {mode === "podcasts" && <PodcastAdd />}
       {mode === "youtube" && <YouTubeAdd />}
@@ -107,16 +120,24 @@ function AddSources() {
 
 type SourceTab = "book" | "podcast" | "youtube" | "article" | "repurpose" | "hidden";
 
+const myCards = [
+  { value: "book" as const, label: "My Books", icon: BookOpen },
+  { value: "podcast" as const, label: "My Podcasts", icon: RssSimple },
+  { value: "youtube" as const, label: "My Videos", icon: YoutubeLogo },
+  { value: "article" as const, label: "My Articles", icon: Globe },
+];
+
 function MySources() {
-  const [tab, setTab] = useState<SourceTab>("book");
+  const [tab, setTab] = useState<SourceTab | null>(null);
   const [sources, setSources] = useState<ContentIdea[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [hiddenCount, setHiddenCount] = useState(0);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (!tab) return;
     setLoading(true);
     const isHidden = tab === "hidden";
     const status = isHidden ? "hidden" : "active";
@@ -185,49 +206,49 @@ function MySources() {
     setActionLoading(null);
   }
 
-  const tabs: { value: SourceTab; label: string }[] = [
-    { value: "book", label: "Books" },
-    { value: "podcast", label: "Podcasts" },
-    { value: "youtube", label: "YouTube" },
-    { value: "article", label: "Articles" },
-    { value: "repurpose", label: "Repurpose" },
-  ];
+  if (tab === null) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          {myCards.map((card) => (
+            <button
+              key={card.value}
+              onClick={() => { setTab(card.value); setPage(0); }}
+              className="flex flex-col items-center gap-2 rounded-lg border border-paper-muted p-6 text-center hover:bg-paper-warm hover:border-clay-muted transition-colors"
+            >
+              <card.icon size={28} weight="regular" className="text-clay" />
+              <span className="text-sm font-medium text-ink">{card.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={() => { setTab("repurpose"); setPage(0); }}
+            className="text-xs text-ink-muted hover:text-ink transition-colors"
+          >
+            Repurpose
+          </button>
+          {hiddenCount > 0 && (
+            <button
+              onClick={() => { setTab("hidden"); setPage(0); }}
+              className="text-xs text-ink-light hover:text-ink transition-colors"
+            >
+              Hidden ({hiddenCount})
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 flex-wrap">
-        {tabs.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => {
-              setTab(t.value);
-              setPage(0);
-            }}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-              tab === t.value
-                ? "bg-ink text-paper"
-                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-        {hiddenCount > 0 && (
-          <button
-            onClick={() => {
-              setTab("hidden");
-              setPage(0);
-            }}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-              tab === "hidden"
-                ? "bg-ink text-paper"
-                : "text-ink-light hover:text-ink hover:bg-paper-warm"
-            }`}
-          >
-            Hidden ({hiddenCount})
-          </button>
-        )}
-      </div>
+      <button
+        onClick={() => setTab(null)}
+        className="text-sm text-ink-light hover:text-ink transition-colors"
+      >
+        &larr; Back
+      </button>
 
       {tab === "hidden" && (
         <p className="text-xs text-ink-muted bg-paper-warm/50 rounded-md px-3 py-2">
@@ -458,7 +479,7 @@ function ArticleAdd() {
         <button
           onClick={handleIngest}
           disabled={loading || !url.trim()}
-          className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+          className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
         >
           {loading ? "Queuing..." : "Add"}
         </button>
@@ -631,7 +652,7 @@ function BookAdd() {
             <button
               onClick={handleSearch}
               disabled={searching || !query.trim()}
-              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
             >
               {searching ? "Searching..." : "Search"}
             </button>
@@ -673,7 +694,7 @@ function BookAdd() {
                       <button
                         onClick={() => handleIngestBook(book)}
                         disabled={ingesting === key}
-                        className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                        className="shrink-0 px-3 py-1 rounded-md bg-clay text-paper text-xs hover:bg-clay/90 transition-colors disabled:opacity-50"
                       >
                         {ingesting === key ? "Adding..." : "Add"}
                       </button>
@@ -773,7 +794,7 @@ function BookAdd() {
                         })
                       }
                       disabled={ingesting === book.title}
-                      className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                      className="shrink-0 px-3 py-1 rounded-md bg-clay text-paper text-xs hover:bg-clay/90 transition-colors disabled:opacity-50"
                     >
                       {ingesting === book.title ? "Adding..." : "Add"}
                     </button>
@@ -934,7 +955,7 @@ function PodcastAdd() {
             <button
               onClick={handleSearch}
               disabled={searching || !query.trim()}
-              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
             >
               {searching ? "Searching..." : "Search"}
             </button>
@@ -1047,7 +1068,7 @@ function PodcastAdd() {
                     <button
                       onClick={() => handleIngestEpisode(ep)}
                       disabled={ingesting === ep.guid || !ep.audioUrl}
-                      className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                      className="shrink-0 px-3 py-1 rounded-md bg-clay text-paper text-xs hover:bg-clay/90 transition-colors disabled:opacity-50"
                     >
                       {ingesting === ep.guid
                         ? "Queuing..."
@@ -1231,7 +1252,7 @@ function YouTubeAdd() {
             <button
               onClick={handleSearch}
               disabled={searching || !query.trim()}
-              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
             >
               {searching ? "Searching..." : "Search"}
             </button>
@@ -1273,7 +1294,7 @@ function YouTubeAdd() {
                         handleIngestVideo(vid.videoId, vid.title)
                       }
                       disabled={ingesting === vid.videoId}
-                      className="shrink-0 px-3 py-1 rounded-md bg-ink text-paper text-xs hover:bg-ink-muted transition-colors disabled:opacity-50"
+                      className="shrink-0 px-3 py-1 rounded-md bg-clay text-paper text-xs hover:bg-clay/90 transition-colors disabled:opacity-50"
                     >
                       {ingesting === vid.videoId ? "Adding..." : "Add"}
                     </button>
@@ -1326,7 +1347,7 @@ function YouTubeAdd() {
             <button
               onClick={handleIngestUrl}
               disabled={ingesting === "url" || !youtubeUrl.trim()}
-              className="px-4 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
             >
               {ingesting === "url" ? "Queuing..." : "Add"}
             </button>

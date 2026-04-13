@@ -4,17 +4,17 @@ import { isAuthenticatedRequest } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 import { generatePostDraft, VoiceGuideMissingError } from "@/lib/generate-post";
 import {
-  CONTENT_PILLARS,
   HOOK_TYPES,
   FUNNEL_STAGES,
 } from "@/lib/content-strategy";
+import { getContentPillars } from "@/lib/pillars";
 import type {
   ContentPillar,
   HookType,
   FunnelStage,
 } from "@/lib/types/database";
 
-const PILLAR_VALUES = new Set(CONTENT_PILLARS.map((p) => p.value));
+// Pillar validation is done dynamically from DB inside the handler
 const HOOK_VALUES = new Set(HOOK_TYPES.map((h) => h.value));
 const FUNNEL_VALUES = new Set(FUNNEL_STAGES.map((f) => f.value));
 
@@ -40,15 +40,26 @@ export async function POST(request: NextRequest) {
 
   const { pillar, hookType, funnelStage, sourceMaterial, sourceUrl } = body;
 
-  if (!pillar || !PILLAR_VALUES.has(pillar as ContentPillar)) {
+  const dbPillars = await getContentPillars();
+  const PILLAR_SLUGS = new Set(dbPillars.map((p) => p.slug));
+  if (!pillar || !PILLAR_SLUGS.has(pillar as string)) {
     return NextResponse.json(
       { error: "Invalid or missing pillar" },
       { status: 400 }
     );
   }
+  const humanOnlyHooks = new Set(
+    HOOK_TYPES.filter((h) => h.humanOnly).map((h) => h.value)
+  );
   if (!hookType || !HOOK_VALUES.has(hookType as HookType)) {
     return NextResponse.json(
       { error: "Invalid or missing hookType" },
+      { status: 400 }
+    );
+  }
+  if (humanOnlyHooks.has(hookType as HookType)) {
+    return NextResponse.json(
+      { error: "Story and Vulnerable hooks are reserved for human-authored posts" },
       { status: 400 }
     );
   }

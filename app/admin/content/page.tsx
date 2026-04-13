@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Plus } from "@phosphor-icons/react";
 import type { ContentPost, PostStatus } from "@/lib/types/database";
 
 const statusTabs: { value: PostStatus | "all"; label: string }[] = [
@@ -41,26 +42,18 @@ export default function ContentPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl text-ink">Content</h1>
-        <Link
-          href="/admin/content/new"
-          className="px-3 py-1.5 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors"
-        >
-          New post
-        </Link>
-      </div>
+      <h1 className="font-serif text-2xl text-ink text-center">Content</h1>
 
       {/* Status tabs */}
-      <div className="flex gap-1">
+      <div className="flex justify-center border-b border-paper-muted -mb-px">
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setFilter(tab.value)}
-            className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+            className={`px-5 py-2.5 text-sm transition-colors border-b-2 ${
               filter === tab.value
-                ? "bg-ink text-paper"
-                : "text-ink-muted hover:text-ink hover:bg-paper-warm"
+                ? "border-clay text-clay font-medium"
+                : "border-transparent text-ink-muted hover:text-ink hover:border-clay-muted"
             }`}
           >
             {tab.label}
@@ -68,14 +61,25 @@ export default function ContentPage() {
         ))}
       </div>
 
-      {/* Posts list */}
-      {loading ? (
-        <p className="text-ink-light text-sm py-8">Loading...</p>
-      ) : posts.length === 0 ? (
-        <p className="text-ink-light text-sm py-8">No posts yet.</p>
-      ) : (
-        <div className="space-y-2">
-          {posts.map((post) => (
+      <div className="pt-2 space-y-2">
+        {/* New post card */}
+        <Link
+          href="/admin/content/new"
+          className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-clay-muted p-6 text-center hover:bg-paper-warm hover:border-clay transition-colors"
+        >
+          <Plus size={24} weight="regular" className="text-clay" />
+          <span className="text-sm font-medium text-ink">New post</span>
+        </Link>
+
+        {/* Posts list */}
+        {loading ? (
+          <p className="text-ink-light text-sm py-8">Loading...</p>
+        ) : posts.length === 0 ? (
+          <p className="text-ink-light text-sm py-8 text-center">
+            No posts yet. Create your first one above.
+          </p>
+        ) : (
+          posts.map((post) => (
             <Link
               key={post.id}
               href={`/admin/content/${post.id}`}
@@ -117,9 +121,9 @@ export default function ContentPage() {
                 {post.status}
               </span>
             </Link>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }
