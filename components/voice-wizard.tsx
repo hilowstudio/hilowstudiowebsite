@@ -13,6 +13,70 @@ type Step =
   | "generate"
   | "review";
 
+function QuestionBlock({
+  label,
+  guidance,
+  value,
+  onChange,
+  rows = 4,
+  optional = false,
+}: {
+  label: string;
+  guidance: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+  optional?: boolean;
+}) {
+  return (
+    <div>
+      <label className="text-xs font-medium text-ink-muted uppercase tracking-wide block mb-1">
+        {label}
+        {optional && (
+          <span className="font-normal text-ink-light ml-1">(optional)</span>
+        )}
+      </label>
+      <p className="text-xs text-ink-light mb-2">{guidance}</p>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={rows}
+        className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay resize-y"
+      />
+    </div>
+  );
+}
+
+function NavButtons({
+  back,
+  next,
+  nextLabel = "Next",
+  nextDisabled = false,
+}: {
+  back: () => void;
+  next: () => void;
+  nextLabel?: string;
+  nextDisabled?: boolean;
+}) {
+  return (
+    <div className="flex gap-3 pt-2">
+      <button
+        onClick={back}
+        className="px-4 py-2 rounded-md text-sm text-ink-muted hover:text-ink"
+      >
+        Back
+      </button>
+      <button
+        onClick={next}
+        disabled={nextDisabled}
+        className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
+      >
+        {nextLabel}
+      </button>
+    </div>
+  );
+}
+
 export function VoiceWizard({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState<Step>("intro");
 
@@ -117,70 +181,6 @@ export function VoiceWizard({ onComplete }: { onComplete: () => void }) {
 
     setSaving(false);
     onComplete();
-  }
-
-  function QuestionBlock({
-    label,
-    guidance,
-    value,
-    onChange,
-    rows = 4,
-    optional = false,
-  }: {
-    label: string;
-    guidance: string;
-    value: string;
-    onChange: (v: string) => void;
-    rows?: number;
-    optional?: boolean;
-  }) {
-    return (
-      <div>
-        <label className="text-xs font-medium text-ink-muted uppercase tracking-wide block mb-1">
-          {label}
-          {optional && (
-            <span className="font-normal text-ink-light ml-1">(optional)</span>
-          )}
-        </label>
-        <p className="text-xs text-ink-light mb-2">{guidance}</p>
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={rows}
-          className="w-full px-3 py-2 rounded-md border border-paper-muted bg-paper-warm text-ink text-sm focus:outline-none focus:ring-2 focus:ring-clay resize-y"
-        />
-      </div>
-    );
-  }
-
-  function NavButtons({
-    back,
-    next,
-    nextLabel = "Next",
-    nextDisabled = false,
-  }: {
-    back: () => void;
-    next: () => void;
-    nextLabel?: string;
-    nextDisabled?: boolean;
-  }) {
-    return (
-      <div className="flex gap-3 pt-2">
-        <button
-          onClick={back}
-          className="px-4 py-2 rounded-md text-sm text-ink-muted hover:text-ink"
-        >
-          Back
-        </button>
-        <button
-          onClick={next}
-          disabled={nextDisabled}
-          className="px-4 py-2 rounded-md bg-clay text-paper text-sm hover:bg-clay/90 transition-colors disabled:opacity-50"
-        >
-          {nextLabel}
-        </button>
-      </div>
-    );
   }
 
   // ─── Intro ──────────────────────────────────────────────
