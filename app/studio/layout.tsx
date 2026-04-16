@@ -18,7 +18,7 @@ export default async function StudioLayout({
   const authed = await isAuthenticated();
 
   if (!authed) {
-    redirect("/login");
+    redirect("/login?next=/studio");
   }
 
   const timer = await getRunningTimer();

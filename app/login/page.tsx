@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AdminLogin() {
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLogin />
+    </Suspense>
+  );
+}
+
+function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,7 +31,12 @@ export default function AdminLogin() {
       });
 
       if (res.ok) {
-        router.push("/admin");
+        const rawNext = searchParams.get("next");
+        const next =
+          rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+            ? rawNext
+            : "/admin";
+        router.push(next);
       } else {
         const data = await res.json();
         setError(data.error || "Invalid password");
