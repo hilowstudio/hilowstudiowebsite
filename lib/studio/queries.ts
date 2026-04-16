@@ -178,7 +178,7 @@ export async function getProjects(options?: {
   if (error) throw error;
 
   return (data ?? []).map((row) => {
-    const { studio_clients, ...rest } = row as Project & {
+    const { studio_clients, ...rest } = row as unknown as Project & {
       studio_clients: { name: string } | null;
     };
     return {
@@ -233,7 +233,7 @@ export async function getHomeProjects(): Promise<HomeProject[]> {
   }
 
   return projects.map((row) => {
-    const { studio_clients, ...rest } = row as Project & {
+    const { studio_clients, ...rest } = row as unknown as Project & {
       studio_clients: { name: string } | null;
     };
     const projectPhases = phasesByProject.get(rest.id) ?? [];
@@ -271,7 +271,7 @@ export async function getProjectDetail(id: string): Promise<ProjectDetail | null
   if (error) throw error;
   if (!project) return null;
 
-  const { studio_clients, ...projectRest } = project as Project & {
+  const { studio_clients, ...projectRest } = project as unknown as Project & {
     studio_clients: { name: string } | null;
   };
 
@@ -355,7 +355,7 @@ export async function getNextUpTasks(): Promise<NextUpTask[]> {
   if (error) throw error;
 
   return (data ?? []).map((row) => {
-    const { studio_projects, ...rest } = row as Task & {
+    const { studio_projects, ...rest } = row as unknown as Task & {
       studio_projects: { name: string } | null;
     };
     return {
@@ -387,7 +387,7 @@ export async function getRunningTimer(): Promise<RunningTimer | null> {
     .limit(1);
   if (error) throw error;
   if (!data || data.length === 0) return null;
-  const { studio_projects, ...rest } = data[0] as TimeEntry & {
+  const { studio_projects, ...rest } = data[0] as unknown as TimeEntry & {
     studio_projects: { name: string } | null;
   };
   return {
@@ -430,7 +430,7 @@ export async function getAllUpdates(): Promise<ClientUpdateWithProject[]> {
     .order("generated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row) => {
-    const { studio_projects, ...rest } = row as ClientUpdate & {
+    const { studio_projects, ...rest } = row as unknown as ClientUpdate & {
       studio_projects: { name: string } | null;
     };
     return {
@@ -451,7 +451,7 @@ export async function getUpdate(
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const { studio_projects, ...rest } = data as ClientUpdate & {
+  const { studio_projects, ...rest } = data as unknown as ClientUpdate & {
     studio_projects: { name: string } | null;
   };
   return {
@@ -483,7 +483,7 @@ export async function getPublicProject(
 
   if (error) throw error;
   if (!project) return null;
-  const row = project as {
+  const row = project as unknown as {
     id: string;
     name: string;
     public_status_enabled: boolean;

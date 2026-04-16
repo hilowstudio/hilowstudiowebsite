@@ -27,7 +27,7 @@ async function gatherContext(
     .maybeSingle();
 
   if (!project) return null;
-  const row = project as {
+  const row = project as unknown as {
     id: string;
     name: string;
     studio_clients: { name: string; company: string | null } | null;
