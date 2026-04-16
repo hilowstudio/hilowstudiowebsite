@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { getHomeProjects } from "@/lib/studio/queries";
+import {
+  getHomeProjects,
+  getUnprocessedInbox,
+  getNextUpTasks,
+} from "@/lib/studio/queries";
+import { TodayStrip } from "./today-strip";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +26,15 @@ function relativeTime(iso: string): string {
 }
 
 export default async function StudioHome() {
-  const projects = await getHomeProjects();
+  const [projects, inbox, nextUpTasks] = await Promise.all([
+    getHomeProjects(),
+    getUnprocessedInbox(),
+    getNextUpTasks(),
+  ]);
 
-  if (projects.length === 0) {
+  const projectOptions = projects.map((p) => ({ id: p.id, name: p.name }));
+
+  if (projects.length === 0 && inbox.length === 0 && nextUpTasks.length === 0) {
     return (
       <div className="space-y-4 py-12 text-center">
         <h1 className="font-serif text-2xl text-ink">Studio</h1>
@@ -41,50 +52,73 @@ export default async function StudioHome() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-serif text-2xl text-ink">Active projects</h1>
+    <div className="space-y-8">
+      <TodayStrip
+        inbox={inbox}
+        tasks={nextUpTasks}
+        projects={projectOptions}
+      />
 
-      <ul className="space-y-3">
-        {projects.map((project) => (
-          <li key={project.id}>
-            <Link
-              href={`/studio/projects/${project.id}`}
-              className="block rounded-md border border-paper-muted bg-paper-warm/60 p-4 hover:border-clay hover:bg-paper-warm transition-colors"
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <div className="space-y-0.5">
-                  <p className="font-serif text-base text-ink">{project.name}</p>
-                  {project.client_name && (
-                    <p className="text-xs text-ink-light">{project.client_name}</p>
-                  )}
-                </div>
-                <span className="text-xs text-ink-light whitespace-nowrap">
-                  {relativeTime(project.last_movement_at)}
-                </span>
-              </div>
+      <div className="space-y-6">
+        <div className="flex items-baseline justify-between">
+          <h1 className="font-serif text-2xl text-ink">Active projects</h1>
+          {(nextUpTasks.length === 0 && inbox.length === 0) && (
+            <span className="text-xs text-ink-light">⌘K to capture</span>
+          )}
+        </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-ink-muted uppercase tracking-wide">
-                    Phase
-                  </p>
-                  <p className="text-ink">
-                    {project.current_phase_name ?? "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-ink-muted uppercase tracking-wide">
-                    Next up
-                  </p>
-                  <p className="text-ink">
-                    {project.next_deliverable_title ?? "—"}
-                  </p>
-                </div>
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
+        {projects.length === 0 ? (
+          <p className="text-ink-light text-sm">
+            No active projects. Everything's in the inbox or on the pinned list.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {projects.map((project) => (
+              <li key={project.id}>
+                <Link
+                  href={`/studio/projects/${project.id}`}
+                  className="block rounded-md border border-paper-muted bg-paper-warm/60 p-4 hover:border-clay hover:bg-paper-warm transition-colors"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <p className="font-serif text-base text-ink">
+                        {project.name}
+                      </p>
+                      {project.client_name && (
+                        <p className="text-xs text-ink-light">
+                          {project.client_name}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-xs text-ink-light whitespace-nowrap">
+                      {relativeTime(project.last_movement_at)}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-ink-muted uppercase tracking-wide">
+                        Phase
+                      </p>
+                      <p className="text-ink">
+                        {project.current_phase_name ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-ink-muted uppercase tracking-wide">
+                        Next up
+                      </p>
+                      <p className="text-ink">
+                        {project.next_deliverable_title ?? "—"}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

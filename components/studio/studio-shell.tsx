@@ -2,14 +2,23 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { QuickCapture } from "./quick-capture";
+import { HeaderTimer, type HeaderTimerProps } from "./header-timer";
 
 const navItems = [
   { href: "/studio", label: "Home", match: "exact" as const },
   { href: "/studio/projects", label: "Projects", match: "prefix" as const },
   { href: "/studio/clients", label: "Clients", match: "prefix" as const },
+  { href: "/studio/updates", label: "Updates", match: "prefix" as const },
 ];
 
-export function StudioShell({ children }: { children: React.ReactNode }) {
+export function StudioShell({
+  children,
+  runningTimer,
+}: {
+  children: React.ReactNode;
+  runningTimer: HeaderTimerProps["timer"];
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -22,6 +31,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-paper">
       <nav className="border-b border-paper-muted">
         <div className="px-6 pt-4 pb-2 text-center relative">
+          <HeaderTimer timer={runningTimer} />
           <span className="font-serif text-lg text-ink">Studio</span>
           <button
             onClick={handleLogout}
@@ -53,6 +63,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
       <main className="p-6 max-w-3xl mx-auto">{children}</main>
+      <QuickCapture />
     </div>
   );
 }

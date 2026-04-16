@@ -7,6 +7,7 @@ import { postFirstComment } from "@/inngest/functions/post-first-comment";
 import { generateCarousel } from "@/inngest/functions/generate-carousel";
 import { generateImage } from "@/inngest/functions/generate-image";
 import { checkRepurpose } from "@/inngest/functions/check-repurpose";
+import { studioWeeklyUpdates } from "@/inngest/functions/studio-weekly-updates";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -18,5 +19,6 @@ export const { GET, POST, PUT } = serve({
     generateCarousel,
     generateImage,
     checkRepurpose,
+    studioWeeklyUpdates,
   ],
 });
