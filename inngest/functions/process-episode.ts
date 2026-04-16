@@ -33,30 +33,36 @@ export const processEpisode = inngest.createFunction(
     const youtubeId = meta.youtube_id as string | undefined;
     const existingTranscriptUrl = meta.transcript_url as string | undefined;
 
-    // Step 2: Get transcript
+    // Step 2: Get transcript (cheapest source first)
     const transcript = await step.run("get-transcript", async () => {
-      // Priority 1: Existing transcript URL from RSS
+      // Priority 1: Existing transcript URL from RSS (free, instant)
       if (existingTranscriptUrl) {
         try {
           const res = await fetch(existingTranscriptUrl);
           if (res.ok) {
             const text = await res.text();
-            return { rawTranscript: text, timestampedTranscript: text };
+            console.log("Transcript source: RSS feed (free)");
+            return { rawTranscript: text, timestampedTranscript: text, source: "rss_transcript" as const };
           }
         } catch {
           // Fall through
         }
       }
 
-      // Priority 2: YouTube captions
+      // Priority 2: YouTube captions (free, instant)
       if (youtubeId) {
         const ytResult = await fetchYouTubeTranscript(youtubeId);
-        if (ytResult) return ytResult;
+        if (ytResult) {
+          console.log("Transcript source: YouTube captions (free)");
+          return { ...ytResult, source: "youtube_captions" as const };
+        }
       }
 
-      // Priority 3: Deepgram transcription
+      // Priority 3: Deepgram transcription (paid, ~$0.0043/min)
       if (audioUrl) {
-        return await transcribeAudio(audioUrl);
+        console.log("Transcript source: Deepgram (paid)");
+        const result = await transcribeAudio(audioUrl);
+        return { ...result, source: "deepgram" as const };
       }
 
       throw new Error(
@@ -95,6 +101,7 @@ ${transcript.timestampedTranscript || transcript.rawTranscript}`,
         key_takeaways: insights.keyTakeaways,
         chapters: insights.chapters,
         entities: insights.entities,
+        transcript_source: transcript.source,
         processed: true,
       };
 
