@@ -104,25 +104,28 @@ export default async function ClientContentPage({
         {posts.length === 0 ? (
           <p className="text-sm text-ink-light">
             No posts yet. Adam's existing LinkedIn Content Manager at /admin is
-            the current composer surface; migrating it into /w in Phase B.
+            the current composer surface. Open any post to collaborate with the
+            client.
           </p>
         ) : (
           <ul className="space-y-1 text-sm">
             {posts.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-baseline justify-between py-2 border-b border-paper-muted/50 -mx-2 px-2"
-              >
-                <span className="text-ink truncate">
-                  {p.title || p.body.slice(0, 60)}
-                </span>
-                <span className="text-xs text-ink-light whitespace-nowrap">
-                  {p.published_at
-                    ? `Published ${new Date(p.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                    : p.scheduled_at
-                      ? `Scheduled ${new Date(p.scheduled_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                      : p.status}
-                </span>
+              <li key={p.id}>
+                <a
+                  href={`/w/${workspace.slug}/c/${client.slug}/content/${p.id}`}
+                  className="flex items-baseline justify-between py-2 border-b border-paper-muted/50 hover:bg-paper-warm/50 transition-colors -mx-2 px-2"
+                >
+                  <span className="text-ink truncate">
+                    {p.title || p.body.slice(0, 60)}
+                  </span>
+                  <span className="text-xs text-ink-light whitespace-nowrap">
+                    {p.published_at
+                      ? `Published ${new Date(p.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                      : p.scheduled_at
+                        ? `Scheduled ${new Date(p.scheduled_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                        : p.status}
+                  </span>
+                </a>
               </li>
             ))}
           </ul>

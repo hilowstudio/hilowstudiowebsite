@@ -79,6 +79,21 @@ export function MeetingInsights({
     router.refresh();
   }
 
+  async function promoteQuote(id: string) {
+    setError("");
+    const res = await fetch(`/api/ops/insights/${id}/promote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || "Could not promote");
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <section className="space-y-6">
       {KIND_ORDER.filter((k) => grouped.has(k)).map((kind) => (
@@ -105,6 +120,15 @@ export function MeetingInsights({
                         className="text-xs text-ink-light hover:text-moss transition-colors whitespace-nowrap"
                       >
                         {done ? "Reopen" : "Mark done"}
+                      </button>
+                    )}
+                    {kind === "quote" && (
+                      <button
+                        type="button"
+                        onClick={() => promoteQuote(insight.id)}
+                        className="text-xs text-ink-light hover:text-clay transition-colors whitespace-nowrap"
+                      >
+                        Promote to testimonial
                       </button>
                     )}
                   </div>

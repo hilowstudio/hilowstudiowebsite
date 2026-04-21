@@ -1,6 +1,6 @@
-import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
 import { getSupabase } from "@/lib/supabase";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
+import { opsCreateMessage, SONNET_MODEL } from "@/lib/ops/llm";
 
 async function fetchClientVoice(clientId: string): Promise<string | null> {
   const db = getSupabase();
@@ -76,13 +76,18 @@ export async function draftPostFromMeeting(meetingId: string): Promise<{
     .filter(Boolean)
     .join("\n\n");
 
-  const anthropic = getAnthropic();
-  const response = await anthropic.messages.create({
-    model: SONNET_MODEL,
-    max_tokens: 1200,
-    system: PERSONA_SYSTEM_PROMPT + voiceBlock,
-    messages: [{ role: "user", content: userContent }],
-  });
+  const workspaceId = meeting.ops_clients?.workspace_id;
+  if (!workspaceId) return null;
+
+  const response = await opsCreateMessage(
+    { workspaceId, clientId: meeting.client_id },
+    {
+      model: SONNET_MODEL,
+      max_tokens: 1200,
+      system: PERSONA_SYSTEM_PROMPT + voiceBlock,
+      messages: [{ role: "user", content: userContent }],
+    },
+  );
 
   const block = response.content.find((b) => b.type === "text");
   if (!block || block.type !== "text") return null;

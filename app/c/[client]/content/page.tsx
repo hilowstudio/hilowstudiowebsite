@@ -63,31 +63,34 @@ export default async function ClientPortalContent({
       ) : (
         <ul className="space-y-3">
           {posts.map((p) => (
-            <li
-              key={p.id}
-              className="rounded-md border border-paper-muted bg-paper-warm/60 p-4 space-y-2"
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-xs text-ink-light capitalize">
-                  {p.status}
-                  {p.scheduled_at &&
-                    ` · Scheduled ${new Date(p.scheduled_at).toLocaleDateString(
-                      "en-US",
-                      { month: "short", day: "numeric" },
-                    )}`}
-                  {p.published_at &&
-                    ` · Published ${new Date(p.published_at).toLocaleDateString(
-                      "en-US",
-                      { month: "short", day: "numeric" },
-                    )}`}
-                </span>
-              </div>
-              {p.title && (
-                <p className="font-serif text-base text-ink">{p.title}</p>
-              )}
-              <p className="text-sm text-ink whitespace-pre-wrap measure">
-                {p.body}
-              </p>
+            <li key={p.id}>
+              <a
+                href={`/c/${clientSlug}/content/${p.id}`}
+                className="block rounded-md border border-paper-muted bg-paper-warm/60 p-4 space-y-2 hover:border-clay transition-colors"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs text-ink-light capitalize">
+                    {p.status}
+                    {p.scheduled_at &&
+                      ` · Scheduled ${new Date(p.scheduled_at).toLocaleDateString(
+                        "en-US",
+                        { month: "short", day: "numeric" },
+                      )}`}
+                    {p.published_at &&
+                      ` · Published ${new Date(p.published_at).toLocaleDateString(
+                        "en-US",
+                        { month: "short", day: "numeric" },
+                      )}`}
+                  </span>
+                  <span className="text-xs text-clay">Open →</span>
+                </div>
+                {p.title && (
+                  <p className="font-serif text-base text-ink">{p.title}</p>
+                )}
+                <p className="text-sm text-ink whitespace-pre-wrap measure">
+                  {p.body}
+                </p>
+              </a>
             </li>
           ))}
         </ul>

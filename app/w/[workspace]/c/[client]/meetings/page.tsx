@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getClientBySlug, getWorkspaceBySlug } from "@/lib/ops/scope";
 import { SyncMeetingsButton } from "./sync-meetings-button";
+import { UploadMeetingForm } from "./upload-meeting-form";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,8 @@ export default async function MeetingsListPage({
         <h2 className="font-serif text-lg text-ink">Meetings</h2>
         <SyncMeetingsButton clientId={client.id} />
       </div>
+
+      <UploadMeetingForm clientId={client.id} />
 
       {rows.length === 0 ? (
         <p className="text-sm text-ink-light">

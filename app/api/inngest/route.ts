@@ -8,6 +8,7 @@ import { generateCarousel } from "@/inngest/functions/generate-carousel";
 import { generateImage } from "@/inngest/functions/generate-image";
 import { checkRepurpose } from "@/inngest/functions/check-repurpose";
 import { studioWeeklyUpdates } from "@/inngest/functions/studio-weekly-updates";
+import { opsFirefliesSync } from "@/inngest/functions/ops-fireflies-sync";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -20,5 +21,6 @@ export const { GET, POST, PUT } = serve({
     generateImage,
     checkRepurpose,
     studioWeeklyUpdates,
+    opsFirefliesSync,
   ],
 });

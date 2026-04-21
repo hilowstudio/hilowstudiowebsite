@@ -1,4 +1,4 @@
-import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
+import { opsCreateMessage, SONNET_MODEL } from "@/lib/ops/llm";
 
 export type ExtractedInsight =
   | { kind: "action_item"; body: string; speaker?: string; timestamp_seconds?: number; metadata?: Record<string, unknown> }
@@ -32,13 +32,14 @@ Output JSON exactly matching this schema:
 }`;
 
 export async function extractInsightsFromTranscript(params: {
+  workspaceId: string;
+  clientId: string;
   transcriptText: string;
   meetingTitle: string | null;
   clientName?: string;
 }): Promise<ExtractedInsight[]> {
-  const { transcriptText, meetingTitle, clientName } = params;
+  const { workspaceId, clientId, transcriptText, meetingTitle, clientName } = params;
 
-  const client = getAnthropic();
   const userContent = [
     meetingTitle ? `Meeting title: ${meetingTitle}` : null,
     clientName ? `Client: ${clientName}` : null,
@@ -48,12 +49,15 @@ export async function extractInsightsFromTranscript(params: {
     .filter(Boolean)
     .join("\n\n");
 
-  const response = await client.messages.create({
-    model: SONNET_MODEL,
-    max_tokens: 3000,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userContent }],
-  });
+  const response = await opsCreateMessage(
+    { workspaceId, clientId },
+    {
+      model: SONNET_MODEL,
+      max_tokens: 3000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userContent }],
+    },
+  );
 
   const block = response.content.find((b) => b.type === "text");
   if (!block || block.type !== "text") return [];

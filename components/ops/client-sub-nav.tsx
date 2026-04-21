@@ -15,6 +15,12 @@ export function ClientSubNav({
   const items = [
     { href: base, label: "Overview", match: "exact" as const },
     { href: `${base}/meetings`, label: "Meetings", match: "prefix" as const },
+    { href: `${base}/briefs`, label: "Briefs", match: "prefix" as const },
+    {
+      href: `${base}/testimonials`,
+      label: "Testimonials",
+      match: "prefix" as const,
+    },
     { href: `${base}/content`, label: "Content", match: "prefix" as const },
     {
       href: `${base}/integrations`,

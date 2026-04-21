@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUserFromRequest } from "@/lib/ops/auth";
 import { hasClientAccess } from "@/lib/ops/scope";
 import { draftPostFromMeeting } from "@/lib/ops/meetings/post-draft";
+import { QuotaExceededError } from "@/lib/ops/meters";
 
 export async function POST(
   request: NextRequest,
@@ -47,6 +48,16 @@ export async function POST(
     }
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
+    if (err instanceof QuotaExceededError) {
+      return NextResponse.json(
+        {
+          error: err.message,
+          code: err.code,
+          meter: err.meter,
+        },
+        { status: 402 },
+      );
+    }
     const message = err instanceof Error ? err.message : "Draft failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

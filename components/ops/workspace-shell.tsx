@@ -37,6 +37,11 @@ export function WorkspaceShell({
       label: "Clients",
       match: "prefix" as const,
     },
+    {
+      href: `/w/${workspace.slug}/usage`,
+      label: "Usage",
+      match: "prefix" as const,
+    },
     ...(canManage
       ? [
           {

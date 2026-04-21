@@ -7,7 +7,7 @@ import {
   fetchTranscriptDetail,
   listRecentTranscripts,
 } from "@/lib/ops/meetings/fireflies";
-import { extractInsightsFromTranscript } from "@/lib/ops/meetings/insights";
+import { ingestMeeting } from "@/lib/ops/meetings/ingest";
 
 export async function POST(
   request: NextRequest,
@@ -53,31 +53,6 @@ export async function POST(
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
-  let sourceId: string | null = null;
-  const { data: existingSource } = await supabase
-    .from("ops_meeting_sources")
-    .select("id")
-    .eq("client_id", client.id)
-    .eq("type", "fireflies")
-    .maybeSingle();
-  if (existingSource) {
-    sourceId = (existingSource as { id: string }).id;
-  } else {
-    const { data: created } = await supabase
-      .from("ops_meeting_sources")
-      .insert({ client_id: client.id, type: "fireflies", enabled: true })
-      .select("id")
-      .single();
-    sourceId = (created as { id: string } | null)?.id ?? null;
-  }
-
-  if (sourceId) {
-    await supabase
-      .from("ops_meeting_sources")
-      .update({ last_synced_at: new Date().toISOString() })
-      .eq("id", sourceId);
-  }
-
   let ingested = 0;
   let skipped = 0;
   const failures: { external_id: string; error: string }[] = [];
@@ -103,80 +78,28 @@ export async function POST(
       const transcriptText = concatenateSentences(detail.sentences ?? []);
       const participants = detail.speakers?.map((s) => s.name) ?? [];
 
-      const { data: upserted, error: upsertError } = await supabase
-        .from("ops_meetings")
-        .upsert(
-          {
-            client_id: client.id,
-            source_id: sourceId,
-            external_id: t.id,
-            title: detail.title,
-            started_at: detail.date
-              ? new Date(detail.date).toISOString()
-              : null,
-            duration_minutes: detail.duration
-              ? Math.round(detail.duration / 60)
-              : null,
-            participants,
-            transcript_url: detail.transcript_url,
-            transcript_text: transcriptText,
-            audio_url: detail.audio_url,
-            status: "ready",
-          },
-          { onConflict: "client_id,external_id" },
-        )
-        .select("id")
-        .single();
+      const result = await ingestMeeting(
+        {
+          clientId: client.id,
+          sourceType: "fireflies",
+          externalId: t.id,
+          title: detail.title,
+          startedAt: detail.date ? new Date(detail.date).toISOString() : null,
+          durationMinutes: detail.duration
+            ? Math.round(detail.duration / 60)
+            : null,
+          participants,
+          transcriptUrl: detail.transcript_url,
+          transcriptText,
+          audioUrl: detail.audio_url,
+        },
+        { clientName: client.name },
+      );
 
-      if (upsertError || !upserted) {
-        failures.push({
-          external_id: t.id,
-          error: upsertError?.message || "upsert failed",
-        });
+      if (result.error) {
+        failures.push({ external_id: t.id, error: result.error });
         continue;
       }
-
-      const meetingId = (upserted as { id: string }).id;
-
-      const { data: existingInsights } = await supabase
-        .from("ops_meeting_insights")
-        .select("id")
-        .eq("meeting_id", meetingId)
-        .limit(1);
-      const alreadyExtracted = (existingInsights ?? []).length > 0;
-
-      if (!alreadyExtracted && transcriptText.length > 0) {
-        try {
-          const insights = await extractInsightsFromTranscript({
-            transcriptText,
-            meetingTitle: detail.title,
-            clientName: client.name,
-          });
-          if (insights.length > 0) {
-            await supabase.from("ops_meeting_insights").insert(
-              insights.map((i) => ({
-                meeting_id: meetingId,
-                kind: i.kind,
-                body: i.body,
-                speaker: "speaker" in i ? i.speaker ?? null : null,
-                timestamp_seconds:
-                  "timestamp_seconds" in i ? i.timestamp_seconds ?? null : null,
-                metadata: i.metadata ?? {},
-                status: i.kind === "action_item" ? "open" : "open",
-              })),
-            );
-          }
-        } catch (err) {
-          failures.push({
-            external_id: t.id,
-            error:
-              err instanceof Error
-                ? `insight extraction: ${err.message}`
-                : "insight extraction failed",
-          });
-        }
-      }
-
       ingested += 1;
     } catch (err) {
       failures.push({
