@@ -4,6 +4,7 @@ import { getSupabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/ops/auth";
 import { hasClientAccess } from "@/lib/ops/scope";
 import { PostCollaboration } from "@/components/ops/post-collaboration";
+import { PostBodyEditor } from "@/components/ops/post-body-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -81,11 +82,12 @@ export default async function ClientPortalPostDetail({
         )}
       </header>
 
-      <section className="rounded-md border border-paper-muted bg-paper-warm/60 p-4">
-        <p className="text-sm text-ink whitespace-pre-wrap measure">
-          {post.body}
-        </p>
-      </section>
+      <PostBodyEditor
+        postId={post.id}
+        initialTitle={post.title}
+        initialBody={post.body}
+        canEdit={canApprove}
+      />
 
       <PostCollaboration postId={post.id} canApprove={canApprove} />
     </div>

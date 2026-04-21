@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getClientBySlug, getWorkspaceBySlug } from "@/lib/ops/scope";
 import { PostCollaboration } from "@/components/ops/post-collaboration";
+import { PostBodyEditor } from "@/components/ops/post-body-editor";
+import { PublishPostButton } from "@/components/ops/publish-post-button";
+import { SyncEngagementButton } from "@/components/ops/sync-engagement-button";
 
 export const dynamic = "force-dynamic";
 
@@ -62,11 +65,19 @@ export default async function AgencyPostDetail({
         )}
       </header>
 
-      <section className="rounded-md border border-paper-muted bg-paper-warm/60 p-4">
-        <p className="text-sm text-ink whitespace-pre-wrap measure">
-          {post.body}
-        </p>
-      </section>
+      <PostBodyEditor
+        postId={post.id}
+        initialTitle={post.title}
+        initialBody={post.body}
+        canEdit={true}
+      />
+
+      <PublishPostButton postId={post.id} status={post.status} />
+
+      <SyncEngagementButton
+        postId={post.id}
+        disabled={post.status !== "published"}
+      />
 
       <PostCollaboration postId={post.id} canApprove={false} />
     </div>

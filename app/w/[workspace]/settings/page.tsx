@@ -3,6 +3,8 @@ import { getSupabase } from "@/lib/supabase";
 import { getWorkspaceBySlug } from "@/lib/ops/scope";
 import { SettingsForm } from "./settings-form";
 import { InvitesPanel } from "./invites-panel";
+import { DomainPanel } from "./domain-panel";
+import { BillingPanel } from "./billing-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +92,16 @@ export default async function WorkspaceSettingsPage({
       <section className="space-y-3">
         <h2 className="font-serif text-lg text-ink">Invites</h2>
         <InvitesPanel workspaceId={workspace.id} initialInvites={invites} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-serif text-lg text-ink">Custom domain</h2>
+        <DomainPanel workspaceId={workspace.id} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-serif text-lg text-ink">Billing</h2>
+        <BillingPanel workspaceId={workspace.id} currentPlan={workspace.plan} />
       </section>
     </div>
   );

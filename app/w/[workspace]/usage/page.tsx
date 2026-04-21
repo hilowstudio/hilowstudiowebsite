@@ -69,15 +69,39 @@ export default async function UsagePage({
   const plan = planRes.data as PlanRow | null;
 
   const period = currentPeriod();
-  const { data: usageData } = await db
-    .from("ops_usage_meters")
-    .select("client_id, meter, count, cap, byok_override, period")
-    .eq("period", period)
-    .in(
-      "client_id",
-      clients.map((c) => c.id),
+  const periodsToShow: string[] = [];
+  {
+    const d = new Date();
+    for (let i = 0; i < 6; i++) {
+      periodsToShow.push(
+        `${d.getUTCFullYear()}-${(d.getUTCMonth() + 1).toString().padStart(2, "0")}`,
+      );
+      d.setUTCMonth(d.getUTCMonth() - 1);
+    }
+  }
+
+  const { data: usageData } = clients.length
+    ? await db
+        .from("ops_usage_meters")
+        .select("client_id, meter, count, cap, byok_override, period")
+        .in("period", periodsToShow)
+        .in(
+          "client_id",
+          clients.map((c) => c.id),
+        )
+    : { data: [] };
+  const allUsage = (usageData as UsageRow[]) ?? [];
+  const usage = allUsage.filter((u) => u.period === period);
+
+  type HistoryKey = string; // `${meter}:${period}`
+  const totalsByMeterPeriod = new Map<HistoryKey, number>();
+  for (const row of allUsage) {
+    const key: HistoryKey = `${row.meter}:${row.period}`;
+    totalsByMeterPeriod.set(
+      key,
+      (totalsByMeterPeriod.get(key) ?? 0) + row.count,
     );
-  const usage = (usageData as UsageRow[]) ?? [];
+  }
 
   const meters = ["llm_tokens", "transcription_minutes", "posts_published"];
 
@@ -90,9 +114,10 @@ export default async function UsagePage({
         <h1 className="font-serif text-2xl text-ink">Usage</h1>
         {plan && (
           <p className="text-sm text-ink-light">
-            Plan: {plan.name} \u00b7 LLM tokens cap {plan.llm_tokens_cap.toLocaleString()},
-            transcription minutes cap {plan.transcription_minutes_cap}, posts
-            cap {plan.posts_published_cap} (per client, per month)
+            Plan: {plan.name} &middot; LLM tokens cap{" "}
+            {plan.llm_tokens_cap.toLocaleString()}, transcription minutes cap{" "}
+            {plan.transcription_minutes_cap}, posts cap{" "}
+            {plan.posts_published_cap} (per client, per month)
           </p>
         )}
       </header>
@@ -152,6 +177,63 @@ export default async function UsagePage({
             </tbody>
           </table>
         </div>
+      )}
+
+      {clients.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="font-serif text-lg text-ink">Last 6 months</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {meters.map((meter) => {
+              const bars = periodsToShow
+                .slice()
+                .reverse()
+                .map((p) => ({
+                  period: p,
+                  count: totalsByMeterPeriod.get(`${meter}:${p}`) ?? 0,
+                }));
+              const max = Math.max(1, ...bars.map((b) => b.count));
+              return (
+                <div
+                  key={meter}
+                  className="rounded-md border border-paper-muted bg-paper-warm/60 p-4 space-y-3"
+                >
+                  <p className="text-xs text-ink-muted uppercase tracking-wide capitalize">
+                    {meter.replace("_", " ")}
+                  </p>
+                  <div className="flex items-end gap-2 h-24">
+                    {bars.map((b) => (
+                      <div
+                        key={b.period}
+                        className="flex-1 flex flex-col items-center gap-1"
+                        title={`${b.period}: ${b.count}`}
+                      >
+                        <div className="flex-1 w-full flex items-end">
+                          <div
+                            className="w-full bg-clay/60 rounded-sm"
+                            style={{
+                              height: `${(b.count / max) * 100}%`,
+                              minHeight: b.count > 0 ? "2px" : "0",
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-ink-light">
+                          {b.period.slice(5)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-ink">
+                    {formatCount(
+                      meter,
+                      bars[bars.length - 1]?.count ?? 0,
+                    )}{" "}
+                    this month
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
     </div>
   );

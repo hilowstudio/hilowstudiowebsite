@@ -10,7 +10,11 @@ type Workspace = {
   brand_name: string | null;
   logo_url: string | null;
   primary_color: string | null;
+  accent_color: string | null;
+  tagline: string | null;
   billing_email: string | null;
+  email_from_name: string | null;
+  email_from_address: string | null;
   plan: string;
 };
 
@@ -21,7 +25,11 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
     brand_name: workspace.brand_name ?? "",
     logo_url: workspace.logo_url ?? "",
     primary_color: workspace.primary_color ?? "",
+    accent_color: workspace.accent_color ?? "",
+    tagline: workspace.tagline ?? "",
     billing_email: workspace.billing_email ?? "",
+    email_from_name: workspace.email_from_name ?? "",
+    email_from_address: workspace.email_from_address ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -40,7 +48,11 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
         brand_name: form.brand_name || null,
         logo_url: form.logo_url || null,
         primary_color: form.primary_color || null,
+        accent_color: form.accent_color || null,
+        tagline: form.tagline || null,
         billing_email: form.billing_email || null,
+        email_from_name: form.email_from_name || null,
+        email_from_address: form.email_from_address || null,
       }),
     });
     if (res.ok) {
@@ -74,7 +86,18 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
         <input
           type="text"
           value={form.brand_name}
-          onChange={(e) => setForm((p) => ({ ...p, brand_name: e.target.value }))}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, brand_name: e.target.value }))
+          }
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <label className={labelClass}>Tagline (shown under brand name on the client portal)</label>
+        <input
+          type="text"
+          value={form.tagline}
+          onChange={(e) => setForm((p) => ({ ...p, tagline: e.target.value }))}
           className={inputClass}
         />
       </div>
@@ -87,18 +110,63 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
           className={inputClass}
         />
       </div>
-      <div>
-        <label className={labelClass}>Primary color</label>
-        <input
-          type="text"
-          value={form.primary_color}
-          onChange={(e) =>
-            setForm((p) => ({ ...p, primary_color: e.target.value }))
-          }
-          placeholder="#a07a55"
-          className={inputClass}
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Primary color</label>
+          <input
+            type="text"
+            value={form.primary_color}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, primary_color: e.target.value }))
+            }
+            placeholder="#a07a55"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Accent color</label>
+          <input
+            type="text"
+            value={form.accent_color}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, accent_color: e.target.value }))
+            }
+            placeholder="#5f7a55"
+            className={inputClass}
+          />
+        </div>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Email sender name</label>
+          <input
+            type="text"
+            value={form.email_from_name}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, email_from_name: e.target.value }))
+            }
+            placeholder="Magical Teams Ops"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Email sender address</label>
+          <input
+            type="email"
+            value={form.email_from_address}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, email_from_address: e.target.value }))
+            }
+            placeholder="hello@magicalteams.com"
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <p className="text-xs text-ink-light">
+        For sender address to actually deliver, the domain must be verified in
+        your Resend dashboard (DKIM + SPF). Until then emails fall back to the
+        platform sender.
+      </p>
       <div>
         <label className={labelClass}>Billing email</label>
         <input

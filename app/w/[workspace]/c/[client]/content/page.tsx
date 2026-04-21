@@ -64,8 +64,18 @@ export default async function ClientContentPage({
 
   return (
     <div className="space-y-8">
+      <div className="flex items-baseline justify-between">
+        <h2 className="font-serif text-lg text-ink">Content</h2>
+        <a
+          href={`/w/${workspace.slug}/c/${client.slug}/content/new`}
+          className="px-3 py-1.5 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors"
+        >
+          New post
+        </a>
+      </div>
+
       <section className="space-y-3">
-        <h2 className="font-serif text-lg text-ink">Meeting-generated drafts</h2>
+        <h3 className="font-serif text-base text-ink">Meeting-generated drafts</h3>
         {drafts.length === 0 ? (
           <p className="text-sm text-ink-light">
             No drafts yet. Open a meeting and click "Draft LinkedIn post".
@@ -100,7 +110,7 @@ export default async function ClientContentPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-lg text-ink">Scheduled posts</h2>
+        <h3 className="font-serif text-base text-ink">Scheduled + published</h3>
         {posts.length === 0 ? (
           <p className="text-sm text-ink-light">
             No posts yet. Adam's existing LinkedIn Content Manager at /admin is

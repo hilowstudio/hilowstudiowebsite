@@ -125,8 +125,13 @@ export async function getWorkspaceBySlug(slug: string) {
     brand_name: string | null;
     logo_url: string | null;
     primary_color: string | null;
+    accent_color: string | null;
+    tagline: string | null;
     custom_domain: string | null;
+    domain_verified_at: string | null;
     billing_email: string | null;
+    email_from_name: string | null;
+    email_from_address: string | null;
     plan: string;
   } | null;
 }

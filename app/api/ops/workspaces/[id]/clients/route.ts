@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUserFromRequest } from "@/lib/ops/auth";
 import { hasWorkspaceAccess } from "@/lib/ops/scope";
+import { seedClientDefaults } from "@/lib/ops/onboarding";
 
 function slugify(input: string): string {
   return input
@@ -68,6 +69,13 @@ export async function POST(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const client = data as { id: string; workspace_id: string };
+  try {
+    await seedClientDefaults(client.id, client.workspace_id);
+  } catch {
+    // Non-fatal; the client exists. Defaults can be added later.
   }
 
   return NextResponse.json(data, { status: 201 });

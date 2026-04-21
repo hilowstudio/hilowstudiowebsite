@@ -8,7 +8,11 @@ const ALLOWED_FIELDS = [
   "brand_name",
   "billing_email",
   "primary_color",
+  "accent_color",
   "logo_url",
+  "tagline",
+  "email_from_name",
+  "email_from_address",
   "plan",
 ];
 

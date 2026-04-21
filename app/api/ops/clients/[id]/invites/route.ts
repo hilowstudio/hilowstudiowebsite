@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUserFromRequest, generateInviteToken } from "@/lib/ops/auth";
 import { hasClientAccess } from "@/lib/ops/scope";
+import { sendInviteEmail } from "@/lib/ops/invite-email";
 
 const EXPIRY_DAYS = 14;
 
@@ -65,7 +66,24 @@ export async function POST(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data, { status: 201 });
+
+  const emailResult = await sendInviteEmail({
+    email: (data as { email: string }).email,
+    token: (data as { token: string }).token,
+    scope: "client",
+    scopeId: client.id,
+    role: (data as { role: string }).role,
+    inviterEmail: user.email,
+  });
+
+  return NextResponse.json(
+    {
+      ...(data as object),
+      email_sent: emailResult.ok,
+      email_error: emailResult.ok ? null : emailResult.reason,
+    },
+    { status: 201 },
+  );
 }
 
 export async function GET(
