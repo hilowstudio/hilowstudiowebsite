@@ -11,15 +11,19 @@ export const ingestArticle = inngest.createFunction(
     triggers: [{ event: "source/article.ingest" }],
   },
   async ({ event, step }) => {
-    const { url } = event.data as { url: string };
+    const { url, workspaceId } = event.data as {
+      url: string;
+      workspaceId?: string | null;
+    };
 
     // Step 1: Check for duplicate
     const existing = await step.run("check-duplicate", async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("content_ideas")
         .select("id")
-        .eq("source_metadata->>external_id", `article:${url}`)
-        .maybeSingle();
+        .eq("source_metadata->>external_id", `article:${url}`);
+      if (workspaceId) query = query.eq("workspace_id", workspaceId);
+      const { data } = await query.maybeSingle();
       return data;
     });
 
@@ -47,6 +51,8 @@ export const ingestArticle = inngest.createFunction(
       const { data, error } = await supabase
         .from("content_ideas")
         .insert({
+          workspace_id: workspaceId ?? null,
+          client_id: null,
           raw_insight: analysis.summary,
           source: "article",
           source_url: url,

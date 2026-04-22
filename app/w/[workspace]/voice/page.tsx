@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getWorkspaceBySlug } from "@/lib/ops/scope";
 import { VoiceEditor } from "@/components/ops/voice-editor";
+import { HookPreferences } from "@/components/ops/hook-preferences";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,11 @@ export default async function WorkspaceVoicePage({
         addUrl={`/api/ops/workspaces/${workspace.id}/voice`}
         initial={rows}
       />
+
+      <section className="space-y-3 pt-6 border-t border-paper-muted">
+        <h2 className="font-serif text-lg text-ink">Hook preferences</h2>
+        <HookPreferences workspaceId={workspace.id} />
+      </section>
     </div>
   );
 }

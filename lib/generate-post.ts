@@ -12,12 +12,18 @@ import type {
   FunnelStage,
 } from "@/lib/types/database";
 
+export type GenerateScope = {
+  workspaceId?: string | null;
+  clientId?: string | null;
+};
+
 export interface GenerateInput {
   pillar: ContentPillar;
   hookType: HookType;
   funnelStage: FunnelStage;
   sourceMaterial?: string;
   sourceUrl?: string;
+  scope?: GenerateScope;
 }
 
 export class VoiceGuideMissingError extends Error {
@@ -29,12 +35,22 @@ export class VoiceGuideMissingError extends Error {
   }
 }
 
-async function fetchVoicePrinciple(): Promise<string> {
-  const { data, error } = await supabase
+async function fetchVoicePrinciple(scope?: GenerateScope): Promise<string> {
+  let query = supabase
     .from("voice_guide")
     .select("content")
     .eq("category", "principle")
     .order("sort_order", { ascending: true });
+
+  if (scope?.workspaceId) query = query.eq("workspace_id", scope.workspaceId);
+  if (scope && "clientId" in scope) {
+    query =
+      scope.clientId === null || scope.clientId === undefined
+        ? query.is("client_id", null)
+        : query.eq("client_id", scope.clientId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   if (!data || data.length === 0) throw new VoiceGuideMissingError();
@@ -146,8 +162,8 @@ export function assembleSourceContext(idea: {
 export async function generatePostDraft(
   input: GenerateInput
 ): Promise<string> {
-  const voice = await fetchVoicePrinciple();
-  const pillars = await getContentPillars();
+  const voice = await fetchVoicePrinciple(input.scope);
+  const pillars = await getContentPillars(input.scope);
   const pillar = pillars.find((p) => p.slug === input.pillar);
   const systemPrompt = buildSystemPrompt(
     voice,

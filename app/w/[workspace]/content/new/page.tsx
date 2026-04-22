@@ -43,21 +43,11 @@ export default async function NewWorkspacePostPage({
   ];
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <a
-        href={`/w/${workspace.slug}/content`}
-        className="text-sm text-ink-light hover:text-ink transition-colors inline-block"
-      >
-        &larr; Content
-      </a>
-      <h2 className="font-serif text-2xl text-ink">
-        New post for {workspace.brand_name || workspace.name}
-      </h2>
-      <NewWorkspacePostForm
-        workspaceId={workspace.id}
-        workspaceSlug={workspace.slug}
-        templates={templates}
-      />
-    </div>
+    <NewWorkspacePostForm
+      workspaceId={workspace.id}
+      workspaceSlug={workspace.slug}
+      brandName={workspace.brand_name || workspace.name}
+      templates={templates}
+    />
   );
 }

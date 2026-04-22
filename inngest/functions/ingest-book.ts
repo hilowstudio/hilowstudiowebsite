@@ -21,16 +21,19 @@ export const ingestBook = inngest.createFunction(
       coverUrl?: string;
       isbn?: string;
       categories?: string[];
+      workspaceId?: string | null;
     };
+    const workspaceId = book.workspaceId ?? null;
     const externalId = `book:${book.isbn || book.title}`;
 
     // Step 1: Check for duplicate
     const existing = await step.run("check-duplicate", async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("content_ideas")
         .select("id")
-        .eq("source_metadata->>external_id", externalId)
-        .maybeSingle();
+        .eq("source_metadata->>external_id", externalId);
+      if (workspaceId) query = query.eq("workspace_id", workspaceId);
+      const { data } = await query.maybeSingle();
       return data;
     });
 
@@ -79,6 +82,8 @@ Provide:
       const { data, error } = await supabase
         .from("content_ideas")
         .insert({
+          workspace_id: workspaceId,
+          client_id: null,
           raw_insight: `Book: "${book.title}"${book.authors.length ? ` by ${book.authors.join(", ")}` : ""}. ${analysis.summary.slice(0, 500)}`,
           source: "book",
           source_metadata: {

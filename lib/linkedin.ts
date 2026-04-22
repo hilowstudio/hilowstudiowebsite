@@ -26,6 +26,7 @@ interface LinkedInConnection {
 
 async function getActiveConnection(
   clientId?: string | null,
+  workspaceId?: string | null,
 ): Promise<LinkedInConnection> {
   let query = supabase
     .from("linkedin_connections")
@@ -35,6 +36,8 @@ async function getActiveConnection(
 
   if (clientId) {
     query = query.eq("client_id", clientId);
+  } else if (workspaceId) {
+    query = query.eq("workspace_id", workspaceId).is("client_id", null);
   }
 
   const { data, error } = await query.maybeSingle();
@@ -78,8 +81,9 @@ export interface LinkedInPostResult {
 export async function publishTextPost(
   text: string,
   clientId?: string | null,
+  workspaceId?: string | null,
 ): Promise<LinkedInPostResult> {
-  const connection = await getActiveConnection(clientId);
+  const connection = await getActiveConnection(clientId, workspaceId);
 
   const res = await fetch(`${LINKEDIN_API}/posts`, {
     method: "POST",
@@ -112,8 +116,9 @@ export async function publishDocumentPost(
   documentUrn: string,
   title: string,
   clientId?: string | null,
+  workspaceId?: string | null,
 ): Promise<LinkedInPostResult> {
-  const connection = await getActiveConnection(clientId);
+  const connection = await getActiveConnection(clientId, workspaceId);
 
   const res = await fetch(`${LINKEDIN_API}/posts`, {
     method: "POST",
@@ -151,8 +156,9 @@ export async function publishImagePost(
   text: string,
   imageUrn: string,
   clientId?: string | null,
+  workspaceId?: string | null,
 ): Promise<LinkedInPostResult> {
-  const connection = await getActiveConnection(clientId);
+  const connection = await getActiveConnection(clientId, workspaceId);
 
   const res = await fetch(`${LINKEDIN_API}/posts`, {
     method: "POST",
@@ -191,8 +197,9 @@ export async function uploadImage(
   imageBuffer: Buffer,
   contentType: string = "image/png",
   clientId?: string | null,
+  workspaceId?: string | null,
 ): Promise<string> {
-  const connection = await getActiveConnection(clientId);
+  const connection = await getActiveConnection(clientId, workspaceId);
 
   // Register upload via v2 assets API (works with w_member_social)
   const initRes = await fetch(
@@ -268,8 +275,9 @@ export async function uploadDocument(
   pdfBuffer: Buffer,
   _title: string,
   clientId?: string | null,
+  workspaceId?: string | null,
 ): Promise<string> {
-  const connection = await getActiveConnection(clientId);
+  const connection = await getActiveConnection(clientId, workspaceId);
 
   // Step 1: Initialize upload
   const initRes = await fetch(
@@ -324,8 +332,9 @@ export async function postComment(
   postUrn: string,
   commentText: string,
   clientId?: string | null,
+  workspaceId?: string | null,
 ): Promise<string> {
-  const connection = await getActiveConnection(clientId);
+  const connection = await getActiveConnection(clientId, workspaceId);
 
   const res = await fetch(
     `${LINKEDIN_API}/socialActions/${encodeURIComponent(postUrn)}/comments`,

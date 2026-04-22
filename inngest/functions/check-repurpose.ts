@@ -18,7 +18,7 @@ export const checkRepurpose = inngest.createFunction(
       // Get published posts older than threshold
       const { data: posts } = await supabase
         .from("content_posts")
-        .select("id, body, title, hook_type, funnel_stage, content_pillar, published_at")
+        .select("id, body, title, hook_type, funnel_stage, content_pillar, published_at, workspace_id, client_id")
         .eq("status", "published")
         .lte("published_at", cutoff.toISOString());
 
@@ -59,6 +59,8 @@ export const checkRepurpose = inngest.createFunction(
         const { data: idea, error } = await supabase
           .from("content_ideas")
           .insert({
+            workspace_id: post.workspace_id ?? null,
+            client_id: post.client_id ?? null,
             raw_insight: `High-performing post (${impressions.toLocaleString()} impressions, ${(engagementRate * 100).toFixed(1)}% engagement): ${post.body.slice(0, 300)}`,
             source: "repurpose",
             source_metadata: {

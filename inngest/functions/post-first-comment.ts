@@ -9,19 +9,22 @@ export const postFirstComment = inngest.createFunction(
     triggers: [{ event: "linkedin/first-comment.schedule" }],
   },
   async ({ event, step }) => {
-    const { postId, postUrn, comment, delayMinutes } = event.data as {
-      postId: string;
-      postUrn: string;
-      comment: string;
-      delayMinutes: number;
-    };
+    const { postId, postUrn, comment, delayMinutes, workspaceId, clientId } =
+      event.data as {
+        postId: string;
+        postUrn: string;
+        comment: string;
+        delayMinutes: number;
+        workspaceId?: string | null;
+        clientId?: string | null;
+      };
 
     // Wait the configured delay
     await step.sleep("wait-before-comment", `${delayMinutes}m`);
 
     // Post the comment
     const commentId = await step.run("post-comment", async () => {
-      return await postComment(postUrn, comment);
+      return await postComment(postUrn, comment, clientId ?? null, workspaceId ?? null);
     });
 
     // Mark as posted in the database
