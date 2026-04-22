@@ -48,6 +48,7 @@ export async function ingestMeeting(
     clientName?: string;
     skipInsights?: boolean;
     workspaceId?: string;
+    matchReason?: string | null;
   },
 ): Promise<IngestResult> {
   const db = getSupabase();
@@ -86,6 +87,7 @@ export async function ingestMeeting(
         transcript_text: payload.transcriptText,
         audio_url: payload.audioUrl,
         status: "ready",
+        match_reason: options?.matchReason ?? null,
       },
       { onConflict: "client_id,external_id" },
     )

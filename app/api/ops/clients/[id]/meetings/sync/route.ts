@@ -8,6 +8,16 @@ import {
   listRecentTranscripts,
 } from "@/lib/ops/meetings/fireflies";
 import { ingestMeeting } from "@/lib/ops/meetings/ingest";
+import { hasAnyRules, matchesClient } from "@/lib/ops/meetings/match";
+
+type MatchableClient = {
+  id: string;
+  workspace_id: string;
+  name: string;
+  title_keywords: string[];
+  participant_emails: string[];
+  participant_domains: string[];
+};
 
 export async function POST(
   request: NextRequest,
@@ -21,11 +31,13 @@ export async function POST(
 
   const { data: clientRow } = await supabase
     .from("ops_clients")
-    .select("id, workspace_id, name")
+    .select(
+      "id, workspace_id, name, title_keywords, participant_emails, participant_domains",
+    )
     .eq("id", clientId)
     .maybeSingle();
 
-  const client = clientRow as { id: string; workspace_id: string; name: string } | null;
+  const client = clientRow as MatchableClient | null;
   if (!client) {
     return NextResponse.json({ error: "Client not found" }, { status: 404 });
   }
@@ -41,12 +53,33 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const rules = {
+    title_keywords: client.title_keywords ?? [],
+    participant_emails: client.participant_emails ?? [],
+    participant_domains: client.participant_domains ?? [],
+  };
+
+  if (!hasAnyRules(rules)) {
+    return NextResponse.json(
+      {
+        ingested: 0,
+        skipped: 0,
+        filtered: 0,
+        failures: [],
+        no_rules: true,
+        error:
+          "This client has no meeting match rules yet. Add a title keyword, participant email, or participant domain on Integrations before syncing.",
+      },
+      { status: 409 },
+    );
+  }
+
   let transcripts;
   try {
     transcripts = await listRecentTranscripts({
       workspaceId: client.workspace_id,
       clientId: client.id,
-      limit: 10,
+      limit: 50,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Fireflies sync failed";
@@ -55,9 +88,19 @@ export async function POST(
 
   let ingested = 0;
   let skipped = 0;
+  let filtered = 0;
   const failures: { external_id: string; error: string }[] = [];
 
   for (const t of transcripts) {
+    const match = matchesClient(
+      { title: t.title ?? null, participant_emails: t.participants ?? [] },
+      rules,
+    );
+    if (!match.matched) {
+      filtered += 1;
+      continue;
+    }
+
     const { data: existing } = await supabase
       .from("ops_meetings")
       .select("id, status")
@@ -93,7 +136,7 @@ export async function POST(
           transcriptText,
           audioUrl: detail.audio_url,
         },
-        { clientName: client.name },
+        { clientName: client.name, matchReason: match.reason },
       );
 
       if (result.error) {
@@ -109,5 +152,5 @@ export async function POST(
     }
   }
 
-  return NextResponse.json({ ingested, skipped, failures });
+  return NextResponse.json({ ingested, skipped, filtered, failures });
 }

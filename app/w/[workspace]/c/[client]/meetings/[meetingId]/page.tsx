@@ -4,6 +4,7 @@ import { getSupabase } from "@/lib/supabase";
 import { getClientBySlug, getWorkspaceBySlug } from "@/lib/ops/scope";
 import { MeetingInsights } from "./meeting-insights";
 import { DraftFromMeetingButton } from "./draft-from-meeting-button";
+import { DeleteMeetingButton } from "./delete-meeting-button";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ type MeetingRow = {
   participants: string[];
   transcript_text: string | null;
   status: string;
+  match_reason: string | null;
 };
 
 type InsightRow = {
@@ -44,7 +46,7 @@ export default async function MeetingDetailPage({
   const { data: meetingData } = await db
     .from("ops_meetings")
     .select(
-      "id, client_id, external_id, title, started_at, duration_minutes, participants, transcript_text, status",
+      "id, client_id, external_id, title, started_at, duration_minutes, participants, transcript_text, status, match_reason",
     )
     .eq("id", meetingId)
     .eq("client_id", client.id)
@@ -75,12 +77,18 @@ export default async function MeetingDetailPage({
 
   return (
     <div className="space-y-8">
-      <Link
-        href={`/w/${workspace.slug}/c/${client.slug}/meetings`}
-        className="text-sm text-ink-light hover:text-ink transition-colors inline-block"
-      >
-        &larr; Meetings
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          href={`/w/${workspace.slug}/c/${client.slug}/meetings`}
+          className="text-sm text-ink-light hover:text-ink transition-colors inline-block"
+        >
+          &larr; Meetings
+        </Link>
+        <DeleteMeetingButton
+          meetingId={meeting.id}
+          redirectTo={`/w/${workspace.slug}/c/${client.slug}/meetings`}
+        />
+      </div>
 
       <header className="space-y-1">
         <h2 className="font-serif text-2xl text-ink">
@@ -101,6 +109,11 @@ export default async function MeetingDetailPage({
         {Array.isArray(meeting.participants) && meeting.participants.length > 0 && (
           <p className="text-xs text-ink-light">
             {meeting.participants.join(", ")}
+          </p>
+        )}
+        {meeting.match_reason && (
+          <p className="text-xs text-moss">
+            Matched by {meeting.match_reason}
           </p>
         )}
       </header>
