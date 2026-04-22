@@ -14,9 +14,9 @@ export default async function WorkspaceContentLayout({
   if (!workspace) notFound();
 
   return (
-    <div className="space-y-6">
+    <div>
       <ContentSubNav workspaceSlug={workspace.slug} />
-      <div className="max-w-3xl mx-auto">{children}</div>
+      <div className="max-w-3xl mx-auto pt-10">{children}</div>
     </div>
   );
 }
