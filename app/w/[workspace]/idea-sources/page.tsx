@@ -1,17 +1,10 @@
-import { notFound } from "next/navigation";
-import { getWorkspaceBySlug } from "@/lib/ops/scope";
-import { WorkspaceSourceMaterial } from "./source-material";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function WorkspaceIdeaSourcesPage({
+export default async function RedirectIdeaSources({
   params,
 }: {
   params: Promise<{ workspace: string }>;
 }) {
-  const { workspace: workspaceSlug } = await params;
-  const workspace = await getWorkspaceBySlug(workspaceSlug);
-  if (!workspace) notFound();
-
-  return <WorkspaceSourceMaterial workspaceId={workspace.id} />;
+  const { workspace } = await params;
+  redirect(`/w/${workspace}/content/sources`);
 }

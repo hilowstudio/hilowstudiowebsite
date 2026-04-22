@@ -50,60 +50,13 @@ export function WorkspaceContentList({
 
   return (
     <div className="space-y-6">
-      <header className="flex items-baseline justify-between">
-        <div>
-          <h1 className="font-serif text-2xl text-ink">{brandName} content</h1>
-          <p className="text-sm text-ink-light mt-1 measure">
-            Posts published on {brandName}&apos;s own LinkedIn. For a
-            client&apos;s content, open their client page.
-          </p>
-        </div>
-        <div className="flex items-baseline gap-3 text-sm">
-          <Link
-            href={`/w/${workspaceSlug}/content/calendar`}
-            className="text-clay hover:text-ink transition-colors"
-          >
-            Calendar
-          </Link>
-          <span className="text-ink-light">&middot;</span>
-          <Link
-            href={`/w/${workspaceSlug}/content/analytics`}
-            className="text-clay hover:text-ink transition-colors"
-          >
-            Analytics
-          </Link>
-          <span className="text-ink-light">&middot;</span>
-          <Link
-            href={`/w/${workspaceSlug}/idea-sources`}
-            className="text-clay hover:text-ink transition-colors"
-          >
-            Sources
-          </Link>
-        </div>
+      <header>
+        <h1 className="font-serif text-2xl text-ink">{brandName} content</h1>
+        <p className="text-sm text-ink-light mt-1 measure">
+          Posts published on {brandName}&apos;s own LinkedIn. For a
+          client&apos;s content, open their client page.
+        </p>
       </header>
-
-      <div className="flex gap-3 text-sm">
-        <Link
-          href={`/w/${workspaceSlug}/voice`}
-          className="text-clay hover:text-ink transition-colors"
-        >
-          Voice guide
-        </Link>
-        <span className="text-ink-light">&middot;</span>
-        <Link
-          href={`/w/${workspaceSlug}/pillars`}
-          className="text-clay hover:text-ink transition-colors"
-        >
-          Pillars
-        </Link>
-        <span className="text-ink-light">&middot;</span>
-        <Link
-          href={`/w/${workspaceSlug}/prompts`}
-          className="text-clay hover:text-ink transition-colors"
-        >
-          Prompt library
-        </Link>
-      </div>
 
       <div className="flex justify-center border-b border-paper-muted -mb-px">
         {statusTabs.map((tab) => (

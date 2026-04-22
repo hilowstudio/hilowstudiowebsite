@@ -1,23 +1,10 @@
-import { notFound } from "next/navigation";
-import { getWorkspaceBySlug } from "@/lib/ops/scope";
-import { WorkspaceVoiceGuide } from "./workspace-voice-guide";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function WorkspaceVoicePage({
+export default async function RedirectVoice({
   params,
 }: {
   params: Promise<{ workspace: string }>;
 }) {
-  const { workspace: workspaceSlug } = await params;
-  const workspace = await getWorkspaceBySlug(workspaceSlug);
-  if (!workspace) notFound();
-
-  return (
-    <WorkspaceVoiceGuide
-      workspaceId={workspace.id}
-      workspaceSlug={workspace.slug}
-      brandName={workspace.brand_name || workspace.name}
-    />
-  );
+  const { workspace } = await params;
+  redirect(`/w/${workspace}/content/voice`);
 }

@@ -141,13 +141,6 @@ export function WorkspaceVoiceGuide({
 
   return (
     <div className="space-y-8 max-w-3xl">
-      <a
-        href={`/w/${workspaceSlug}/content`}
-        className="text-sm text-ink-light hover:text-ink transition-colors inline-block"
-      >
-        &larr; Content
-      </a>
-
       <div>
         <h1 className="font-serif text-2xl text-ink">
           {brandName} voice guide
