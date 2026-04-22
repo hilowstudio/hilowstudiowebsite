@@ -133,7 +133,7 @@ export function WorkspaceContentCalendar({
           &larr;
         </button>
         <span className="text-sm text-ink font-medium">
-          {currentWeek.year} \u00b7 W{String(currentWeek.week).padStart(2, "0")}
+          {currentWeek.year} · W{String(currentWeek.week).padStart(2, "0")}
           {weekDates.length > 0 && (
             <span className="text-ink-light ml-2">
               {weekDates[0].toLocaleDateString("en-US", {
@@ -159,7 +159,7 @@ export function WorkspaceContentCalendar({
 
       <section className="rounded-lg border border-paper-muted p-4">
         <h2 className="text-xs text-ink-muted uppercase tracking-wide mb-3">
-          Weekly Flywheel (4\u00b72\u00b71)
+          Weekly Flywheel (4·2·1)
         </h2>
         <div className="flex gap-6">
           {(["tofu", "mofu", "bofu"] as FunnelStage[]).map((stage) => {
