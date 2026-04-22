@@ -88,13 +88,13 @@ export function WorkspaceShell({
     >
       <nav className="border-b border-paper-muted">
         <div className="px-6 pt-4 pb-2 text-center relative">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-col items-center justify-center gap-2">
             {workspace.logo_url && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={workspace.logo_url}
                 alt=""
-                className="h-6 w-auto"
+                className="h-8 w-auto"
                 aria-hidden
               />
             )}
