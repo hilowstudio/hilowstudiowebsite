@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUserFromRequest } from "@/lib/ops/auth";
 import { hasWorkspaceAccess } from "@/lib/ops/scope";
+import { invalidatePillarCache } from "@/lib/pillars";
 
 function slugify(input: string): string {
   return input
@@ -77,5 +78,58 @@ export async function POST(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  invalidatePillarCache();
   return NextResponse.json(data, { status: 201 });
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const user = await getCurrentUserFromRequest(request);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await params;
+  if (!hasWorkspaceAccess(user.memberships, id, "staff", user.isPlatformAdmin)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const pillars = (await request.json()) as {
+    slug: string;
+    label: string;
+    short_label: string;
+    description: string;
+    funnel_role: string;
+    color_class: string;
+    sort_order: number;
+  }[];
+
+  if (!Array.isArray(pillars) || pillars.length < 3 || pillars.length > 5) {
+    return NextResponse.json(
+      { error: "Must provide 3-5 pillars" },
+      { status: 400 },
+    );
+  }
+
+  await supabase
+    .from("content_pillars")
+    .delete()
+    .eq("workspace_id", id)
+    .is("client_id", null);
+
+  const { data, error } = await supabase
+    .from("content_pillars")
+    .insert(
+      pillars.map((p) => ({
+        ...p,
+        workspace_id: id,
+        client_id: null,
+      })),
+    )
+    .select();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  invalidatePillarCache();
+  return NextResponse.json(data);
 }

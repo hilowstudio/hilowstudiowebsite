@@ -21,7 +21,23 @@ interface WizardPillar {
 
 type Step = "intro" | "internal" | "external" | "generate" | "review";
 
-export function PillarWizard({ onComplete }: { onComplete: () => void }) {
+export type PillarWizardUrls = {
+  generateUrl: string;
+  saveUrl: string;
+};
+
+export const ADMIN_PILLAR_URLS: PillarWizardUrls = {
+  generateUrl: "/api/admin/pillars/generate",
+  saveUrl: "/api/admin/pillars",
+};
+
+export function PillarWizard({
+  onComplete,
+  urls = ADMIN_PILLAR_URLS,
+}: {
+  onComplete: () => void;
+  urls?: PillarWizardUrls;
+}) {
   const [step, setStep] = useState<Step>("intro");
 
   // Phase 1: Internal audit
@@ -48,7 +64,7 @@ export function PillarWizard({ onComplete }: { onComplete: () => void }) {
     setError(null);
 
     try {
-      const res = await fetch("/api/admin/pillars/generate", {
+      const res = await fetch(urls.generateUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,7 +110,7 @@ export function PillarWizard({ onComplete }: { onComplete: () => void }) {
       sort_order: i,
     }));
 
-    const res = await fetch("/api/admin/pillars", {
+    const res = await fetch(urls.saveUrl, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(pillars),

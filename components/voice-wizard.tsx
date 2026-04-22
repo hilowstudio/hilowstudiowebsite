@@ -77,7 +77,27 @@ function NavButtons({
   );
 }
 
-export function VoiceWizard({ onComplete }: { onComplete: () => void }) {
+export type VoiceWizardUrls = {
+  generatePersonaUrl: string;
+  listVoiceUrl: string;
+  createVoiceUrl: string;
+  voiceItemUrl: (id: string) => string;
+};
+
+export const ADMIN_VOICE_URLS: VoiceWizardUrls = {
+  generatePersonaUrl: "/api/admin/voice/generate-persona",
+  listVoiceUrl: "/api/admin/voice",
+  createVoiceUrl: "/api/admin/voice",
+  voiceItemUrl: (id) => `/api/admin/voice/${id}`,
+};
+
+export function VoiceWizard({
+  onComplete,
+  urls = ADMIN_VOICE_URLS,
+}: {
+  onComplete: () => void;
+  urls?: VoiceWizardUrls;
+}) {
   const [step, setStep] = useState<Step>("intro");
 
   // Phase 1
@@ -110,7 +130,7 @@ export function VoiceWizard({ onComplete }: { onComplete: () => void }) {
     setError(null);
 
     try {
-      const res = await fetch("/api/admin/voice/generate-persona", {
+      const res = await fetch(urls.generatePersonaUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -151,18 +171,18 @@ export function VoiceWizard({ onComplete }: { onComplete: () => void }) {
     setError(null);
 
     // Delete existing principle rows
-    const listRes = await fetch("/api/admin/voice");
+    const listRes = await fetch(urls.listVoiceUrl);
     if (listRes.ok) {
       const entries = await listRes.json();
       for (const entry of entries) {
         if (entry.category === "principle") {
-          await fetch(`/api/admin/voice/${entry.id}`, { method: "DELETE" });
+          await fetch(urls.voiceItemUrl(entry.id), { method: "DELETE" });
         }
       }
     }
 
     // Save the new persona as a principle entry
-    const res = await fetch("/api/admin/voice", {
+    const res = await fetch(urls.createVoiceUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
