@@ -55,8 +55,16 @@ export async function GET(
     .in("post_id", postIds)
     .order("fetched_at", { ascending: false });
 
-  const latestMetrics: Record<string, (typeof allMetrics)[number]> = {};
-  for (const m of allMetrics || []) {
+  type MetricRow = {
+    post_id: string;
+    impressions: number;
+    likes: number;
+    comments: number;
+    shares: number;
+    clicks: number;
+  };
+  const latestMetrics: Record<string, MetricRow> = {};
+  for (const m of (allMetrics as MetricRow[] | null) || []) {
     if (!latestMetrics[m.post_id]) latestMetrics[m.post_id] = m;
   }
 
