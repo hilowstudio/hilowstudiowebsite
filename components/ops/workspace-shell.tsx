@@ -38,6 +38,11 @@ export function WorkspaceShell({
       match: "prefix" as const,
     },
     {
+      href: `/w/${workspace.slug}/alerts`,
+      label: "Signals",
+      match: "prefix" as const,
+    },
+    {
       href: `/w/${workspace.slug}/clients`,
       label: "Clients",
       match: "prefix" as const,

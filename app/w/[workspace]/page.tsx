@@ -48,6 +48,8 @@ export default async function WorkspaceDashboard({
   let meetingSummaries: Map<string, MeetingSummary> = new Map();
   let insightSummaries: Map<string, InsightSummary> = new Map();
 
+  let signalCounts = { churn: 0, upsell: 0, referral: 0 };
+
   if (clientIds.length > 0) {
     const { data: meetings } = await db
       .from("ops_meetings")
@@ -77,21 +79,30 @@ export default async function WorkspaceDashboard({
     const { data: insights } = await db
       .from("ops_meeting_insights")
       .select("meeting_id, kind, status, ops_meetings!inner(client_id)")
-      .eq("kind", "action_item")
+      .in("kind", ["action_item", "churn_signal", "upsell_signal", "referral_signal"])
       .eq("status", "open")
       .in("ops_meetings.client_id", clientIds);
 
     for (const row of ((insights ?? []) as unknown as {
+      kind: string;
       ops_meetings: { client_id: string } | null;
     }[])) {
       const clientId = row.ops_meetings?.client_id;
       if (!clientId) continue;
-      const current = insightSummaries.get(clientId) ?? {
-        client_id: clientId,
-        open_action_items: 0,
-      };
-      current.open_action_items += 1;
-      insightSummaries.set(clientId, current);
+      if (row.kind === "action_item") {
+        const current = insightSummaries.get(clientId) ?? {
+          client_id: clientId,
+          open_action_items: 0,
+        };
+        current.open_action_items += 1;
+        insightSummaries.set(clientId, current);
+      } else if (row.kind === "churn_signal") {
+        signalCounts.churn += 1;
+      } else if (row.kind === "upsell_signal") {
+        signalCounts.upsell += 1;
+      } else if (row.kind === "referral_signal") {
+        signalCounts.referral += 1;
+      }
     }
   }
 
@@ -113,6 +124,41 @@ export default async function WorkspaceDashboard({
           New client
         </Link>
       </div>
+
+      {(signalCounts.churn > 0 ||
+        signalCounts.upsell > 0 ||
+        signalCounts.referral > 0) && (
+        <Link
+          href={`/w/${workspace.slug}/alerts`}
+          className="block rounded-md border border-clay bg-paper-warm p-4 hover:bg-paper-warm/80 transition-colors"
+        >
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-xs text-clay uppercase tracking-wide">
+              Signals waiting
+            </p>
+            <span className="text-xs text-ink-light">Open alerts \u2192</span>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-4 text-sm">
+            {signalCounts.churn > 0 && (
+              <span className="text-terracotta">
+                {signalCounts.churn} churn risk{signalCounts.churn === 1 ? "" : "s"}
+              </span>
+            )}
+            {signalCounts.upsell > 0 && (
+              <span className="text-moss">
+                {signalCounts.upsell} upsell
+                {signalCounts.upsell === 1 ? "" : "s"}
+              </span>
+            )}
+            {signalCounts.referral > 0 && (
+              <span className="text-clay">
+                {signalCounts.referral} referral
+                {signalCounts.referral === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+        </Link>
+      )}
 
       {clientRows.length === 0 ? (
         <div className="rounded-md border border-paper-muted bg-paper-warm/60 p-8 text-center space-y-3">

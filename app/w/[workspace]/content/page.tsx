@@ -62,12 +62,19 @@ export default async function WorkspaceContentPage({
         >
           Edit voice guide
         </Link>
-        <span className="text-ink-light">\u00b7</span>
+        <span className="text-ink-light">&middot;</span>
         <Link
           href={`/w/${workspace.slug}/pillars`}
           className="text-clay hover:text-ink transition-colors"
         >
           Edit pillars
+        </Link>
+        <span className="text-ink-light">&middot;</span>
+        <Link
+          href={`/w/${workspace.slug}/prompts`}
+          className="text-clay hover:text-ink transition-colors"
+        >
+          Prompt library
         </Link>
       </div>
 

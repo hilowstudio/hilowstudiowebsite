@@ -4,20 +4,32 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { checkVoiceViolations } from "@/lib/voice-persona";
 
+type Template = {
+  id: string;
+  slug: string;
+  label: string;
+  description: string | null;
+  prompt_body: string;
+  category: string;
+};
+
 export function NewPostForm({
   workspaceSlug,
   clientSlug,
   clientId,
+  templates,
 }: {
   workspaceSlug: string;
   clientSlug: string;
   clientId: string;
+  templates: Template[];
 }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [templateId, setTemplateId] = useState("");
   const [busy, setBusy] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [error, setError] = useState("");
@@ -94,10 +106,31 @@ export function NewPostForm({
         <p className="text-xs text-ink-muted uppercase tracking-wide">
           Draft with AI (optional)
         </p>
+        {templates.length > 0 && (
+          <div>
+            <label className={labelClass}>Start from a template</label>
+            <select
+              value={templateId}
+              onChange={(e) => {
+                setTemplateId(e.target.value);
+                const t = templates.find((x) => x.id === e.target.value);
+                if (t) setPrompt(t.prompt_body);
+              }}
+              className={inputClass}
+            >
+              <option value="">(None)</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          rows={2}
+          rows={3}
           placeholder="What's this post about? e.g. Key takeaway from our Antonym call about intake friction."
           className={`${inputClass} resize-y`}
         />

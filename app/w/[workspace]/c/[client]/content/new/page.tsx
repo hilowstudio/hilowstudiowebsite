@@ -1,8 +1,18 @@
 import { notFound } from "next/navigation";
+import { getSupabase } from "@/lib/supabase";
 import { getClientBySlug, getWorkspaceBySlug } from "@/lib/ops/scope";
 import { NewPostForm } from "./new-post-form";
 
 export const dynamic = "force-dynamic";
+
+type Template = {
+  id: string;
+  slug: string;
+  label: string;
+  description: string | null;
+  prompt_body: string;
+  category: string;
+};
 
 export default async function NewPostPage({
   params,
@@ -14,6 +24,25 @@ export default async function NewPostPage({
   if (!workspace) notFound();
   const client = await getClientBySlug(workspace.id, clientSlug);
   if (!client) notFound();
+
+  const db = getSupabase();
+  const [wsRes, platformRes] = await Promise.all([
+    db
+      .from("ops_prompt_templates")
+      .select("id, slug, label, description, prompt_body, category")
+      .eq("workspace_id", workspace.id)
+      .order("sort_order", { ascending: true }),
+    db
+      .from("ops_prompt_templates")
+      .select("id, slug, label, description, prompt_body, category")
+      .is("workspace_id", null)
+      .order("sort_order", { ascending: true }),
+  ]);
+
+  const templates = [
+    ...((wsRes.data as Template[]) ?? []),
+    ...((platformRes.data as Template[]) ?? []),
+  ];
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -28,6 +57,7 @@ export default async function NewPostPage({
         workspaceSlug={workspace.slug}
         clientSlug={client.slug}
         clientId={client.id}
+        templates={templates}
       />
     </div>
   );
