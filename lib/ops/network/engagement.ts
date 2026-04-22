@@ -124,6 +124,14 @@ export async function recordEngagementEvents(params: {
   postId: string;
   postUrn: string;
 }): Promise<{ likes: number; comments: number }> {
+  const { data: clientRow } = await supabase
+    .from("ops_clients")
+    .select("workspace_id")
+    .eq("id", params.clientId)
+    .maybeSingle();
+  const workspaceId =
+    (clientRow as { workspace_id: string } | null)?.workspace_id ?? null;
+
   const [likes, comments] = await Promise.all([
     fetchPostLikes(params.clientId, params.postUrn),
     fetchPostComments(params.clientId, params.postUrn),
@@ -141,11 +149,13 @@ export async function recordEngagementEvents(params: {
   if (actors.length === 0) return { likes: 0, comments: 0 };
 
   const uniqueUrns = Array.from(new Set(actors.map((a) => a.urn)));
-  const { data: existingContacts } = await supabase
-    .from("ops_network_contacts")
-    .select("id, linkedin_urn")
-    .eq("client_id", params.clientId)
-    .in("linkedin_urn", uniqueUrns);
+  const { data: existingContacts } = workspaceId
+    ? await supabase
+        .from("ops_network_contacts")
+        .select("id, linkedin_urn")
+        .eq("workspace_id", workspaceId)
+        .in("linkedin_urn", uniqueUrns)
+    : { data: [] };
 
   const urnToContactId = new Map<string, string>();
   for (const row of ((existingContacts ?? []) as {
@@ -155,9 +165,9 @@ export async function recordEngagementEvents(params: {
     urnToContactId.set(row.linkedin_urn, row.id);
   }
 
-  // Create network contacts for any engagers not yet in the CSV import.
+  // Create network contacts for any engagers not yet in the workspace graph.
   const missing = actors.filter((a) => !urnToContactId.has(a.urn));
-  if (missing.length > 0) {
+  if (missing.length > 0 && workspaceId) {
     const deduped = new Map<string, { urn: string; name: string | null }>();
     for (const m of missing) {
       if (!deduped.has(m.urn)) deduped.set(m.urn, { urn: m.urn, name: m.name });
@@ -166,7 +176,8 @@ export async function recordEngagementEvents(params: {
       .from("ops_network_contacts")
       .insert(
         Array.from(deduped.values()).map((m) => ({
-          client_id: params.clientId,
+          workspace_id: workspaceId,
+          client_id: null,
           linkedin_urn: m.urn,
           name: m.name,
           imported_via: "linkedin_api",
@@ -182,6 +193,7 @@ export async function recordEngagementEvents(params: {
   }
 
   const events = actors.map((a) => ({
+    workspace_id: workspaceId,
     client_id: params.clientId,
     network_contact_id: urnToContactId.get(a.urn) ?? null,
     post_id: params.postId,

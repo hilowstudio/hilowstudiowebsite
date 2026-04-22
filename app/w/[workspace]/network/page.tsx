@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
-import { getClientBySlug, getWorkspaceBySlug } from "@/lib/ops/scope";
-import { NetworkPanels } from "./network-panels";
+import { getWorkspaceBySlug } from "@/lib/ops/scope";
+import { WorkspaceNetworkPanels } from "./network-panels";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +18,7 @@ type CompetitorRow = {
   id: string;
   name: string;
   linkedin_url: string | null;
+  client_id: string | null;
 };
 
 type ProspectRow = {
@@ -39,22 +40,21 @@ type EngagementRow = {
   observed_at: string;
   post_id: string | null;
   raw: Record<string, unknown> | null;
+  client_id: string | null;
   ops_network_contacts: {
     name: string | null;
     linkedin_url: string | null;
   } | null;
 };
 
-export default async function NetworkPage({
+export default async function WorkspaceNetworkPage({
   params,
 }: {
-  params: Promise<{ workspace: string; client: string }>;
+  params: Promise<{ workspace: string }>;
 }) {
-  const { workspace: workspaceSlug, client: clientSlug } = await params;
+  const { workspace: workspaceSlug } = await params;
   const workspace = await getWorkspaceBySlug(workspaceSlug);
   if (!workspace) notFound();
-  const client = await getClientBySlug(workspace.id, clientSlug);
-  if (!client) notFound();
 
   const db = getSupabase();
 
@@ -63,35 +63,36 @@ export default async function NetworkPage({
       db
         .from("ops_network_contacts")
         .select("id, name, company, headline, linkedin_url, imported_via")
-        .eq("client_id", client.id)
+        .eq("workspace_id", workspace.id)
         .order("name", { ascending: true })
-        .limit(100),
+        .limit(200),
       db
         .from("ops_competitors")
-        .select("id, name, linkedin_url")
-        .eq("client_id", client.id)
+        .select("id, name, linkedin_url, client_id")
+        .eq("workspace_id", workspace.id)
         .order("name", { ascending: true }),
       db
         .from("ops_warm_prospects")
         .select(
           "id, score, reasons, surfaced_at, network_contact_id, ops_network_contacts(name, company, linkedin_url)",
         )
-        .eq("client_id", client.id)
+        .eq("workspace_id", workspace.id)
+        .is("client_id", null)
         .is("dismissed_at", null)
         .order("score", { ascending: false })
         .limit(25),
       db
         .from("ops_engagement_events")
         .select(
-          "id, kind, observed_at, post_id, raw, ops_network_contacts(name, linkedin_url)",
+          "id, kind, observed_at, post_id, raw, client_id, ops_network_contacts(name, linkedin_url)",
         )
-        .eq("client_id", client.id)
+        .eq("workspace_id", workspace.id)
         .order("observed_at", { ascending: false })
-        .limit(25),
+        .limit(30),
       db
         .from("ops_network_contacts")
         .select("id", { count: "exact", head: true })
-        .eq("client_id", client.id),
+        .eq("workspace_id", workspace.id),
     ]);
 
   const contacts = (contactsRes.data as ContactRow[]) ?? [];
@@ -101,10 +102,8 @@ export default async function NetworkPage({
   const totalContacts = contactCountRes.count ?? 0;
 
   return (
-    <NetworkPanels
-      clientId={client.id}
-      workspaceSlug={workspace.slug}
-      clientSlug={client.slug}
+    <WorkspaceNetworkPanels
+      workspaceId={workspace.id}
       totalContacts={totalContacts}
       contacts={contacts}
       competitors={competitors}

@@ -3,63 +3,58 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type KeyName =
+export type IntegrationKey =
   | "fireflies_api_key"
   | "fathom_api_key"
   | "anthropic_api_key"
   | "deepgram_api_key"
   | "openrouter_api_key";
 
-const KEY_LABELS: Record<KeyName, string> = {
+const KEY_LABELS: Record<IntegrationKey, string> = {
   fireflies_api_key: "Fireflies API key",
   fathom_api_key: "Fathom API key",
-  anthropic_api_key: "Anthropic API key (BYOK override)",
-  deepgram_api_key: "Deepgram API key (BYOK override)",
-  openrouter_api_key: "OpenRouter API key (BYOK override)",
+  anthropic_api_key: "Anthropic API key",
+  deepgram_api_key: "Deepgram API key",
+  openrouter_api_key: "OpenRouter API key",
 };
 
-const KEY_ORDER: KeyName[] = [
-  "fireflies_api_key",
-  "fathom_api_key",
-  "anthropic_api_key",
-  "deepgram_api_key",
-  "openrouter_api_key",
-];
-
 export function IntegrationsForm({
-  clientId,
+  settingsUrl,
+  availableKeys,
   existingKeys,
+  labelOverrides,
 }: {
-  clientId: string;
+  settingsUrl: string;
+  availableKeys: IntegrationKey[];
   existingKeys: string[];
+  labelOverrides?: Partial<Record<IntegrationKey, string>>;
 }) {
   const router = useRouter();
   const configured = new Set(existingKeys);
-  const [values, setValues] = useState<Record<KeyName, string>>({
+  const [values, setValues] = useState<Record<IntegrationKey, string>>({
     fireflies_api_key: "",
     fathom_api_key: "",
     anthropic_api_key: "",
     deepgram_api_key: "",
     openrouter_api_key: "",
   });
-  const [savingKey, setSavingKey] = useState<KeyName | null>(null);
+  const [savingKey, setSavingKey] = useState<IntegrationKey | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function save(key: KeyName) {
+  async function save(key: IntegrationKey) {
     setSavingKey(key);
     setMessage("");
     setError("");
-    const res = await fetch(`/api/ops/clients/${clientId}/settings`, {
+    const res = await fetch(settingsUrl, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key, value: values[key] || "" }),
     });
     if (res.ok) {
+      const label = labelOverrides?.[key] ?? KEY_LABELS[key];
       setMessage(
-        values[key]
-          ? `${KEY_LABELS[key]} saved.`
-          : `${KEY_LABELS[key]} cleared.`,
+        values[key] ? `${label} saved.` : `${label} cleared.`,
       );
       setValues((prev) => ({ ...prev, [key]: "" }));
       router.refresh();
@@ -72,15 +67,16 @@ export function IntegrationsForm({
 
   return (
     <div className="space-y-4">
-      {KEY_ORDER.map((key) => {
+      {availableKeys.map((key) => {
         const isConfigured = configured.has(key);
+        const label = labelOverrides?.[key] ?? KEY_LABELS[key];
         return (
           <div
             key={key}
             className="rounded-md border border-paper-muted bg-paper-warm/60 p-3 space-y-2"
           >
             <div className="flex items-baseline justify-between">
-              <span className="text-sm text-ink">{KEY_LABELS[key]}</span>
+              <span className="text-sm text-ink">{label}</span>
               <span className="text-xs text-ink-light">
                 {isConfigured ? "Configured" : "Not set"}
               </span>

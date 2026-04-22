@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getClientBySlug, getWorkspaceBySlug } from "@/lib/ops/scope";
-import { PillarsEditor } from "./pillars-editor";
+import { PillarsEditor } from "@/components/ops/pillars-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +46,10 @@ export default async function PillarsPage({
         </p>
       </header>
 
-      <PillarsEditor clientId={client.id} initial={rows} />
+      <PillarsEditor
+        addUrl={`/api/ops/clients/${client.id}/pillars`}
+        initial={rows}
+      />
     </div>
   );
 }

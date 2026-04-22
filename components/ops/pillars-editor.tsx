@@ -14,10 +14,10 @@ type PillarRow = {
 };
 
 export function PillarsEditor({
-  clientId,
+  addUrl,
   initial,
 }: {
-  clientId: string;
+  addUrl: string;
   initial: PillarRow[];
 }) {
   const router = useRouter();
@@ -34,7 +34,7 @@ export function PillarsEditor({
     if (!form.label.trim()) return;
     setBusy(true);
     setError("");
-    const res = await fetch(`/api/ops/clients/${clientId}/pillars`, {
+    const res = await fetch(addUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

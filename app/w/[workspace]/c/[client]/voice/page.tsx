@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getClientBySlug, getWorkspaceBySlug } from "@/lib/ops/scope";
-import { VoiceEditor } from "./voice-editor";
+import { VoiceEditor } from "@/components/ops/voice-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,10 @@ export default async function VoicePage({
         </p>
       </header>
 
-      <VoiceEditor clientId={client.id} initial={rows} />
+      <VoiceEditor
+        addUrl={`/api/ops/clients/${client.id}/voice`}
+        initial={rows}
+      />
     </div>
   );
 }

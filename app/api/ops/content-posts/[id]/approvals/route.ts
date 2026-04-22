@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUserFromRequest } from "@/lib/ops/auth";
-import { hasClientAccess } from "@/lib/ops/scope";
-import { resolveContentPostScope } from "@/lib/ops/content";
+import {
+  canAccessContentPost,
+  resolveContentPostScope,
+} from "@/lib/ops/content";
 
 const ALLOWED_STATES = ["requested", "approved", "changes_requested"];
 
@@ -15,15 +17,7 @@ export async function GET(
   const { id } = await params;
   const scope = await resolveContentPostScope(id);
   if (!scope) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (
-    !hasClientAccess(
-      user.memberships,
-      scope.clientId,
-      scope.workspaceId,
-      "client_viewer",
-      user.isPlatformAdmin,
-    )
-  ) {
+  if (!canAccessContentPost(user.memberships, scope, "viewer", user.isPlatformAdmin)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -45,15 +39,7 @@ export async function POST(
   const { id } = await params;
   const scope = await resolveContentPostScope(id);
   if (!scope) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (
-    !hasClientAccess(
-      user.memberships,
-      scope.clientId,
-      scope.workspaceId,
-      "client_viewer",
-      user.isPlatformAdmin,
-    )
-  ) {
+  if (!canAccessContentPost(user.memberships, scope, "viewer", user.isPlatformAdmin)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

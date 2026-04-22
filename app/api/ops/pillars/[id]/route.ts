@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUserFromRequest } from "@/lib/ops/auth";
-import { hasClientAccess } from "@/lib/ops/scope";
+import { hasClientAccess, hasWorkspaceAccess } from "@/lib/ops/scope";
+import type { OpsUser } from "@/lib/ops/scope";
 
 const ALLOWED_FIELDS = [
   "label",
@@ -25,6 +26,23 @@ async function loadRow(id: string) {
   } | null;
 }
 
+function canEditPillar(
+  user: OpsUser,
+  row: { client_id: string | null; workspace_id: string },
+): boolean {
+  if (user.isPlatformAdmin) return true;
+  if (row.client_id) {
+    return hasClientAccess(
+      user.memberships,
+      row.client_id,
+      row.workspace_id,
+      "client_contributor",
+      false,
+    );
+  }
+  return hasWorkspaceAccess(user.memberships, row.workspace_id, "staff", false);
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -33,18 +51,10 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const row = await loadRow(id);
-  if (!row || !row.client_id || !row.workspace_id) {
+  if (!row || !row.workspace_id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (
-    !hasClientAccess(
-      user.memberships,
-      row.client_id,
-      row.workspace_id,
-      "client_contributor",
-      user.isPlatformAdmin,
-    )
-  ) {
+  if (!canEditPillar(user, { client_id: row.client_id, workspace_id: row.workspace_id })) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -78,18 +88,10 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
   const row = await loadRow(id);
-  if (!row || !row.client_id || !row.workspace_id) {
+  if (!row || !row.workspace_id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (
-    !hasClientAccess(
-      user.memberships,
-      row.client_id,
-      row.workspace_id,
-      "client_contributor",
-      user.isPlatformAdmin,
-    )
-  ) {
+  if (!canEditPillar(user, { client_id: row.client_id, workspace_id: row.workspace_id })) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

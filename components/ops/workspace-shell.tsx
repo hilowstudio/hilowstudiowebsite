@@ -33,8 +33,23 @@ export function WorkspaceShell({
       match: "exact" as const,
     },
     {
+      href: `/w/${workspace.slug}/pipeline`,
+      label: "Pipeline",
+      match: "prefix" as const,
+    },
+    {
       href: `/w/${workspace.slug}/clients`,
       label: "Clients",
+      match: "prefix" as const,
+    },
+    {
+      href: `/w/${workspace.slug}/network`,
+      label: "Network",
+      match: "prefix" as const,
+    },
+    {
+      href: `/w/${workspace.slug}/content`,
+      label: "Content",
       match: "prefix" as const,
     },
     {

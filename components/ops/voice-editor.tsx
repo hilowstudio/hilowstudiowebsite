@@ -11,10 +11,10 @@ type VoiceRow = {
 };
 
 export function VoiceEditor({
-  clientId,
+  addUrl,
   initial,
 }: {
-  clientId: string;
+  addUrl: string;
   initial: VoiceRow[];
 }) {
   const router = useRouter();
@@ -29,7 +29,7 @@ export function VoiceEditor({
     if (!newContent.trim()) return;
     setBusy(true);
     setError("");
-    const res = await fetch(`/api/ops/clients/${clientId}/voice`, {
+    const res = await fetch(addUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

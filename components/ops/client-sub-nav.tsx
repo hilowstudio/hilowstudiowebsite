@@ -22,7 +22,6 @@ export function ClientSubNav({
       match: "prefix" as const,
     },
     { href: `${base}/content`, label: "Content", match: "prefix" as const },
-    { href: `${base}/network`, label: "Network", match: "prefix" as const },
     { href: `${base}/voice`, label: "Voice", match: "prefix" as const },
     { href: `${base}/pillars`, label: "Pillars", match: "prefix" as const },
     {

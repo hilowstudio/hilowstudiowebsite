@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUserFromRequest } from "@/lib/ops/auth";
-import { hasClientAccess } from "@/lib/ops/scope";
-import { resolveContentPostScope } from "@/lib/ops/content";
+import {
+  canAccessContentPost,
+  resolveContentPostScope,
+} from "@/lib/ops/content";
 import { inngest } from "@/lib/inngest/client";
 import {
   publishTextPost,
@@ -23,11 +25,10 @@ export async function POST(
   const scope = await resolveContentPostScope(id);
   if (!scope) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (
-    !hasClientAccess(
+    !canAccessContentPost(
       user.memberships,
-      scope.clientId,
-      scope.workspaceId,
-      "client_contributor",
+      scope,
+      "contributor",
       user.isPlatformAdmin,
     )
   ) {
@@ -109,7 +110,9 @@ export async function POST(
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
 
-    await incrementUsage(scope.clientId, "posts_published", 1);
+    if (scope.clientId) {
+      await incrementUsage(scope.clientId, "posts_published", 1);
+    }
 
     if (post.first_comment && result.id) {
       await inngest.send({

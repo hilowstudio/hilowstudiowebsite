@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -16,6 +17,7 @@ type Competitor = {
   id: string;
   name: string;
   linkedin_url: string | null;
+  client_id: string | null;
 };
 
 type Prospect = {
@@ -37,51 +39,35 @@ type EngagementEvent = {
   observed_at: string;
   post_id: string | null;
   raw: Record<string, unknown> | null;
+  client_id: string | null;
   ops_network_contacts: {
     name: string | null;
     linkedin_url: string | null;
   } | null;
 };
 
-export function NetworkPanels({
-  clientId,
-  workspaceSlug,
-  clientSlug,
+export function WorkspaceNetworkPanels({
+  workspaceId,
   totalContacts,
   contacts,
   competitors,
   prospects,
   events,
 }: {
-  clientId: string;
-  workspaceSlug: string;
-  clientSlug: string;
+  workspaceId: string;
   totalContacts: number;
   contacts: Contact[];
   competitors: Competitor[];
   prospects: Prospect[];
   events: EngagementEvent[];
 }) {
-  void workspaceSlug;
-  void clientSlug;
   const router = useRouter();
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
   const [importError, setImportError] = useState("");
-
   const [competitorName, setCompetitorName] = useState("");
   const [competitorUrl, setCompetitorUrl] = useState("");
   const [competitorError, setCompetitorError] = useState("");
-
-  const [logContactName, setLogContactName] = useState("");
-  const [logContactUrl, setLogContactUrl] = useState("");
-  const [logKind, setLogKind] = useState<"like" | "comment" | "reshare">(
-    "comment",
-  );
-  const [logCompetitorId, setLogCompetitorId] = useState<string>("");
-  const [logNote, setLogNote] = useState("");
-  const [logError, setLogError] = useState("");
-
   const [rescoring, setRescoring] = useState(false);
   const [rescoreMessage, setRescoreMessage] = useState("");
 
@@ -94,7 +80,7 @@ export function NetworkPanels({
     const form = new FormData();
     form.append("file", file);
     const res = await fetch(
-      `/api/ops/clients/${clientId}/network/import`,
+      `/api/ops/workspaces/${workspaceId}/network/import`,
       { method: "POST", body: form },
     );
     if (res.ok) {
@@ -119,21 +105,24 @@ export function NetworkPanels({
     e.preventDefault();
     if (!competitorName.trim()) return;
     setCompetitorError("");
-    const res = await fetch(`/api/ops/clients/${clientId}/competitors`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: competitorName.trim(),
-        linkedin_url: competitorUrl.trim() || null,
-      }),
-    });
+    const res = await fetch(
+      `/api/ops/workspaces/${workspaceId}/competitors`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: competitorName.trim(),
+          linkedin_url: competitorUrl.trim() || null,
+        }),
+      },
+    );
     if (res.ok) {
       setCompetitorName("");
       setCompetitorUrl("");
       router.refresh();
     } else {
       const data = await res.json();
-      setCompetitorError(data.error || "Could not add competitor");
+      setCompetitorError(data.error || "Could not add");
     }
   }
 
@@ -145,42 +134,13 @@ export function NetworkPanels({
     if (res.ok) router.refresh();
   }
 
-  async function logEngagement(e: React.FormEvent) {
-    e.preventDefault();
-    if (!logContactName.trim()) return;
-    setLogError("");
-    const res = await fetch(
-      `/api/ops/clients/${clientId}/network/log-engagement`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contact_name: logContactName.trim(),
-          contact_linkedin_url: logContactUrl.trim() || null,
-          kind: logKind,
-          competitor_id: logCompetitorId || null,
-          note: logNote.trim() || null,
-        }),
-      },
-    );
-    if (res.ok) {
-      setLogContactName("");
-      setLogContactUrl("");
-      setLogNote("");
-      setLogCompetitorId("");
-      router.refresh();
-    } else {
-      const data = await res.json();
-      setLogError(data.error || "Could not log engagement");
-    }
-  }
-
   async function rescore() {
     setRescoring(true);
     setRescoreMessage("");
-    const res = await fetch(`/api/ops/clients/${clientId}/network/rescore`, {
-      method: "POST",
-    });
+    const res = await fetch(
+      `/api/ops/workspaces/${workspaceId}/network/rescore`,
+      { method: "POST" },
+    );
     if (res.ok) {
       const data = (await res.json()) as { top: number };
       setRescoreMessage(`Rebuilt: ${data.top} warm prospects surfaced.`);
@@ -197,6 +157,14 @@ export function NetworkPanels({
 
   return (
     <div className="space-y-10">
+      <header className="space-y-1">
+        <h1 className="font-serif text-2xl text-ink">Network</h1>
+        <p className="text-sm text-ink-light measure">
+          The agency&apos;s full contact graph. Warm prospects score against
+          every engagement event, not just one client&apos;s posts.
+        </p>
+      </header>
+
       <section className="space-y-2">
         <div className="flex items-baseline justify-between">
           <h2 className="font-serif text-lg text-ink">Connections</h2>
@@ -205,9 +173,8 @@ export function NetworkPanels({
           </span>
         </div>
         <p className="text-sm text-ink-muted measure">
-          Import a LinkedIn connections CSV export. Drop the file below.
-          LinkedIn engagement on your own posts auto-backfills contacts as they
-          appear.
+          Import a LinkedIn connections CSV export. Engagers on your clients&apos;
+          published posts auto-append.
         </p>
         <div className="flex items-center gap-3">
           <input
@@ -282,9 +249,8 @@ export function NetworkPanels({
         </div>
         {prospects.length === 0 ? (
           <p className="text-sm text-ink-light">
-            No warm prospects yet. As engagement events pile up (from published
-            posts + manually logged competitor engagement), contacts surface
-            here.
+            No warm prospects surfaced yet. Engagement on client posts and
+            manually-logged competitor engagement feed the scorer.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -318,6 +284,14 @@ export function NetworkPanels({
                 <p className="text-xs text-ink-light mt-1">
                   {p.reasons.slice(0, 4).join(" \u00b7 ")}
                 </p>
+                <div className="pt-2">
+                  <Link
+                    href={`/w/${workspaceId}/pipeline/new?contact=${p.network_contact_id}`}
+                    className="text-xs text-clay hover:text-ink transition-colors"
+                  >
+                    Promote to lead \u2192
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>
@@ -327,10 +301,8 @@ export function NetworkPanels({
       <section className="space-y-3">
         <h2 className="font-serif text-lg text-ink">Competitors</h2>
         <p className="text-sm text-ink-muted measure">
-          Define who you're watching. LinkedIn's public API doesn't expose
-          engagement on other people's posts, so competitor tracking is manual:
-          log when someone in the network engages with a competitor below, and
-          the warm-prospect scorer rewards it heavily.
+          Define who you&apos;re watching. Log competitor engagement against
+          any contact (Pipeline tab) to weight the warm-prospect scorer.
         </p>
         <form onSubmit={addCompetitor} className="flex gap-2 flex-wrap">
           <input
@@ -378,6 +350,11 @@ export function NetworkPanels({
                   ) : (
                     <span className="text-ink">{c.name}</span>
                   )}
+                  {c.client_id && (
+                    <span className="text-xs text-ink-light ml-2">
+                      client-specific
+                    </span>
+                  )}
                 </span>
                 <button
                   type="button"
@@ -390,74 +367,6 @@ export function NetworkPanels({
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="font-serif text-lg text-ink">Log an engagement</h2>
-        <p className="text-sm text-ink-muted measure">
-          Noticed someone commenting on a competitor's post? Log it here and
-          the scorer will weight it in the weekly digest.
-        </p>
-        <form onSubmit={logEngagement} className="space-y-2 max-w-xl">
-          <div className="flex gap-2 flex-wrap">
-            <input
-              type="text"
-              value={logContactName}
-              onChange={(e) => setLogContactName(e.target.value)}
-              placeholder="Contact name"
-              className={`${inputClass} flex-1 min-w-[160px]`}
-            />
-            <input
-              type="url"
-              value={logContactUrl}
-              onChange={(e) => setLogContactUrl(e.target.value)}
-              placeholder="LinkedIn URL (optional)"
-              className={`${inputClass} flex-1 min-w-[200px]`}
-            />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <select
-              value={logKind}
-              onChange={(e) =>
-                setLogKind(e.target.value as "like" | "comment" | "reshare")
-              }
-              className={inputClass}
-            >
-              <option value="comment">Commented</option>
-              <option value="like">Liked</option>
-              <option value="reshare">Reshared</option>
-            </select>
-            <select
-              value={logCompetitorId}
-              onChange={(e) => setLogCompetitorId(e.target.value)}
-              className={`${inputClass} flex-1`}
-            >
-              <option value="">Not a competitor</option>
-              {competitors.map((c) => (
-                <option key={c.id} value={c.id}>
-                  On {c.name}&apos;s post
-                </option>
-              ))}
-            </select>
-          </div>
-          <textarea
-            value={logNote}
-            onChange={(e) => setLogNote(e.target.value)}
-            placeholder="Optional note (topic, angle, quote)"
-            rows={2}
-            className={`${inputClass} w-full resize-y`}
-          />
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={!logContactName.trim()}
-              className="px-3 py-2 rounded-md bg-ink text-paper text-sm hover:bg-ink-muted transition-colors disabled:opacity-50"
-            >
-              Log engagement
-            </button>
-          </div>
-        </form>
-        {logError && <p className="text-terracotta text-sm">{logError}</p>}
       </section>
 
       <section className="space-y-3">
@@ -483,6 +392,7 @@ export function NetworkPanels({
                     <span className="text-xs text-ink-light ml-2 capitalize">
                       {e.kind}
                       {rawMeta.source === "manual" && " (manual)"}
+                      {e.client_id && " \u00b7 on a client post"}
                     </span>
                     {rawMeta.note && (
                       <p className="text-xs text-ink-light truncate mt-0.5">

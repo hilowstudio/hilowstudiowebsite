@@ -1,10 +1,23 @@
 import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getWorkspaceBySlug } from "@/lib/ops/scope";
+import { listSettingsForScope } from "@/lib/ops/settings";
 import { SettingsForm } from "./settings-form";
 import { InvitesPanel } from "./invites-panel";
 import { DomainPanel } from "./domain-panel";
 import { BillingPanel } from "./billing-panel";
+import {
+  IntegrationsForm,
+  type IntegrationKey,
+} from "@/components/ops/integrations-form";
+
+const WORKSPACE_KEYS: IntegrationKey[] = [
+  "anthropic_api_key",
+  "deepgram_api_key",
+  "openrouter_api_key",
+  "fireflies_api_key",
+  "fathom_api_key",
+];
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +69,11 @@ export default async function WorkspaceSettingsPage({
     name: row.user?.name ?? null,
   }));
 
+  const workspaceSettings = await listSettingsForScope("workspace", workspace.id);
+  const workspaceExistingKeys = workspaceSettings
+    .filter((s) => s.hasValue)
+    .map((s) => s.key);
+
   return (
     <div className="space-y-10">
       <h1 className="font-serif text-2xl text-ink">Workspace settings</h1>
@@ -92,6 +110,19 @@ export default async function WorkspaceSettingsPage({
       <section className="space-y-3">
         <h2 className="font-serif text-lg text-ink">Invites</h2>
         <InvitesPanel workspaceId={workspace.id} initialInvites={invites} />
+      </section>
+
+      <section className="space-y-3 max-w-2xl">
+        <h2 className="font-serif text-lg text-ink">Integrations</h2>
+        <p className="text-sm text-ink-muted measure">
+          Default API keys for this workspace. Clients inherit these unless they
+          override their own key. Everything is encrypted at rest.
+        </p>
+        <IntegrationsForm
+          settingsUrl={`/api/ops/workspaces/${workspace.id}/settings`}
+          availableKeys={WORKSPACE_KEYS}
+          existingKeys={workspaceExistingKeys}
+        />
       </section>
 
       <section className="space-y-3">

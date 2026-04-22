@@ -17,17 +17,40 @@ async function fetchClientVoice(clientId: string): Promise<string | null> {
   return null;
 }
 
+async function fetchWorkspaceVoice(
+  workspaceId: string,
+): Promise<string | null> {
+  const db = getSupabase();
+  const { data } = await db
+    .from("voice_guide")
+    .select("content, sort_order")
+    .eq("category", "principle")
+    .eq("workspace_id", workspaceId)
+    .is("client_id", null)
+    .order("sort_order", { ascending: true });
+
+  if (data && data.length > 0) {
+    return (data as { content: string }[]).map((r) => r.content).join("\n\n");
+  }
+  return null;
+}
+
 export async function composePostFromPrompt(params: {
   workspaceId: string;
-  clientId: string;
+  clientId?: string | null;
   prompt: string;
   pillarLabel?: string | null;
   hookType?: string | null;
   funnelStage?: string | null;
 }): Promise<string | null> {
-  const voice = await fetchClientVoice(params.clientId);
+  const voice = params.clientId
+    ? await fetchClientVoice(params.clientId)
+    : await fetchWorkspaceVoice(params.workspaceId);
+  const voiceHeading = params.clientId
+    ? "Voice guide for this client"
+    : "Voice guide for this workspace";
   const voiceBlock = voice
-    ? `\n\n---\n\n## Voice guide for this client\n\n${voice}`
+    ? `\n\n---\n\n## ${voiceHeading}\n\n${voice}`
     : "";
 
   const contextLines: string[] = [];
@@ -44,7 +67,10 @@ export async function composePostFromPrompt(params: {
     .join("\n\n");
 
   const response = await opsCreateMessage(
-    { workspaceId: params.workspaceId, clientId: params.clientId },
+    {
+      workspaceId: params.workspaceId,
+      clientId: params.clientId ?? null,
+    },
     {
       model: SONNET_MODEL,
       max_tokens: 1200,

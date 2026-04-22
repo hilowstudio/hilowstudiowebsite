@@ -2,10 +2,27 @@ import { notFound } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getClientBySlug, getWorkspaceBySlug } from "@/lib/ops/scope";
 import { listSettingsForScope } from "@/lib/ops/settings";
-import { IntegrationsForm } from "./integrations-form";
+import {
+  IntegrationsForm,
+  type IntegrationKey,
+} from "@/components/ops/integrations-form";
 import { MatchRulesEditor } from "./match-rules-editor";
 
 export const dynamic = "force-dynamic";
+
+const CLIENT_KEYS: IntegrationKey[] = [
+  "fireflies_api_key",
+  "fathom_api_key",
+  "anthropic_api_key",
+  "deepgram_api_key",
+  "openrouter_api_key",
+];
+
+const CLIENT_LABEL_OVERRIDES: Partial<Record<IntegrationKey, string>> = {
+  anthropic_api_key: "Anthropic API key (BYOK override)",
+  deepgram_api_key: "Deepgram API key (BYOK override)",
+  openrouter_api_key: "OpenRouter API key (BYOK override)",
+};
 
 type ClientRules = {
   title_keywords: string[] | null;
@@ -42,13 +59,14 @@ export default async function ClientIntegrationsPage({
       <section className="space-y-3">
         <h2 className="font-serif text-lg text-ink">API keys</h2>
         <p className="text-sm text-ink-muted measure">
-          Connect meeting sources + LLM providers for this client. Keys are
-          encrypted at rest. Leave blank to fall back to the workspace or
-          platform defaults.
+          Client-specific keys override the workspace defaults set in
+          workspace settings. Leave blank to inherit.
         </p>
         <IntegrationsForm
-          clientId={client.id}
+          settingsUrl={`/api/ops/clients/${client.id}/settings`}
+          availableKeys={CLIENT_KEYS}
           existingKeys={Array.from(existingKeys)}
+          labelOverrides={CLIENT_LABEL_OVERRIDES}
         />
       </section>
 
