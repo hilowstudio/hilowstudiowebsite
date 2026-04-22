@@ -135,7 +135,7 @@ export function LeadHeader({
               href={`/w/${workspaceSlug}/c/${convertedClientSlug}`}
               className="text-sm text-moss hover:text-ink transition-colors"
             >
-              Converted \u2192 open client
+              Converted → open client
             </Link>
           ) : (
             <button

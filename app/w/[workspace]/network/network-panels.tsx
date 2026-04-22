@@ -289,7 +289,7 @@ export function WorkspaceNetworkPanels({
                     href={`/w/${workspaceId}/pipeline/new?contact=${p.network_contact_id}`}
                     className="text-xs text-clay hover:text-ink transition-colors"
                   >
-                    Promote to lead \u2192
+                    Promote to lead →
                   </Link>
                 </div>
               </li>

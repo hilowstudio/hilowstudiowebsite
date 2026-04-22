@@ -136,7 +136,7 @@ export default async function WorkspaceDashboard({
             <p className="text-xs text-clay uppercase tracking-wide">
               Signals waiting
             </p>
-            <span className="text-xs text-ink-light">Open alerts \u2192</span>
+            <span className="text-xs text-ink-light">Open alerts →</span>
           </div>
           <div className="mt-2 flex flex-wrap gap-4 text-sm">
             {signalCounts.churn > 0 && (

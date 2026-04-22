@@ -203,7 +203,7 @@ export function OutreachTimeline({
                 className="rounded-md border border-clay bg-paper-warm/60 p-3 space-y-2"
               >
                 <p className="text-xs text-ink-muted uppercase tracking-wide">
-                  {d.kind.toUpperCase()} draft \u00b7{" "}
+                  {d.kind.toUpperCase()} draft ·{" "}
                   {new Date(d.generated_at).toLocaleString("en-US", {
                     month: "short",
                     day: "numeric",
