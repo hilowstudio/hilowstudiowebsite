@@ -40,7 +40,7 @@ async function lookupWorkspaceSlug(
   return row.slug;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
   if (!host || isPrimaryHost(host)) {
     return NextResponse.next();
