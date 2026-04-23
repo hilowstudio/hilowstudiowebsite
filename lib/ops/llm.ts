@@ -106,6 +106,40 @@ async function preflightCap(scope: LLMScope, byok: boolean): Promise<void> {
   await assertCapOrBYOK(scope.clientId, "llm_tokens", { byokPresent: byok });
 }
 
+const LLM_DEBUG_LOG = process.env.LLM_DEBUG_LOG !== "0";
+
+function logCall(params: {
+  mode: "text" | "object";
+  provider: ResolvedLLM["provider"];
+  modelId: string;
+  tier: LLMTier;
+  byok: boolean;
+  tokens: number;
+  scope: LLMScope;
+  retried?: string;
+}): void {
+  if (!LLM_DEBUG_LOG) return;
+  const parts = [
+    `[llm]`,
+    `mode=${params.mode}`,
+    `provider=${params.provider}`,
+    `model=${params.modelId}`,
+    `tier=${params.tier}`,
+    `tokens=${params.tokens}`,
+    `byok=${params.byok}`,
+  ];
+  if (params.scope.workspaceId) {
+    parts.push(`ws=${params.scope.workspaceId.slice(0, 8)}`);
+  }
+  if (params.scope.clientId) {
+    parts.push(`client=${params.scope.clientId.slice(0, 8)}`);
+  }
+  if (params.retried) {
+    parts.push(`retried_from=${params.retried}`);
+  }
+  console.log(parts.join(" "));
+}
+
 function shouldRetryOnOpenRouter(
   resolved: ResolvedLLM,
   err: unknown,
@@ -133,7 +167,11 @@ export async function opsGenerateText(
 
   const providerOptions = providerOptionsFor(resolved.provider, opts);
 
-  const runOnce = async (model: ResolvedLLM["model"], modelId: string) => {
+  const runOnce = async (
+    model: ResolvedLLM["model"],
+    modelId: string,
+    retriedFrom?: string,
+  ) => {
     const result = await generateText({
       model,
       system: opts.system,
@@ -145,6 +183,16 @@ export async function opsGenerateText(
     });
     const tokens = totalTokens(result.usage);
     await meterIfApplicable(opts.scope, resolved.byok, tokens);
+    logCall({
+      mode: "text",
+      provider: resolved.provider,
+      modelId,
+      tier: opts.tier,
+      byok: resolved.byok,
+      tokens,
+      scope: opts.scope,
+      retried: retriedFrom,
+    });
     return {
       text: result.text,
       provider: resolved.provider,
@@ -165,7 +213,7 @@ export async function opsGenerateText(
     console.warn(
       `[opsGenerate] OpenRouter ${resolved.modelId} failed; retrying on ${fallback.modelId}`,
     );
-    return runOnce(fallback.model, fallback.modelId);
+    return runOnce(fallback.model, fallback.modelId, resolved.modelId);
   }
 }
 
@@ -177,7 +225,11 @@ export async function opsGenerateObject<S>(
 
   const providerOptions = providerOptionsFor(resolved.provider, opts);
 
-  const runOnce = async (model: ResolvedLLM["model"], modelId: string) => {
+  const runOnce = async (
+    model: ResolvedLLM["model"],
+    modelId: string,
+    retriedFrom?: string,
+  ) => {
     const result = (await generateObject({
       model,
       system: opts.system,
@@ -189,6 +241,16 @@ export async function opsGenerateObject<S>(
     } as Parameters<typeof generateObject>[0])) as GenerateObjectResult<S>;
     const tokens = totalTokens(result.usage);
     await meterIfApplicable(opts.scope, resolved.byok, tokens);
+    logCall({
+      mode: "object",
+      provider: resolved.provider,
+      modelId,
+      tier: opts.tier,
+      byok: resolved.byok,
+      tokens,
+      scope: opts.scope,
+      retried: retriedFrom,
+    });
     return {
       object: result.object,
       provider: resolved.provider,
@@ -207,12 +269,12 @@ export async function opsGenerateObject<S>(
         `[opsGenerate] ${resolved.provider}:${resolved.modelId} returned no valid object; retrying once`,
       );
       try {
-        return await runOnce(resolved.model, resolved.modelId);
+        return await runOnce(resolved.model, resolved.modelId, resolved.modelId);
       } catch (retryErr) {
         if (!shouldRetryOnOpenRouter(resolved, retryErr)) throw retryErr;
         const fallback = openRouterFallbackLM(resolved, opts.tier);
         if (!fallback) throw retryErr;
-        return runOnce(fallback.model, fallback.modelId);
+        return runOnce(fallback.model, fallback.modelId, resolved.modelId);
       }
     }
     if (!shouldRetryOnOpenRouter(resolved, err)) throw err;
@@ -221,7 +283,7 @@ export async function opsGenerateObject<S>(
     console.warn(
       `[opsGenerate] OpenRouter ${resolved.modelId} failed; retrying on ${fallback.modelId}`,
     );
-    return runOnce(fallback.model, fallback.modelId);
+    return runOnce(fallback.model, fallback.modelId, resolved.modelId);
   }
 }
 
