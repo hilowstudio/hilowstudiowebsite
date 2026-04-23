@@ -80,10 +80,30 @@ function providerOptionsFor(
   provider: ResolvedLLM["provider"],
   opts: OpsGenerateOptions,
 ): ProviderOptions {
+  const out: Record<string, Record<string, unknown>> = {};
+
   if (provider === "anthropic" && opts.thinking) {
-    return { anthropic: { thinking: opts.thinking } } as ProviderOptions;
+    out.anthropic = { thinking: opts.thinking };
   }
-  return undefined;
+
+  // Intentionally do NOT pass an OpenRouter provider override. The account's
+  // Organization Privacy + Workspace Guardrail are the source of truth for
+  // which endpoints are eligible. If a request fails with "No endpoints
+  // matching your guardrail restrictions and data policy," we want to SEE
+  // that — not silently overrule it — so we can diagnose the actual cause.
+  //
+  // If we ever need a debug escape hatch, set OPENROUTER_FORCE_ALLOW_DATA=1
+  // to add `provider.data_collection: "allow"` per-request.
+  if (
+    provider === "openrouter" &&
+    process.env.OPENROUTER_FORCE_ALLOW_DATA === "1"
+  ) {
+    out.openrouter = {
+      provider: { data_collection: "allow", allow_fallbacks: true },
+    };
+  }
+
+  return (Object.keys(out).length > 0 ? out : undefined) as ProviderOptions;
 }
 
 function totalTokens(usage: { inputTokens?: number; outputTokens?: number }): number {
@@ -138,6 +158,25 @@ function logCall(params: {
     parts.push(`retried_from=${params.retried}`);
   }
   console.log(parts.join(" "));
+}
+
+function logError(params: {
+  provider: ResolvedLLM["provider"];
+  modelId: string;
+  tier: LLMTier;
+  err: unknown;
+}): void {
+  if (!LLM_DEBUG_LOG) return;
+  const base = `[llm:error] provider=${params.provider} model=${params.modelId} tier=${params.tier}`;
+  if (params.err instanceof APICallError) {
+    const body = params.err.responseBody ?? "(no body)";
+    console.error(
+      `${base} status=${params.err.statusCode ?? "?"} retryable=${params.err.isRetryable} message=${params.err.message}\n${base} body=${body}`,
+    );
+    return;
+  }
+  const msg = params.err instanceof Error ? params.err.message : String(params.err);
+  console.error(`${base} error=${msg}`);
 }
 
 function shouldRetryOnOpenRouter(
@@ -207,6 +246,12 @@ export async function opsGenerateText(
   try {
     return await runOnce(resolved.model, resolved.modelId);
   } catch (err) {
+    logError({
+      provider: resolved.provider,
+      modelId: resolved.modelId,
+      tier: opts.tier,
+      err,
+    });
     if (!shouldRetryOnOpenRouter(resolved, err)) throw err;
     const fallback = openRouterFallbackLM(resolved, opts.tier);
     if (!fallback) throw err;
@@ -263,6 +308,12 @@ export async function opsGenerateObject<S>(
   try {
     return await runOnce(resolved.model, resolved.modelId);
   } catch (err) {
+    logError({
+      provider: resolved.provider,
+      modelId: resolved.modelId,
+      tier: opts.tier,
+      err,
+    });
     // One retry: open-source model returned malformed JSON → retry once on same model
     if (NoObjectGeneratedError.isInstance(err)) {
       console.warn(
