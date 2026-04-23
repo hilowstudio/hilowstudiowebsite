@@ -1,7 +1,6 @@
 import { inngest } from "@/lib/inngest/client";
 import { supabase } from "@/lib/supabase";
-import { google } from "@ai-sdk/google";
-import { generateObject } from "ai";
+import { opsGenerateObject } from "@/lib/ops/llm";
 import { insightSchema } from "@/lib/ai/schemas";
 import {
   transcribeAudio,
@@ -41,8 +40,11 @@ export const processEpisode = inngest.createFunction(
           const res = await fetch(existingTranscriptUrl);
           if (res.ok) {
             const text = await res.text();
-            console.log("Transcript source: RSS feed (free)");
-            return { rawTranscript: text, timestampedTranscript: text, source: "rss_transcript" as const };
+            return {
+              rawTranscript: text,
+              timestampedTranscript: text,
+              source: "rss_transcript" as const,
+            };
           }
         } catch {
           // Fall through
@@ -53,28 +55,29 @@ export const processEpisode = inngest.createFunction(
       if (youtubeId) {
         const ytResult = await fetchYouTubeTranscript(youtubeId);
         if (ytResult) {
-          console.log("Transcript source: YouTube captions (free)");
           return { ...ytResult, source: "youtube_captions" as const };
         }
       }
 
-      // Priority 3: Deepgram transcription (paid, ~$0.0043/min)
+      // Priority 3: Deepgram transcription (paid)
       if (audioUrl) {
-        console.log("Transcript source: Deepgram (paid)");
         const result = await transcribeAudio(audioUrl);
         return { ...result, source: "deepgram" as const };
       }
 
       throw new Error(
-        "No audio URL or YouTube ID available for transcription"
+        "No audio URL or YouTube ID available for transcription",
       );
     });
 
-    // Step 3: AI analysis
+    // Step 3: AI analysis via structured output
     const insights = await step.run("analyze-transcript", async () => {
-      const { object } = await generateObject({
-        model: google("gemini-2.5-flash"),
-        schema: insightSchema,
+      const result = await opsGenerateObject({
+        scope: {
+          workspaceId: idea.workspace_id ?? null,
+          clientId: idea.client_id ?? null,
+        },
+        tier: "standard",
         messages: [
           {
             role: "user",
@@ -89,8 +92,9 @@ Transcript:
 ${transcript.timestampedTranscript || transcript.rawTranscript}`,
           },
         ],
+        schema: insightSchema,
       });
-      return object;
+      return result.object;
     });
 
     // Step 4: Update the idea with processed data
@@ -117,5 +121,5 @@ ${transcript.timestampedTranscript || transcript.rawTranscript}`,
     });
 
     return { status: "processed", ideaId: sourceId };
-  }
+  },
 );

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
+import { opsGenerateText } from "@/lib/ops/llm";
 import { requireWorkspace } from "@/lib/ops/workspace-guard";
 
 interface VoiceWizardInput {
@@ -48,26 +47,8 @@ The output must follow this exact structure. Write in second person as if descri
 - Be specific and concrete.
 - Do not sanitize rough edges.`;
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const guard = await requireWorkspace(request, id);
-  if (!guard.ok) return guard.response;
-
-  const input: VoiceWizardInput = await request.json();
-
-  try {
-    const response = await getAnthropic().messages.create({
-      model: SONNET_MODEL,
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
-      system: SYSTEM,
-      messages: [
-        {
-          role: "user",
-          content: `Here are my discovery answers. Synthesize these into a complete voice persona system prompt.
+function userPrompt(input: VoiceWizardInput): string {
+  return `Here are my discovery answers. Synthesize these into a complete voice persona system prompt.
 
 ## Phase 1: The Unmasking
 **What do people come to you for that has nothing to do with your job title?**
@@ -104,27 +85,39 @@ ${input.neverTouch}
 **The first question you ask when someone brings you a problem:**
 ${input.firstQuestion}
 **What most people in your field get wrong:**
-${input.whatPeopleGetWrong}`,
-        },
-      ],
+${input.whatPeopleGetWrong}`;
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const guard = await requireWorkspace(request, id);
+  if (!guard.ok) return guard.response;
+
+  const input: VoiceWizardInput = await request.json();
+
+  try {
+    const result = await opsGenerateText({
+      scope: { workspaceId: id },
+      tier: "strong",
+      system: SYSTEM,
+      messages: [{ role: "user", content: userPrompt(input) }],
+      maxTokens: 16000,
+      thinking: { type: "adaptive" },
     });
 
-    const textBlock = response.content.findLast((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
+    const text = result.text.trim();
+    if (!text) {
       return NextResponse.json(
         { error: "No response from AI" },
         { status: 500 },
       );
     }
-    return NextResponse.json({ persona: textBlock.text.trim() });
+    return NextResponse.json({ persona: text });
   } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      return NextResponse.json(
-        { error: `AI error (${err.status}): ${err.message}` },
-        { status: 502 },
-      );
-    }
     const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }

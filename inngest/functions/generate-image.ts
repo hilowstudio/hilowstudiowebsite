@@ -1,7 +1,8 @@
 import { inngest } from "@/lib/inngest/client";
 import { supabase } from "@/lib/supabase";
 import { generateQuoteCard } from "@/lib/images/generate-quote-card";
-import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
+import { opsGenerateObject } from "@/lib/ops/llm";
+import { quoteSchema } from "@/lib/ai/schemas";
 
 export const generateImage = inngest.createFunction(
   {
@@ -23,19 +24,21 @@ export const generateImage = inngest.createFunction(
       return data;
     });
 
-    // Step 2: Extract the best quote from the post via AI
+    // Step 2: Extract the best quote from the post via LLM (structured output)
     const quoteData = await step.run("extract-quote", async () => {
-      const response = await getAnthropic().messages.create({
-        model: SONNET_MODEL,
-        max_tokens: 500,
+      const result = await opsGenerateObject({
+        scope: {
+          workspaceId: post.workspace_id ?? null,
+          clientId: post.client_id ?? null,
+        },
+        tier: "fast",
         system:
-          "Extract the single most powerful, shareable sentence or short passage from this LinkedIn post. Return ONLY the quote text, nothing else. No quotation marks. Keep it under 200 characters for visual impact.",
+          "Extract the single most powerful, shareable sentence or short passage from this LinkedIn post. Return it in the structured output. No quotation marks. Keep it under 200 characters for visual impact.",
         messages: [{ role: "user", content: post.body }],
+        schema: quoteSchema,
+        maxTokens: 500,
       });
-      const text = response.content.find((b) => b.type === "text");
-      return text && text.type === "text"
-        ? text.text.trim()
-        : post.body.slice(0, 200);
+      return result.object.quote.trim() || post.body.slice(0, 200);
     });
 
     // Step 3: Generate the quote card PDF
@@ -44,7 +47,7 @@ export const generateImage = inngest.createFunction(
       const buffer = await generateQuoteCard(
         quoteData,
         "Hi-Low Studio",
-        variant
+        variant,
       );
       return buffer.toString("base64");
     });
@@ -62,5 +65,5 @@ export const generateImage = inngest.createFunction(
     });
 
     return { postId, type: "quote_card" };
-  }
+  },
 );

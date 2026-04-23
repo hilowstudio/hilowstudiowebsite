@@ -1,6 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
-import { opsCreateMessage, SONNET_MODEL } from "@/lib/ops/llm";
+import { opsGenerateText } from "@/lib/ops/llm";
 
 async function fetchClientVoice(clientId: string): Promise<string | null> {
   const db = getSupabase();
@@ -79,19 +79,16 @@ export async function draftPostFromMeeting(meetingId: string): Promise<{
   const workspaceId = meeting.ops_clients?.workspace_id;
   if (!workspaceId) return null;
 
-  const response = await opsCreateMessage(
-    { workspaceId, clientId: meeting.client_id },
-    {
-      model: SONNET_MODEL,
-      max_tokens: 1200,
-      system: PERSONA_SYSTEM_PROMPT + voiceBlock,
-      messages: [{ role: "user", content: userContent }],
-    },
-  );
+  const result = await opsGenerateText({
+    scope: { workspaceId, clientId: meeting.client_id },
+    tier: "strong",
+    system: PERSONA_SYSTEM_PROMPT + voiceBlock,
+    messages: [{ role: "user", content: userContent }],
+    maxTokens: 1200,
+  });
 
-  const block = response.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") return null;
-  const draftBody = block.text.trim();
+  const draftBody = result.text.trim();
+  if (!draftBody) return null;
 
   const { data: insertedRaw, error } = await db
     .from("ops_meeting_post_drafts")

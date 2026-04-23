@@ -7,13 +7,19 @@ export type IntegrationKey =
   | "fireflies_api_key"
   | "fathom_api_key"
   | "anthropic_api_key"
+  | "openai_api_key"
+  | "gemini_api_key"
+  | "xai_api_key"
   | "deepgram_api_key"
   | "openrouter_api_key";
 
 const KEY_LABELS: Record<IntegrationKey, string> = {
   fireflies_api_key: "Fireflies API key",
   fathom_api_key: "Fathom API key",
-  anthropic_api_key: "Anthropic API key",
+  anthropic_api_key: "Anthropic API key (upgrades LLM calls to Claude)",
+  openai_api_key: "OpenAI API key (upgrades LLM calls to GPT)",
+  gemini_api_key: "Google Gemini API key (upgrades LLM calls to Gemini)",
+  xai_api_key: "xAI API key (upgrades LLM calls to Grok)",
   deepgram_api_key: "Deepgram API key",
   openrouter_api_key: "OpenRouter API key",
 };
@@ -35,6 +41,9 @@ export function IntegrationsForm({
     fireflies_api_key: "",
     fathom_api_key: "",
     anthropic_api_key: "",
+    openai_api_key: "",
+    gemini_api_key: "",
+    xai_api_key: "",
     deepgram_api_key: "",
     openrouter_api_key: "",
   });

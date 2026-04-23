@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
+import { opsGenerateObject } from "@/lib/ops/llm";
+import { pillarsSchema } from "@/lib/ai/schemas";
 import { requireWorkspace } from "@/lib/ops/workspace-guard";
 
 interface WizardInput {
@@ -13,22 +13,7 @@ interface WizardInput {
   realQuestions: string;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const guard = await requireWorkspace(request, id);
-  if (!guard.ok) return guard.response;
-
-  const input: WizardInput = await request.json();
-
-  try {
-    const response = await getAnthropic().messages.create({
-      model: SONNET_MODEL,
-      max_tokens: 4000,
-      thinking: { type: "adaptive" },
-      system: `${PERSONA_SYSTEM_PROMPT}
+const SYSTEM_PROMPT = `${PERSONA_SYSTEM_PROMPT}
 
 ---
 
@@ -46,16 +31,23 @@ The standard 5-pillar structure:
 - Pillar 4: Audience Mindset / Soft Skills — empathy
 - Pillar 5: Tangential / Personal Passion — relatability
 
-Recommend 3, 4, or 5 pillars. Only recommend what the data supports.
+Recommend 3, 4, or 5 pillars. Only recommend what the data supports.`;
 
-For each pillar provide:
-- label: Compelling specific name
-- shortLabel: 2-3 words
-- description: 1-2 sentences
-- funnelRole: e.g., "TOFU primary", "MOFU to BOFU bridge"
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const guard = await requireWorkspace(request, id);
+  if (!guard.ok) return guard.response;
 
-Return ONLY valid JSON: { "pillars": [...] }
-No markdown, no explanation, no preamble.`,
+  const input: WizardInput = await request.json();
+
+  try {
+    const result = await opsGenerateObject({
+      scope: { workspaceId: id },
+      tier: "strong",
+      system: SYSTEM_PROMPT,
       messages: [
         {
           role: "user",
@@ -80,31 +72,13 @@ ${input.transformationBridge}
 ${input.realQuestions}`,
         },
       ],
+      schema: pillarsSchema,
+      maxTokens: 4000,
+      thinking: { type: "adaptive" },
     });
-
-    const textBlock = response.content.findLast((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      return NextResponse.json(
-        { error: "No response from AI" },
-        { status: 500 },
-      );
-    }
-
-    let jsonStr = textBlock.text.trim();
-    if (jsonStr.startsWith("```")) {
-      jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-    }
-
-    const parsed = JSON.parse(jsonStr);
-    return NextResponse.json(parsed);
+    return NextResponse.json(result.object);
   } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      return NextResponse.json(
-        { error: `AI error (${err.status}): ${err.message}` },
-        { status: 502 },
-      );
-    }
     const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }

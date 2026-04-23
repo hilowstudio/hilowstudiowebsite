@@ -1,6 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
-import { opsCreateMessage, SONNET_MODEL } from "@/lib/ops/llm";
+import { opsGenerateText } from "@/lib/ops/llm";
 
 type Lead = {
   id: string;
@@ -114,19 +114,16 @@ export async function draftOutreachForLead(params: {
     .filter(Boolean)
     .join("\n\n");
 
-  const response = await opsCreateMessage(
-    { workspaceId: lead.workspace_id, clientId: null },
-    {
-      model: SONNET_MODEL,
-      max_tokens: 600,
-      system: SYSTEM_PROMPT_OVERLAY + voiceBlock,
-      messages: [{ role: "user", content: userContent }],
-    },
-  );
+  const result = await opsGenerateText({
+    scope: { workspaceId: lead.workspace_id, clientId: null },
+    tier: "strong",
+    system: SYSTEM_PROMPT_OVERLAY + voiceBlock,
+    messages: [{ role: "user", content: userContent }],
+    maxTokens: 600,
+  });
 
-  const block = response.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") return null;
-  const body = block.text.trim();
+  const body = result.text.trim();
+  if (!body) return null;
 
   const { data: inserted, error } = await db
     .from("ops_outreach_drafts")

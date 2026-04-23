@@ -1,9 +1,5 @@
-import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
 import { supabase } from "@/lib/supabase";
-import {
-  HOOK_TYPES,
-  FUNNEL_STAGES,
-} from "@/lib/content-strategy";
+import { HOOK_TYPES, FUNNEL_STAGES } from "@/lib/content-strategy";
 import { getContentPillars } from "@/lib/pillars";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
 import type {
@@ -11,6 +7,10 @@ import type {
   HookType,
   FunnelStage,
 } from "@/lib/types/database";
+import { opsGenerateText } from "@/lib/ops/llm";
+import { resolveLLMProvider } from "@/lib/ops/model-router";
+import { fetchUrlAsMarkdown } from "@/lib/ops/url-fetch";
+import { anthropic as anthropicProvider } from "@ai-sdk/anthropic";
 
 export type GenerateScope = {
   workspaceId?: string | null;
@@ -29,7 +29,7 @@ export interface GenerateInput {
 export class VoiceGuideMissingError extends Error {
   constructor() {
     super(
-      "No voice guide principle found. Add a 'principle' row to voice_guide before generating."
+      "No voice guide principle found. Add a 'principle' row to voice_guide before generating.",
     );
     this.name = "VoiceGuideMissingError";
   }
@@ -51,10 +51,8 @@ async function fetchVoicePrinciple(scope?: GenerateScope): Promise<string> {
   }
 
   const { data, error } = await query;
-
   if (error) throw error;
   if (!data || data.length === 0) throw new VoiceGuideMissingError();
-
   return data.map((row) => row.content).join("\n\n");
 }
 
@@ -64,7 +62,7 @@ function buildSystemPrompt(
   pillarDescription: string,
   pillarFunnelRole: string,
   hookValue: HookType,
-  funnelValue: FunnelStage
+  funnelValue: FunnelStage,
 ): string {
   const hook = HOOK_TYPES.find((h) => h.value === hookValue)!;
   const funnel = FUNNEL_STAGES.find((f) => f.value === funnelValue)!;
@@ -95,8 +93,25 @@ ${funnel.description}
 Return ONLY the LinkedIn post body. No preamble. No meta-commentary. No "Here's your post:". No explanation of choices. No summary at the end. No hashtags unless they emerge naturally from the thought. Write the post as if you're publishing it directly to LinkedIn. Stop when the post is complete.`;
 }
 
-function buildUserMessage(input: GenerateInput): string {
+function buildUserMessage(
+  input: GenerateInput,
+  fetchedSource: string | null,
+): string {
+  if (fetchedSource) {
+    const extra = input.sourceMaterial
+      ? `\n\nAdditional context from the user:\n${input.sourceMaterial}`
+      : "";
+    return `Draft a LinkedIn post inspired by the content below.
+
+<source-content>
+${fetchedSource}
+</source-content>${extra}
+
+The source is a starting point, not something to summarize. Find the angle that fits the selected pillar, hook, and funnel stage.`;
+  }
+
   if (input.sourceUrl) {
+    // Anthropic path: model fetches the URL via web_fetch tool.
     const extra = input.sourceMaterial
       ? `\n\nAdditional context from the user:\n${input.sourceMaterial}`
       : "";
@@ -128,19 +143,19 @@ export function assembleSourceContext(idea: {
     if (Array.isArray(meta.key_takeaways) && meta.key_takeaways.length > 0) {
       const takeaways = meta.key_takeaways as string[];
       parts.push(
-        `Key takeaways:\n${takeaways.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+        `Key takeaways:\n${takeaways.map((t, i) => `${i + 1}. ${t}`).join("\n")}`,
       );
     }
     if (Array.isArray(meta.chapters) && meta.chapters.length > 0) {
       const chapters = meta.chapters as { title: string }[];
       parts.push(
-        `Chapters/sections:\n${chapters.map((c) => `- ${c.title}`).join("\n")}`
+        `Chapters/sections:\n${chapters.map((c) => `- ${c.title}`).join("\n")}`,
       );
     }
     if (Array.isArray(meta.entities) && meta.entities.length > 0) {
       const entities = meta.entities as { name: string; type: string }[];
       parts.push(
-        `Key entities:\n${entities.map((e) => `- ${e.name} (${e.type})`).join("\n")}`
+        `Key entities:\n${entities.map((e) => `- ${e.name} (${e.type})`).join("\n")}`,
       );
     }
     if (meta.table_of_contents && Array.isArray(meta.table_of_contents)) {
@@ -160,7 +175,7 @@ export function assembleSourceContext(idea: {
 }
 
 export async function generatePostDraft(
-  input: GenerateInput
+  input: GenerateInput,
 ): Promise<string> {
   const voice = await fetchVoicePrinciple(input.scope);
   const pillars = await getContentPillars(input.scope);
@@ -171,40 +186,43 @@ export async function generatePostDraft(
     pillar?.description || "",
     pillar?.funnel_role || "",
     input.hookType,
-    input.funnelStage
+    input.funnelStage,
   );
-  const userMessage = buildUserMessage(input);
 
-  const response = await getAnthropic().messages.create({
-    model: SONNET_MODEL,
-    // High ceiling: adaptive thinking consumes tokens before the text block is
-    // written. 2000 was too tight and hit max_tokens mid-thinking with no final
-    // text. 16000 is the SDK-recommended non-streaming default.
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
-    system: systemPrompt,
-    tools: input.sourceUrl
-      ? [{ type: "web_fetch_20260209", name: "web_fetch" }]
-      : undefined,
-    messages: [{ role: "user", content: userMessage }],
-  });
+  const scope = input.scope ?? {};
+  const resolved = await resolveLLMProvider(scope, "frontier");
 
-  // Extract the final text block (skip thinking and tool_use blocks)
-  const textBlocks = response.content.filter(
-    (b): b is Extract<typeof b, { type: "text" }> => b.type === "text"
-  );
-  const finalText = textBlocks[textBlocks.length - 1];
-
-  if (!finalText || !finalText.text.trim()) {
-    if (response.stop_reason === "max_tokens") {
-      throw new Error(
-        "Claude ran out of tokens before producing the post. Raise max_tokens in lib/generate-post.ts or retry."
-      );
-    }
-    throw new Error(
-      `Claude returned no text content (stop_reason: ${response.stop_reason})`
-    );
+  // On Anthropic, keep the native web_fetch tool + adaptive thinking flow.
+  // On any other provider, pre-fetch the URL to markdown and stuff it.
+  let fetchedSource: string | null = null;
+  if (input.sourceUrl && resolved.provider !== "anthropic") {
+    const fetched = await fetchUrlAsMarkdown(input.sourceUrl);
+    fetchedSource = fetched.content;
   }
 
-  return finalText.text.trim();
+  const userMessage = buildUserMessage(input, fetchedSource);
+
+  const tools =
+    input.sourceUrl && resolved.provider === "anthropic"
+      ? { web_fetch: anthropicProvider.tools.webFetch_20260209({}) }
+      : undefined;
+
+  const result = await opsGenerateText({
+    scope,
+    tier: "frontier",
+    system: systemPrompt,
+    messages: [{ role: "user", content: userMessage }],
+    tools,
+    maxTokens: 16000,
+    thinking:
+      resolved.provider === "anthropic" ? { type: "adaptive" } : undefined,
+  });
+
+  const text = result.text.trim();
+  if (!text) {
+    throw new Error(
+      `Model returned no text content (provider=${result.provider}, model=${result.modelId})`,
+    );
+  }
+  return text;
 }

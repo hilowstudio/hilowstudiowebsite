@@ -5,6 +5,9 @@ export type SettingScope = "platform" | "workspace" | "client";
 
 export type SettingKey =
   | "anthropic_api_key"
+  | "openai_api_key"
+  | "gemini_api_key"
+  | "xai_api_key"
   | "openrouter_api_key"
   | "deepgram_api_key"
   | "fireflies_api_key"
@@ -23,6 +26,16 @@ function envFallback(key: SettingKey): string | null {
   switch (key) {
     case "anthropic_api_key":
       return process.env.ANTHROPIC_API_KEY || null;
+    case "openai_api_key":
+      return process.env.OPENAI_API_KEY || null;
+    case "gemini_api_key":
+      return (
+        process.env.GEMINI_API_KEY ||
+        process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+        null
+      );
+    case "xai_api_key":
+      return process.env.XAI_API_KEY || null;
     case "openrouter_api_key":
       return process.env.OPENROUTER_API_KEY || null;
     case "deepgram_api_key":

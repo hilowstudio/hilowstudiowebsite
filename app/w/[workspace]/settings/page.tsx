@@ -13,8 +13,11 @@ import {
 
 const WORKSPACE_KEYS: IntegrationKey[] = [
   "anthropic_api_key",
-  "deepgram_api_key",
+  "openai_api_key",
+  "gemini_api_key",
+  "xai_api_key",
   "openrouter_api_key",
+  "deepgram_api_key",
   "fireflies_api_key",
   "fathom_api_key",
 ];

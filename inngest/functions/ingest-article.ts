@@ -1,7 +1,7 @@
 import { inngest } from "@/lib/inngest/client";
 import { supabase } from "@/lib/supabase";
-import { google } from "@ai-sdk/google";
-import { generateObject } from "ai";
+import { opsGenerateObject } from "@/lib/ops/llm";
+import { fetchUrlAsMarkdown } from "@/lib/ops/url-fetch";
 import { articleSummarySchema } from "@/lib/ai/schemas";
 
 export const ingestArticle = inngest.createFunction(
@@ -11,9 +11,10 @@ export const ingestArticle = inngest.createFunction(
     triggers: [{ event: "source/article.ingest" }],
   },
   async ({ event, step }) => {
-    const { url, workspaceId } = event.data as {
+    const { url, workspaceId, clientId } = event.data as {
       url: string;
       workspaceId?: string | null;
+      clientId?: string | null;
     };
 
     // Step 1: Check for duplicate
@@ -31,28 +32,41 @@ export const ingestArticle = inngest.createFunction(
       return { status: "duplicate", ideaId: existing.id };
     }
 
-    // Step 2: Fetch and summarize the article using Gemini
+    // Step 2: Fetch the article as clean markdown
+    const pageMarkdown = await step.run("fetch-article", async () => {
+      const fetched = await fetchUrlAsMarkdown(url);
+      return fetched.content;
+    });
+
+    // Step 3: Analyze the article content via LLM (structured output)
     const analysis = await step.run("analyze-article", async () => {
-      const { object } = await generateObject({
-        model: google("gemini-2.5-flash"),
-        schema: articleSummarySchema,
+      const result = await opsGenerateObject({
+        scope: { workspaceId: workspaceId ?? null, clientId: clientId ?? null },
+        tier: "standard",
         messages: [
           {
             role: "user",
-            content: `Read this URL and analyze the article content. Extract a summary, key takeaways, and entities.\n\nURL: ${url}`,
+            content: `Analyze the article below. Extract a summary, key takeaways, and entities.
+
+URL: ${url}
+
+<article>
+${pageMarkdown}
+</article>`,
           },
         ],
+        schema: articleSummarySchema,
       });
-      return object;
+      return result.object;
     });
 
-    // Step 3: Create content idea
+    // Step 4: Create content idea
     const idea = await step.run("create-idea", async () => {
       const { data, error } = await supabase
         .from("content_ideas")
         .insert({
           workspace_id: workspaceId ?? null,
-          client_id: null,
+          client_id: clientId ?? null,
           raw_insight: analysis.summary,
           source: "article",
           source_url: url,
@@ -74,5 +88,5 @@ export const ingestArticle = inngest.createFunction(
     });
 
     return { status: "created", ideaId: idea.id };
-  }
+  },
 );

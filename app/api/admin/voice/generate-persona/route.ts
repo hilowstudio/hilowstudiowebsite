@@ -1,43 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { isAuthenticatedRequest } from "@/lib/admin-auth";
-import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
+import { opsGenerateText } from "@/lib/ops/llm";
 
 interface VoiceWizardInput {
-  // Phase 1: The Unmasking
   whatPeopleComeToYouFor: string;
   authenticConversation: string;
   uncomfortableBelief: string;
-  // Phase 2: Origin Story
   hardestSeason: string;
   lessonYouCantUnsee: string;
   hesitantIdentity: string;
-  // Phase 3: Voice Discovery
   howYouNaturallyTalk: string;
   contentThatMakesYouCringe: string;
   howOthersDescribeYou: string;
   writingSamples?: string;
-  // Phase 4: Boundaries
   dishonestContent: string;
   neverTouch: string;
-  // Phase 5: Operating System
   firstQuestion: string;
   whatPeopleGetWrong: string;
 }
 
-export async function POST(request: NextRequest) {
-  if (!(await isAuthenticatedRequest(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const input: VoiceWizardInput = await request.json();
-
-  try {
-    const response = await getAnthropic().messages.create({
-      model: SONNET_MODEL,
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
-      system: `You are a voice persona consultant helping someone discover and articulate their authentic communication style for a LinkedIn content system. Your job is to synthesize their answers into a structured AI system prompt that captures who they actually are, not who they perform as.
+const SYSTEM_PROMPT = `You are a voice persona consultant helping someone discover and articulate their authentic communication style for a LinkedIn content system. Your job is to synthesize their answers into a structured AI system prompt that captures who they actually are, not who they perform as.
 
 The output must follow this exact structure (reference the example format below). Write in second person as if describing an AI persona that embodies this person. The prompt will be used to instruct an AI to write LinkedIn content in this person's authentic voice.
 
@@ -98,11 +80,10 @@ The output must follow this exact structure (reference the example format below)
 - Be specific. "Warm and approachable" is useless. "You explain complex ideas by grounding them in physical metaphors, like building houses or tending gardens, because that's how your brain actually works" is useful.
 - The Mindset & Motives section should make a stranger feel like they understand this person after reading it.
 - Do not sanitize or professionalize their rough edges. If they're blunt, the prompt should be blunt. If they're gentle, the prompt should be gentle. If they swear, the prompt should note that.
-- The persona name should feel earned, not assigned. It should make the person think "yes, that's me."`,
-      messages: [
-        {
-          role: "user",
-          content: `Here are my discovery answers. Synthesize these into a complete voice persona system prompt.
+- The persona name should feel earned, not assigned. It should make the person think "yes, that's me."`;
+
+function userPrompt(input: VoiceWizardInput): string {
+  return `Here are my discovery answers. Synthesize these into a complete voice persona system prompt.
 
 ## Phase 1: The Unmasking
 
@@ -153,28 +134,36 @@ ${input.neverTouch}
 ${input.firstQuestion}
 
 **What most people in your field get wrong:**
-${input.whatPeopleGetWrong}`,
-        },
-      ],
+${input.whatPeopleGetWrong}`;
+}
+
+export async function POST(request: NextRequest) {
+  if (!(await isAuthenticatedRequest(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const input: VoiceWizardInput = await request.json();
+
+  try {
+    const result = await opsGenerateText({
+      scope: {},
+      tier: "strong",
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userPrompt(input) }],
+      maxTokens: 16000,
+      thinking: { type: "adaptive" },
     });
 
-    const textBlock = response.content.findLast((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
+    const text = result.text.trim();
+    if (!text) {
       return NextResponse.json(
         { error: "No response from AI" },
-        { status: 500 }
+        { status: 500 },
       );
     }
-
-    return NextResponse.json({ persona: textBlock.text.trim() });
+    return NextResponse.json({ persona: text });
   } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      return NextResponse.json(
-        { error: `AI error (${err.status}): ${err.message}` },
-        { status: 502 }
-      );
-    }
     const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }

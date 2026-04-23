@@ -1,6 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
-import { opsCreateMessage, SONNET_MODEL } from "@/lib/ops/llm";
+import { opsGenerateText } from "@/lib/ops/llm";
 
 const BRIEF_SYSTEM_PROMPT = `${PERSONA_SYSTEM_PROMPT}
 
@@ -98,17 +98,14 @@ export async function generatePreMeetingBrief(params: {
     .filter(Boolean)
     .join("\n\n");
 
-  const response = await opsCreateMessage(
-    { workspaceId: client.workspace_id, clientId: client.id },
-    {
-      model: SONNET_MODEL,
-      max_tokens: 1200,
-      system: BRIEF_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userContent }],
-    },
-  );
+  const result = await opsGenerateText({
+    scope: { workspaceId: client.workspace_id, clientId: client.id },
+    tier: "standard",
+    system: BRIEF_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userContent }],
+    maxTokens: 1200,
+  });
 
-  const block = response.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") return null;
-  return block.text.trim();
+  const text = result.text.trim();
+  return text || null;
 }

@@ -25,7 +25,10 @@ export const generateCarousel = inngest.createFunction(
 
     // Step 2: AI structures content into slides
     const slides = await step.run("structure-slides", async () => {
-      return await structureIntoSlides(post.body, post.title);
+      return await structureIntoSlides(post.body, post.title, {
+        workspaceId: post.workspace_id ?? null,
+        clientId: post.client_id ?? null,
+      });
     });
 
     // Step 3: Generate PDF

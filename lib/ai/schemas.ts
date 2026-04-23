@@ -89,3 +89,86 @@ export const bookSummarySchema = z.object({
 });
 
 export type BookSummaryResult = z.infer<typeof bookSummarySchema>;
+
+/** Schema for carousel slide structuring */
+export const slidesSchema = z.object({
+  slides: z
+    .array(
+      z.object({
+        heading: z.string().describe("Short heading, 5-10 words max"),
+        body: z.string().describe("Body text, 1-3 sentences max"),
+      }),
+    )
+    .min(2)
+    .max(12)
+    .describe(
+      "5-10 carousel slides. First slide: strong hook/title. Last slide: CTA.",
+    ),
+});
+
+export type SlidesResult = z.infer<typeof slidesSchema>;
+
+/** Schema for quote-card extraction (single most shareable line from a post) */
+export const quoteSchema = z.object({
+  quote: z
+    .string()
+    .max(220)
+    .describe(
+      "The single most powerful, shareable sentence or short passage from the post. No quotation marks. Under 200 characters.",
+    ),
+});
+
+export type QuoteResult = z.infer<typeof quoteSchema>;
+
+/** Schema for AI-generated content pillars from the wizard */
+export const pillarsSchema = z.object({
+  pillars: z
+    .array(
+      z.object({
+        label: z.string().describe("Compelling specific pillar name"),
+        shortLabel: z.string().describe("2-3 word abbreviation"),
+        description: z.string().describe("1-2 sentences explaining the pillar"),
+        funnelRole: z
+          .string()
+          .describe('e.g. "TOFU primary", "MOFU to BOFU bridge"'),
+      }),
+    )
+    .min(3)
+    .max(5),
+});
+
+export type PillarsResult = z.infer<typeof pillarsSchema>;
+
+/** Schema for meeting/episode insight extraction (non-podcast flavor). */
+export const meetingInsightSchema = z.object({
+  brief: z
+    .string()
+    .describe("3-5 sentence executive summary of the meeting"),
+  actionItems: z
+    .array(
+      z.object({
+        body: z.string(),
+        speaker: z.string().nullable().optional(),
+        timestampSeconds: z.number().nullable().optional(),
+      }),
+    )
+    .describe("Discrete commitments made during the meeting"),
+  quotes: z
+    .array(
+      z.object({
+        body: z.string(),
+        speaker: z.string().nullable().optional(),
+      }),
+    )
+    .describe("Quotable statements suitable for testimonials or content"),
+  signals: z
+    .array(
+      z.object({
+        kind: z.enum(["churn_signal", "upsell_signal", "referral_signal"]),
+        body: z.string(),
+      }),
+    )
+    .describe("Business signals surfaced in the conversation"),
+});
+
+export type MeetingInsightResult = z.infer<typeof meetingInsightSchema>;

@@ -1,7 +1,6 @@
 import { inngest } from "@/lib/inngest/client";
 import { supabase } from "@/lib/supabase";
-import { google } from "@ai-sdk/google";
-import { generateObject } from "ai";
+import { opsGenerateObject } from "@/lib/ops/llm";
 import { bookSummarySchema } from "@/lib/ai/schemas";
 
 export const ingestBook = inngest.createFunction(
@@ -22,8 +21,10 @@ export const ingestBook = inngest.createFunction(
       isbn?: string;
       categories?: string[];
       workspaceId?: string | null;
+      clientId?: string | null;
     };
     const workspaceId = book.workspaceId ?? null;
+    const clientId = book.clientId ?? null;
     const externalId = `book:${book.isbn || book.title}`;
 
     // Step 1: Check for duplicate
@@ -41,7 +42,7 @@ export const ingestBook = inngest.createFunction(
       return { status: "duplicate", ideaId: existing.id };
     }
 
-    // Step 2: Generate deep summary using AI + training data
+    // Step 2: Generate deep summary via LLM (structured output)
     const analysis = await step.run("summarize-book", async () => {
       const authorStr = book.authors.length
         ? ` by ${book.authors.join(", ")}`
@@ -53,9 +54,9 @@ export const ingestBook = inngest.createFunction(
         ? `\nCategories: ${book.categories.join(", ")}`
         : "";
 
-      const { object } = await generateObject({
-        model: google("gemini-2.5-flash"),
-        schema: bookSummarySchema,
+      const result = await opsGenerateObject({
+        scope: { workspaceId, clientId },
+        tier: "standard",
         messages: [
           {
             role: "user",
@@ -73,8 +74,9 @@ Provide:
 4. Key entities (people, concepts, related works mentioned or relevant)`,
           },
         ],
+        schema: bookSummarySchema,
       });
-      return object;
+      return result.object;
     });
 
     // Step 3: Create content idea
@@ -83,7 +85,7 @@ Provide:
         .from("content_ideas")
         .insert({
           workspace_id: workspaceId,
-          client_id: null,
+          client_id: clientId,
           raw_insight: `Book: "${book.title}"${book.authors.length ? ` by ${book.authors.join(", ")}` : ""}. ${analysis.summary.slice(0, 500)}`,
           source: "book",
           source_metadata: {
@@ -109,5 +111,5 @@ Provide:
     });
 
     return { status: "created", ideaId: idea.id };
-  }
+  },
 );

@@ -1,6 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
-import { opsCreateMessage, SONNET_MODEL } from "@/lib/ops/llm";
+import { opsGenerateText } from "@/lib/ops/llm";
 
 async function fetchClientVoice(clientId: string): Promise<string | null> {
   const db = getSupabase();
@@ -66,20 +66,17 @@ export async function composePostFromPrompt(params: {
     .filter(Boolean)
     .join("\n\n");
 
-  const response = await opsCreateMessage(
-    {
+  const result = await opsGenerateText({
+    scope: {
       workspaceId: params.workspaceId,
       clientId: params.clientId ?? null,
     },
-    {
-      model: SONNET_MODEL,
-      max_tokens: 1200,
-      system: PERSONA_SYSTEM_PROMPT + voiceBlock,
-      messages: [{ role: "user", content: userContent }],
-    },
-  );
+    tier: "strong",
+    system: PERSONA_SYSTEM_PROMPT + voiceBlock,
+    messages: [{ role: "user", content: userContent }],
+    maxTokens: 1200,
+  });
 
-  const block = response.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") return null;
-  return block.text.trim();
+  const text = result.text.trim();
+  return text || null;
 }

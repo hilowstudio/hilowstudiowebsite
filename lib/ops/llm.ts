@@ -1,71 +1,228 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { getAnthropic, SONNET_MODEL } from "@/lib/anthropic";
-import { resolveSetting } from "@/lib/ops/settings";
+/**
+ * Single entry point for every LLM call in hi-low.
+ *
+ * Replaces the old Anthropic-only `opsCreateMessage`. Routes through the
+ * Vercel AI SDK (`generateText` / `generateObject`) to Anthropic, OpenAI,
+ * Google, or OpenRouter based on scope + tier. BYOK in ops_settings upgrades
+ * a scope to the matching frontier provider.
+ */
+
+import {
+  generateText,
+  generateObject,
+  NoObjectGeneratedError,
+  APICallError,
+  type ModelMessage,
+  type ToolSet,
+  type GenerateTextResult,
+  type GenerateObjectResult,
+} from "ai";
+import type { ZodType } from "zod";
+
+import {
+  resolveLLMProvider,
+  openRouterFallbackModel,
+  type LLMScope,
+  type LLMTier,
+  type ResolvedLLM,
+} from "@/lib/ops/model-router";
 import {
   assertCapOrBYOK,
   incrementUsage,
   QuotaExceededError,
 } from "@/lib/ops/meters";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 export { QuotaExceededError };
-export { SONNET_MODEL };
+export type { LLMScope, LLMTier };
 
-type AnthropicInput = Anthropic.Messages.MessageCreateParamsNonStreaming;
-type AnthropicMessage = Anthropic.Messages.Message;
-
-export type OpsLlmScope = {
-  workspaceId: string;
-  clientId?: string | null;
+export type OpsGenerateOptions<S = unknown> = {
+  scope: LLMScope;
+  tier: LLMTier;
+  system?: string;
+  messages: ModelMessage[];
+  tools?: ToolSet;
+  /** When provided, routes through `generateObject` with structured output. */
+  schema?: ZodType<S>;
+  maxTokens?: number;
+  temperature?: number;
+  /**
+   * Forward Anthropic's extended thinking. Honored only when the resolved
+   * provider is `anthropic`; ignored otherwise (open-source models don't
+   * support it).
+   */
+  thinking?:
+    | { type: "adaptive"; display?: "omitted" | "summarized" }
+    | { type: "enabled"; budgetTokens?: number };
 };
 
-async function clientForScope(scope: OpsLlmScope): Promise<{
-  client: Anthropic;
-  byok: boolean;
-}> {
-  const override = await resolveSetting("anthropic_api_key", {
-    workspaceId: scope.workspaceId,
-    clientId: scope.clientId ?? null,
+export type OpsGenerateTextResult = {
+  text: string;
+  provider: ResolvedLLM["provider"];
+  modelId: string;
+  usage: GenerateTextResult<ToolSet, never>["usage"];
+  tokens: number;
+  toolCalls: GenerateTextResult<ToolSet, never>["toolCalls"];
+  content: GenerateTextResult<ToolSet, never>["content"];
+};
+
+export type OpsGenerateObjectResult<S> = {
+  object: S;
+  provider: ResolvedLLM["provider"];
+  modelId: string;
+  usage: GenerateObjectResult<S>["usage"];
+  tokens: number;
+};
+
+type ProviderOptions = Parameters<typeof generateText>[0]["providerOptions"];
+
+function providerOptionsFor(
+  provider: ResolvedLLM["provider"],
+  opts: OpsGenerateOptions,
+): ProviderOptions {
+  if (provider === "anthropic" && opts.thinking) {
+    return { anthropic: { thinking: opts.thinking } } as ProviderOptions;
+  }
+  return undefined;
+}
+
+function totalTokens(usage: { inputTokens?: number; outputTokens?: number }): number {
+  return (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
+}
+
+async function meterIfApplicable(
+  scope: LLMScope,
+  byok: boolean,
+  tokens: number,
+): Promise<void> {
+  if (!scope.clientId || tokens <= 0) return;
+  await incrementUsage(scope.clientId, "llm_tokens", tokens, {
+    byokOverride: byok,
   });
-  if (
-    override &&
-    (override.source === "workspace" || override.source === "client")
-  ) {
+}
+
+async function preflightCap(scope: LLMScope, byok: boolean): Promise<void> {
+  if (!scope.clientId) return;
+  await assertCapOrBYOK(scope.clientId, "llm_tokens", { byokPresent: byok });
+}
+
+function shouldRetryOnOpenRouter(
+  resolved: ResolvedLLM,
+  err: unknown,
+): boolean {
+  if (resolved.provider !== "openrouter") return false;
+  if (err instanceof APICallError) {
+    if (err.statusCode && err.statusCode >= 500) return true;
+    if (err.isRetryable) return true;
+  }
+  return false;
+}
+
+function openRouterFallbackLM(resolved: ResolvedLLM, tier: LLMTier) {
+  const altModelId = openRouterFallbackModel(tier);
+  if (altModelId === resolved.modelId) return null;
+  const openrouter = createOpenRouter({ apiKey: resolved.apiKey });
+  return { model: openrouter.chat(altModelId), modelId: altModelId };
+}
+
+export async function opsGenerateText(
+  opts: OpsGenerateOptions,
+): Promise<OpsGenerateTextResult> {
+  const resolved = await resolveLLMProvider(opts.scope, opts.tier);
+  await preflightCap(opts.scope, resolved.byok);
+
+  const providerOptions = providerOptionsFor(resolved.provider, opts);
+
+  const runOnce = async (model: ResolvedLLM["model"], modelId: string) => {
+    const result = await generateText({
+      model,
+      system: opts.system,
+      messages: opts.messages,
+      tools: opts.tools,
+      maxOutputTokens: opts.maxTokens,
+      temperature: opts.temperature,
+      providerOptions,
+    });
+    const tokens = totalTokens(result.usage);
+    await meterIfApplicable(opts.scope, resolved.byok, tokens);
     return {
-      client: new Anthropic({ apiKey: override.value }),
-      byok: true,
-    };
+      text: result.text,
+      provider: resolved.provider,
+      modelId,
+      usage: result.usage,
+      tokens,
+      toolCalls: result.toolCalls,
+      content: result.content,
+    } satisfies OpsGenerateTextResult;
+  };
+
+  try {
+    return await runOnce(resolved.model, resolved.modelId);
+  } catch (err) {
+    if (!shouldRetryOnOpenRouter(resolved, err)) throw err;
+    const fallback = openRouterFallbackLM(resolved, opts.tier);
+    if (!fallback) throw err;
+    console.warn(
+      `[opsGenerate] OpenRouter ${resolved.modelId} failed; retrying on ${fallback.modelId}`,
+    );
+    return runOnce(fallback.model, fallback.modelId);
   }
-  return { client: getAnthropic(), byok: false };
 }
 
-/**
- * Create an Anthropic message under the hybrid cost model.
- * - Scope with clientId: enforces that client's LLM cap + increments its meter.
- * - Scope without clientId (lead drafts, workspace-level content, etc.): uses
- *   the resolved key (workspace BYOK if present, else platform). No metering.
- *   These calls are absorbed by the platform license.
- */
-export async function opsCreateMessage(
-  scope: OpsLlmScope,
-  input: AnthropicInput,
-): Promise<AnthropicMessage> {
-  const { client, byok } = await clientForScope(scope);
+export async function opsGenerateObject<S>(
+  opts: OpsGenerateOptions<S> & { schema: ZodType<S> },
+): Promise<OpsGenerateObjectResult<S>> {
+  const resolved = await resolveLLMProvider(opts.scope, opts.tier);
+  await preflightCap(opts.scope, resolved.byok);
 
-  if (scope.clientId) {
-    await assertCapOrBYOK(scope.clientId, "llm_tokens", { byokPresent: byok });
-  }
+  const providerOptions = providerOptionsFor(resolved.provider, opts);
 
-  const response = await client.messages.create(input);
+  const runOnce = async (model: ResolvedLLM["model"], modelId: string) => {
+    const result = (await generateObject({
+      model,
+      system: opts.system,
+      messages: opts.messages,
+      schema: opts.schema,
+      maxOutputTokens: opts.maxTokens,
+      temperature: opts.temperature,
+      providerOptions,
+    } as Parameters<typeof generateObject>[0])) as GenerateObjectResult<S>;
+    const tokens = totalTokens(result.usage);
+    await meterIfApplicable(opts.scope, resolved.byok, tokens);
+    return {
+      object: result.object,
+      provider: resolved.provider,
+      modelId,
+      usage: result.usage,
+      tokens,
+    } satisfies OpsGenerateObjectResult<S>;
+  };
 
-  if (scope.clientId) {
-    const tokens =
-      (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0);
-    if (tokens > 0) {
-      await incrementUsage(scope.clientId, "llm_tokens", tokens, {
-        byokOverride: byok,
-      });
+  try {
+    return await runOnce(resolved.model, resolved.modelId);
+  } catch (err) {
+    // One retry: open-source model returned malformed JSON → retry once on same model
+    if (NoObjectGeneratedError.isInstance(err)) {
+      console.warn(
+        `[opsGenerate] ${resolved.provider}:${resolved.modelId} returned no valid object; retrying once`,
+      );
+      try {
+        return await runOnce(resolved.model, resolved.modelId);
+      } catch (retryErr) {
+        if (!shouldRetryOnOpenRouter(resolved, retryErr)) throw retryErr;
+        const fallback = openRouterFallbackLM(resolved, opts.tier);
+        if (!fallback) throw retryErr;
+        return runOnce(fallback.model, fallback.modelId);
+      }
     }
+    if (!shouldRetryOnOpenRouter(resolved, err)) throw err;
+    const fallback = openRouterFallbackLM(resolved, opts.tier);
+    if (!fallback) throw err;
+    console.warn(
+      `[opsGenerate] OpenRouter ${resolved.modelId} failed; retrying on ${fallback.modelId}`,
+    );
+    return runOnce(fallback.model, fallback.modelId);
   }
-
-  return response;
 }
+
+export { resolveLLMProvider };
