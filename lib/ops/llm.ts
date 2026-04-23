@@ -217,11 +217,21 @@ function shouldRetryOnOpenRouter(
   return false;
 }
 
-function openRouterFallbackLM(resolved: ResolvedLLM, tier: LLMTier) {
+function openRouterFallbackLM(
+  resolved: ResolvedLLM,
+  tier: LLMTier,
+  opts?: { schemaMode?: boolean },
+) {
   const altModelId = openRouterFallbackModel(tier);
   if (altModelId === resolved.modelId) return null;
   const openrouter = createOpenRouter({ apiKey: resolved.apiKey });
-  return { model: openrouter.chat(altModelId), modelId: altModelId };
+  const extraBody = opts?.schemaMode
+    ? { response_format: { type: "json_object" } }
+    : undefined;
+  return {
+    model: openrouter.chat(altModelId, extraBody ? { extraBody } : undefined),
+    modelId: altModelId,
+  };
 }
 
 export async function opsGenerateText(
@@ -291,7 +301,9 @@ export async function opsGenerateText(
 export async function opsGenerateObject<S>(
   opts: OpsGenerateOptions<S> & { schema: ZodType<S> },
 ): Promise<OpsGenerateObjectResult<S>> {
-  const resolved = await resolveLLMProvider(opts.scope, opts.tier);
+  const resolved = await resolveLLMProvider(opts.scope, opts.tier, {
+    schemaMode: true,
+  });
   await preflightCap(opts.scope, resolved.byok);
 
   const providerOptions = providerOptionsFor(resolved.provider, opts);
@@ -349,13 +361,17 @@ export async function opsGenerateObject<S>(
         return await runOnce(resolved.model, resolved.modelId, resolved.modelId);
       } catch (retryErr) {
         if (!shouldRetryOnOpenRouter(resolved, retryErr)) throw retryErr;
-        const fallback = openRouterFallbackLM(resolved, opts.tier);
+        const fallback = openRouterFallbackLM(resolved, opts.tier, {
+          schemaMode: true,
+        });
         if (!fallback) throw retryErr;
         return runOnce(fallback.model, fallback.modelId, resolved.modelId);
       }
     }
     if (!shouldRetryOnOpenRouter(resolved, err)) throw err;
-    const fallback = openRouterFallbackLM(resolved, opts.tier);
+    const fallback = openRouterFallbackLM(resolved, opts.tier, {
+      schemaMode: true,
+    });
     if (!fallback) throw err;
     console.warn(
       `[opsGenerate] OpenRouter ${resolved.modelId} failed; retrying on ${fallback.modelId}`,

@@ -156,6 +156,7 @@ async function pickProviderAndKey(
 export async function resolveLLMProvider(
   scope: LLMScope,
   tier: LLMTier,
+  opts?: { schemaMode?: boolean },
 ): Promise<ResolvedLLM> {
   const { provider, apiKey, byok } = await pickProviderAndKey(scope);
   const modelId = modelIdFor(provider, tier);
@@ -187,7 +188,15 @@ export async function resolveLLMProvider(
         apiKey,
         fetch: process.env.LLM_DEBUG_REQUEST === "1" ? debugFetch : undefined,
       });
-      model = openrouter.chat(modelId);
+      // The OpenRouter provider hardcodes `strict: true` on json_schema
+      // response_format, which filters out every endpoint that doesn't
+      // advertise strict-mode support (which is most of them for Kimi, GLM,
+      // Qwen, etc.). For structured-output calls we override to plain
+      // json_object mode; Zod validates the output client-side.
+      const extraBody = opts?.schemaMode
+        ? { response_format: { type: "json_object" } }
+        : undefined;
+      model = openrouter.chat(modelId, extraBody ? { extraBody } : undefined);
       break;
     }
   }
