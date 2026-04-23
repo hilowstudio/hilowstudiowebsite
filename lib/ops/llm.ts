@@ -175,8 +175,34 @@ function logError(params: {
     );
     return;
   }
-  const msg = params.err instanceof Error ? params.err.message : String(params.err);
-  console.error(`${base} error=${msg}`);
+  // Non-APICallError path: dump whatever fields the error carries so the
+  // OpenRouter-specific wrapping doesn't hide response body or cause.
+  const e = params.err as Record<string, unknown> | undefined;
+  const msg =
+    params.err instanceof Error
+      ? params.err.message
+      : String(params.err);
+  const extras: string[] = [];
+  if (e && typeof e === "object") {
+    for (const key of [
+      "code",
+      "status",
+      "statusCode",
+      "responseBody",
+      "response",
+      "cause",
+      "data",
+      "error",
+    ]) {
+      const v = e[key];
+      if (v !== undefined) {
+        extras.push(
+          `${key}=${typeof v === "string" ? v : JSON.stringify(v)}`,
+        );
+      }
+    }
+  }
+  console.error(`${base} error=${msg}${extras.length ? " " + extras.join(" ") : ""}`);
 }
 
 function shouldRetryOnOpenRouter(
