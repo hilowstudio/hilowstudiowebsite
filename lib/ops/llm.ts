@@ -17,7 +17,7 @@ import {
   type GenerateTextResult,
   type GenerateObjectResult,
 } from "ai";
-import type { ZodType } from "zod";
+import { z, type ZodType } from "zod";
 
 import {
   resolveLLMProvider,
@@ -298,14 +298,167 @@ export async function opsGenerateText(
   }
 }
 
+/**
+ * Build a JSON-Schema hint for the model. Zod v4 exposes `z.toJSONSchema`
+ * which emits a valid draft-07 JSON Schema from any ZodType.
+ */
+function schemaAsJsonSchemaString(schema: ZodType<unknown>): string {
+  try {
+    const js = z.toJSONSchema(
+      schema as unknown as Parameters<typeof z.toJSONSchema>[0],
+    );
+    return JSON.stringify(js, null, 2);
+  } catch {
+    return "(schema description unavailable; infer structure from field names)";
+  }
+}
+
+function stripCodeFences(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("```")) {
+    return trimmed
+      .replace(/^```(?:json)?\s*\n?/, "")
+      .replace(/\n?```\s*$/, "")
+      .trim();
+  }
+  return trimmed;
+}
+
+function extractJsonObject(text: string): string {
+  const stripped = stripCodeFences(text);
+  // If the model added prose before/after, pull out the first balanced { ... }.
+  const first = stripped.indexOf("{");
+  const last = stripped.lastIndexOf("}");
+  if (first !== -1 && last !== -1 && last > first) {
+    return stripped.slice(first, last + 1);
+  }
+  return stripped;
+}
+
+/**
+ * OpenRouter-specific path for structured output. The @openrouter/ai-sdk-provider
+ * hardcodes `strict: true` on json_schema response_format, which filters out
+ * every Kimi/GLM/Qwen endpoint that doesn't advertise strict-schema support.
+ * Instead of fighting that, we use plain `generateText` with a JSON Schema
+ * hint in the system prompt, then parse + Zod-validate the response
+ * client-side. Equivalent output contract, zero dependence on provider
+ * response_format negotiation.
+ */
+async function generateObjectViaText<S>(
+  opts: OpsGenerateOptions<S> & { schema: ZodType<S> },
+  resolved: ResolvedLLM,
+  modelId: string,
+  retriedFrom?: string,
+): Promise<OpsGenerateObjectResult<S>> {
+  const schemaHint = schemaAsJsonSchemaString(opts.schema);
+  const jsonInstructions = [
+    "## Output format",
+    "Respond with ONLY a JSON object that matches the schema below.",
+    "- Begin your response with `{` and end it with `}`.",
+    "- No markdown code fences. No prose. No preamble. No commentary.",
+    "- All required fields must be present. Use the exact field names.",
+    "",
+    "```json",
+    schemaHint,
+    "```",
+  ].join("\n");
+
+  const mergedSystem = [opts.system, jsonInstructions]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const result = await generateText({
+    model: resolved.model,
+    system: mergedSystem,
+    messages: opts.messages,
+    maxOutputTokens: opts.maxTokens,
+    temperature: opts.temperature,
+  });
+
+  const tokens = totalTokens(result.usage);
+  await meterIfApplicable(opts.scope, resolved.byok, tokens);
+  logCall({
+    mode: "object",
+    provider: resolved.provider,
+    modelId,
+    tier: opts.tier,
+    byok: resolved.byok,
+    tokens,
+    scope: opts.scope,
+    retried: retriedFrom,
+  });
+
+  const rawJson = extractJsonObject(result.text);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch (parseErr) {
+    throw new Error(
+      `Model returned non-JSON output (${resolved.provider}:${modelId}). First 400 chars: ${result.text.slice(0, 400)} | parseErr=${(parseErr as Error).message}`,
+    );
+  }
+
+  const validated = opts.schema.safeParse(parsed);
+  if (!validated.success) {
+    throw new Error(
+      `Model output failed Zod validation (${resolved.provider}:${modelId}): ${validated.error.message}`,
+    );
+  }
+
+  return {
+    object: validated.data,
+    provider: resolved.provider,
+    modelId,
+    usage: result.usage,
+    tokens,
+  } satisfies OpsGenerateObjectResult<S>;
+}
+
 export async function opsGenerateObject<S>(
   opts: OpsGenerateOptions<S> & { schema: ZodType<S> },
 ): Promise<OpsGenerateObjectResult<S>> {
-  const resolved = await resolveLLMProvider(opts.scope, opts.tier, {
-    schemaMode: true,
-  });
+  const resolved = await resolveLLMProvider(opts.scope, opts.tier);
   await preflightCap(opts.scope, resolved.byok);
 
+  // OpenRouter: use text-based schema path (bypass response_format entirely).
+  if (resolved.provider === "openrouter") {
+    try {
+      return await generateObjectViaText(opts, resolved, resolved.modelId);
+    } catch (err) {
+      logError({
+        provider: resolved.provider,
+        modelId: resolved.modelId,
+        tier: opts.tier,
+        err,
+      });
+      // Retry once on the same model (transient parse/validation failure).
+      try {
+        return await generateObjectViaText(
+          opts,
+          resolved,
+          resolved.modelId,
+          resolved.modelId,
+        );
+      } catch (retryErr) {
+        if (!shouldRetryOnOpenRouter(resolved, retryErr)) throw retryErr;
+        const fallback = openRouterFallbackLM(resolved, opts.tier);
+        if (!fallback) throw retryErr;
+        const fallbackResolved: ResolvedLLM = {
+          ...resolved,
+          model: fallback.model,
+          modelId: fallback.modelId,
+        };
+        return generateObjectViaText(
+          opts,
+          fallbackResolved,
+          fallback.modelId,
+          resolved.modelId,
+        );
+      }
+    }
+  }
+
+  // Native providers: use the SDK's built-in structured output.
   const providerOptions = providerOptionsFor(resolved.provider, opts);
 
   const runOnce = async (
@@ -352,31 +505,13 @@ export async function opsGenerateObject<S>(
       tier: opts.tier,
       err,
     });
-    // One retry: open-source model returned malformed JSON → retry once on same model
     if (NoObjectGeneratedError.isInstance(err)) {
       console.warn(
         `[opsGenerate] ${resolved.provider}:${resolved.modelId} returned no valid object; retrying once`,
       );
-      try {
-        return await runOnce(resolved.model, resolved.modelId, resolved.modelId);
-      } catch (retryErr) {
-        if (!shouldRetryOnOpenRouter(resolved, retryErr)) throw retryErr;
-        const fallback = openRouterFallbackLM(resolved, opts.tier, {
-          schemaMode: true,
-        });
-        if (!fallback) throw retryErr;
-        return runOnce(fallback.model, fallback.modelId, resolved.modelId);
-      }
+      return runOnce(resolved.model, resolved.modelId, resolved.modelId);
     }
-    if (!shouldRetryOnOpenRouter(resolved, err)) throw err;
-    const fallback = openRouterFallbackLM(resolved, opts.tier, {
-      schemaMode: true,
-    });
-    if (!fallback) throw err;
-    console.warn(
-      `[opsGenerate] OpenRouter ${resolved.modelId} failed; retrying on ${fallback.modelId}`,
-    );
-    return runOnce(fallback.model, fallback.modelId, resolved.modelId);
+    throw err;
   }
 }
 
