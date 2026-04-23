@@ -15,10 +15,10 @@ const HI_LOW_SLUGS = [
   "z-ai/glm-5.1",
   "moonshotai/kimi-k2.6",
   "minimax/minimax-m2.7",
-  "google/gemma-4-26b-a4b",
-  "google/gemma-4-26b-a4b:free",
-  "google/gemma-4-31b",
-  "google/gemma-4-31b:free",
+  "google/gemma-4-26b-a4b-it",
+  "google/gemma-4-26b-a4b-it:free",
+  "google/gemma-4-31b-it",
+  "google/gemma-4-31b-it:free",
 ];
 
 export async function GET(request: NextRequest) {

@@ -51,8 +51,10 @@ export type ResolvedLLM = {
  *
  * Documented OpenRouter alternates (use via env override if the primary is
  * misbehaving; all open-source, all on the allow-list):
- *   fast     → google/gemma-4-26b-a4b or google/gemma-4-31b (Apache-2.0,
- *              native multimodal, edge-deployable)
+ *   fast     → google/gemma-4-26b-a4b-it or google/gemma-4-31b-it (Apache-2.0,
+ *              native multimodal, edge-deployable). Note the `-it`
+ *              instruction-tuned suffix is part of the canonical slug.
+ *              `:free` variants also exist on the allow-list.
  *   standard → minimax/minimax-m2.7 (the only non-GLM open-source pick here)
  *   strong   → minimax/minimax-m2.7, z-ai/glm-5.1
  *   frontier → minimax/minimax-m2.7
@@ -196,8 +198,8 @@ export function openRouterFallbackModel(tier: LLMTier): string {
   const fallbacks: Record<LLMTier, string[]> = {
     fast: [
       "qwen/qwen3.6-plus",
-      "google/gemma-4-26b-a4b",
-      "google/gemma-4-31b",
+      "google/gemma-4-26b-a4b-it",
+      "google/gemma-4-31b-it",
     ],
     standard: ["z-ai/glm-5.1", "minimax/minimax-m2.7"],
     strong: [
