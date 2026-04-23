@@ -183,7 +183,10 @@ export async function resolveLLMProvider(
       break;
     }
     case "openrouter": {
-      const openrouter = createOpenRouter({ apiKey });
+      const openrouter = createOpenRouter({
+        apiKey,
+        fetch: process.env.LLM_DEBUG_REQUEST === "1" ? debugFetch : undefined,
+      });
       model = openrouter.chat(modelId);
       break;
     }
@@ -191,6 +194,26 @@ export async function resolveLLMProvider(
 
   return { provider, model, modelId, apiKey, byok };
 }
+
+/**
+ * Debug fetch wrapper that logs the exact outbound request + response for
+ * OpenRouter calls. Activate by setting LLM_DEBUG_REQUEST=1 in env.
+ */
+const debugFetch: typeof fetch = async (input, init) => {
+  const url = typeof input === "string" ? input : (input as Request).url;
+  const bodyStr =
+    typeof init?.body === "string"
+      ? init.body
+      : init?.body instanceof Uint8Array
+        ? new TextDecoder().decode(init.body)
+        : "(non-string body)";
+  console.log(`[llm:request] url=${url}\n[llm:request] body=${bodyStr}`);
+  const res = await fetch(input, init);
+  const clone = res.clone();
+  const respText = await clone.text();
+  console.log(`[llm:response] status=${res.status}\n[llm:response] body=${respText.slice(0, 2000)}`);
+  return res;
+};
 
 /** For callers who need a fallback model id in the same tier after an OpenRouter 5xx. */
 export function openRouterFallbackModel(tier: LLMTier): string {
