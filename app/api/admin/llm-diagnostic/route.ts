@@ -81,6 +81,8 @@ export async function GET(request: NextRequest) {
     openrouter_total_models: data.data.length,
     configured_count: HI_LOW_SLUGS.length,
     missing_count: missingCount,
+    key_prefix: `${key.slice(0, 16)}...${key.slice(-4)}`,
+    vercel_region: process.env.VERCEL_REGION ?? "(unknown)",
     models: report,
   });
 }
