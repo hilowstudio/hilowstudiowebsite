@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticatedRequest } from "@/lib/admin-auth";
+import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
 
 /**
  * Admin-only diagnostic: compares hi-low's configured OpenRouter model slugs
@@ -140,6 +141,13 @@ export async function GET(request: NextRequest) {
           role: "system",
           content: [{ type: "text", text: bigSystem }],
         },
+        { role: "user", content: "hello" },
+      ],
+    }),
+    await probe("real_persona_system", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [
+        { role: "system", content: PERSONA_SYSTEM_PROMPT },
         { role: "user", content: "hello" },
       ],
     }),
