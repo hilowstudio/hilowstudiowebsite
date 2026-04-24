@@ -169,30 +169,24 @@ function logError(params: {
 }): void {
   if (!LLM_DEBUG_LOG) return;
   const base = `[llm:error] provider=${params.provider} model=${params.modelId} tier=${params.tier}`;
-  if (params.err instanceof APICallError) {
-    const body = params.err.responseBody ?? "(no body)";
-    const reqBody = params.err.requestBodyValues
-      ? JSON.stringify(params.err.requestBodyValues)
-      : "(no request body)";
-    console.error(
-      `${base} status=${params.err.statusCode ?? "?"} retryable=${params.err.isRetryable} message=${params.err.message}\n${base} response=${body}\n${base} request=${reqBody}`,
-    );
-    return;
-  }
-  // Non-APICallError path: dump whatever fields the error carries so the
-  // OpenRouter-specific wrapping doesn't hide response body or cause.
+  // Duck-type APICallError shape. The OpenRouter provider bundles its own
+  // copy of @ai-sdk/provider, so the thrown error isn't instanceof APICallError
+  // from the `ai` package even though it carries the same fields.
   const e = params.err as Record<string, unknown> | undefined;
   const msg =
-    params.err instanceof Error
-      ? params.err.message
-      : String(params.err);
+    params.err instanceof Error ? params.err.message : String(params.err);
   const extras: string[] = [];
   if (e && typeof e === "object") {
     for (const key of [
       "code",
       "status",
       "statusCode",
+      "retryable",
+      "isRetryable",
       "responseBody",
+      "requestBodyValues",
+      "url",
+      "responseHeaders",
       "response",
       "cause",
       "data",
@@ -206,7 +200,21 @@ function logError(params: {
       }
     }
   }
-  console.error(`${base} error=${msg}${extras.length ? " " + extras.join(" ") : ""}`);
+  // Use APICallError fancy format when available (native `ai` errors); else
+  // dump extras.
+  if (params.err instanceof APICallError) {
+    const body = params.err.responseBody ?? "(no body)";
+    const reqBody = params.err.requestBodyValues
+      ? JSON.stringify(params.err.requestBodyValues)
+      : "(no request body)";
+    console.error(
+      `${base} status=${params.err.statusCode ?? "?"} retryable=${params.err.isRetryable} message=${params.err.message}\n${base} response=${body}\n${base} request=${reqBody}`,
+    );
+    return;
+  }
+  console.error(
+    `${base} error=${msg}${extras.length ? " " + extras.join(" ") : ""}`,
+  );
 }
 
 function shouldRetryOnOpenRouter(
