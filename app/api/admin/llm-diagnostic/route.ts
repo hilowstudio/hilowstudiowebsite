@@ -151,6 +151,49 @@ export async function GET(request: NextRequest) {
         { role: "user", content: "hello" },
       ],
     }),
+    // Persona + pillar wizard instructions (no schema code block).
+    await probe("persona_plus_wizard_prompt", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [
+        {
+          role: "system",
+          content:
+            PERSONA_SYSTEM_PROMPT +
+            `\n\n---\n\nYou are a content strategy consultant helping a founder define their 3-5 core LinkedIn content pillars.\n\n## Output format\nRespond with ONLY a JSON object.`,
+        },
+        { role: "user", content: "hello" },
+      ],
+    }),
+    // Persona + wizard instructions + JSON schema in a markdown code block.
+    await probe("persona_plus_wizard_plus_schema", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [
+        {
+          role: "system",
+          content:
+            PERSONA_SYSTEM_PROMPT +
+            `\n\n---\n\nYou are a content strategy consultant helping a founder define their 3-5 core LinkedIn content pillars.\n\n## Output format\nRespond with ONLY a JSON object matching the schema.\n\n\`\`\`json\n{"type":"object","properties":{"pillars":{"type":"array"}},"required":["pillars"]}\n\`\`\``,
+        },
+        { role: "user", content: "hello" },
+      ],
+    }),
+    // Full wizard payload: persona + schema + user "baseball" answers.
+    await probe("full_pillar_wizard", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [
+        {
+          role: "system",
+          content:
+            PERSONA_SYSTEM_PROMPT +
+            `\n\n---\n\nYou are a content strategy consultant helping a founder define their 3-5 core LinkedIn content pillars.\n\n## Output format\nRespond with ONLY a JSON object matching the schema.\n\n\`\`\`json\n{"type":"object","properties":{"pillars":{"type":"array"}},"required":["pillars"]}\n\`\`\``,
+        },
+        {
+          role: "user",
+          content:
+            "Here are my discovery answers. Synthesize these into 3-5 content pillars.\n\n**What I could speak about for 45 minutes with no prep:**\nbaseball\n\n**Bad advice in my industry that drives me crazy:**\nbaseball\n\n**My unfair advantage:**\nbaseball\n\n**Top 3 problems my ideal client is trying to solve:**\nbaseball\n\n**What my audience needs to believe to be ready to buy:**\nbaseball\n\n**What people actually ask me on calls, in comments, and DMs:**\nbaseball",
+        },
+      ],
+    }),
   ];
 
   return NextResponse.json({
