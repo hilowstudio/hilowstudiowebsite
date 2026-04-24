@@ -28,6 +28,10 @@ import {
   type ResolvedLLM,
 } from "@/lib/ops/model-router";
 import {
+  openrouterRawChat,
+  type OpenRouterRawResult,
+} from "@/lib/ops/openrouter-raw";
+import {
   assertCapOrBYOK,
   incrementUsage,
   QuotaExceededError,
@@ -258,11 +262,79 @@ function openRouterFallbackLM(resolved: ResolvedLLM, tier: LLMTier) {
   };
 }
 
+async function opsGenerateTextViaOpenRouterRaw(
+  opts: OpsGenerateOptions,
+  resolved: ResolvedLLM,
+  modelId: string,
+  retriedFrom?: string,
+): Promise<OpsGenerateTextResult> {
+  const result: OpenRouterRawResult = await openrouterRawChat({
+    apiKey: resolved.apiKey,
+    modelId,
+    system: opts.system,
+    messages: opts.messages,
+    temperature: opts.temperature,
+    // Deliberately omit maxTokens — OpenRouter's endpoint filter drops
+    // providers whose output ceiling is below the request; letting the
+    // upstream use its default keeps the endpoint pool wide.
+  });
+  const tokens = result.usage.totalTokens;
+  await meterIfApplicable(opts.scope, resolved.byok, tokens);
+  logCall({
+    mode: "text",
+    provider: resolved.provider,
+    modelId,
+    tier: opts.tier,
+    byok: resolved.byok,
+    tokens,
+    scope: opts.scope,
+    retried: retriedFrom,
+  });
+  return {
+    text: result.text,
+    provider: resolved.provider,
+    modelId,
+    usage: {
+      inputTokens: result.usage.inputTokens,
+      outputTokens: result.usage.outputTokens,
+      totalTokens: result.usage.totalTokens,
+    } as OpsGenerateTextResult["usage"],
+    tokens,
+    toolCalls: [] as unknown as OpsGenerateTextResult["toolCalls"],
+    content: [] as unknown as OpsGenerateTextResult["content"],
+  } satisfies OpsGenerateTextResult;
+}
+
 export async function opsGenerateText(
   opts: OpsGenerateOptions,
 ): Promise<OpsGenerateTextResult> {
   const resolved = await resolveLLMProvider(opts.scope, opts.tier);
   await preflightCap(opts.scope, resolved.byok);
+
+  if (resolved.provider === "openrouter") {
+    try {
+      return await opsGenerateTextViaOpenRouterRaw(
+        opts,
+        resolved,
+        resolved.modelId,
+      );
+    } catch (err) {
+      logError({
+        provider: resolved.provider,
+        modelId: resolved.modelId,
+        tier: opts.tier,
+        err,
+      });
+      const altId = openRouterFallbackModel(opts.tier);
+      if (altId === resolved.modelId) throw err;
+      return opsGenerateTextViaOpenRouterRaw(
+        opts,
+        resolved,
+        altId,
+        resolved.modelId,
+      );
+    }
+  }
 
   const providerOptions = providerOptionsFor(resolved.provider, opts);
 
@@ -391,15 +463,36 @@ async function generateObjectViaText<S>(
     .filter(Boolean)
     .join("\n\n");
 
-  const result = await generateText({
-    model: resolved.model,
-    system: mergedSystem,
-    messages: opts.messages,
-    maxOutputTokens: maxTokensFor(resolved.provider, opts.maxTokens),
-    temperature: opts.temperature,
-  });
+  // For OpenRouter, use the raw client (bypasses AI SDK entirely). For
+  // native-BYOK providers, use AI SDK generateText as before.
+  let resultText: string;
+  let resultUsage: { inputTokens?: number; outputTokens?: number };
+  if (resolved.provider === "openrouter") {
+    const raw = await openrouterRawChat({
+      apiKey: resolved.apiKey,
+      modelId,
+      system: mergedSystem,
+      messages: opts.messages,
+      temperature: opts.temperature,
+    });
+    resultText = raw.text;
+    resultUsage = {
+      inputTokens: raw.usage.inputTokens,
+      outputTokens: raw.usage.outputTokens,
+    };
+  } else {
+    const result = await generateText({
+      model: resolved.model,
+      system: mergedSystem,
+      messages: opts.messages,
+      maxOutputTokens: maxTokensFor(resolved.provider, opts.maxTokens),
+      temperature: opts.temperature,
+    });
+    resultText = result.text;
+    resultUsage = result.usage;
+  }
 
-  const tokens = totalTokens(result.usage);
+  const tokens = totalTokens(resultUsage);
   await meterIfApplicable(opts.scope, resolved.byok, tokens);
   logCall({
     mode: "object",
@@ -412,13 +505,13 @@ async function generateObjectViaText<S>(
     retried: retriedFrom,
   });
 
-  const rawJson = extractJsonObject(result.text);
+  const rawJson = extractJsonObject(resultText);
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawJson);
   } catch (parseErr) {
     throw new Error(
-      `Model returned non-JSON output (${resolved.provider}:${modelId}). First 400 chars: ${result.text.slice(0, 400)} | parseErr=${(parseErr as Error).message}`,
+      `Model returned non-JSON output (${resolved.provider}:${modelId}). First 400 chars: ${resultText.slice(0, 400)} | parseErr=${(parseErr as Error).message}`,
     );
   }
 
@@ -433,7 +526,7 @@ async function generateObjectViaText<S>(
     object: validated.data,
     provider: resolved.provider,
     modelId,
-    usage: result.usage,
+    usage: resultUsage as OpsGenerateObjectResult<S>["usage"],
     tokens,
   } satisfies OpsGenerateObjectResult<S>;
 }
