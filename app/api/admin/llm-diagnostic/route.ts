@@ -77,44 +77,73 @@ export async function GET(request: NextRequest) {
 
   const missingCount = report.filter((r) => !r.found).length;
 
-  // Raw fetch test: bypass AI SDK entirely, replicate the exact curl that
-  // succeeds from the developer's machine. If this also 404s, the issue is
-  // Vercel's outbound IP being filtered by OpenRouter regardless of source.
-  // If it succeeds, the AI SDK adds something to the payload that trips the
-  // filter.
-  let rawTestResult: {
-    status: number;
-    body: string;
-    cfRay: string | null;
-  };
-  try {
-    const rawRes = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${key}`,
-          "Content-Type": "application/json",
+  // Four raw-fetch probes to isolate which payload attribute trips the
+  // OpenRouter filter from Vercel's outbound IP. Each uses identical
+  // headers — only the body differs.
+  async function probe(label: string, body: Record<string, unknown>) {
+    try {
+      const res = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify({
-          model: "moonshotai/kimi-k2.6",
-          messages: [{ role: "user", content: "hello" }],
-        }),
-      },
-    );
-    const text = await rawRes.text();
-    rawTestResult = {
-      status: rawRes.status,
-      body: text.slice(0, 500),
-      cfRay: rawRes.headers.get("cf-ray"),
-    };
-  } catch (err) {
-    rawTestResult = {
-      status: -1,
-      body: err instanceof Error ? err.message : String(err),
-      cfRay: null,
-    };
+      );
+      const text = await res.text();
+      return {
+        label,
+        status: res.status,
+        body_preview: text.slice(0, 200),
+        cfRay: res.headers.get("cf-ray"),
+        bytes: JSON.stringify(body).length,
+      };
+    } catch (err) {
+      return {
+        label,
+        status: -1,
+        body_preview: err instanceof Error ? err.message : String(err),
+        cfRay: null,
+        bytes: 0,
+      };
+    }
   }
+
+  const bigSystem = "You are a helpful assistant.\n\n".repeat(500); // ~15KB
+
+  const probes = [
+    await probe("minimal_user_only", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [{ role: "user", content: "hello" }],
+    }),
+    await probe("short_system_plus_user", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: "hello" },
+      ],
+    }),
+    await probe("big_system_plain_string", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [
+        { role: "system", content: bigSystem },
+        { role: "user", content: "hello" },
+      ],
+    }),
+    await probe("big_system_content_parts", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [
+        {
+          role: "system",
+          content: [{ type: "text", text: bigSystem }],
+        },
+        { role: "user", content: "hello" },
+      ],
+    }),
+  ];
 
   return NextResponse.json({
     openrouter_total_models: data.data.length,
@@ -122,7 +151,7 @@ export async function GET(request: NextRequest) {
     missing_count: missingCount,
     key_prefix: `${key.slice(0, 16)}...${key.slice(-4)}`,
     vercel_region: process.env.VERCEL_REGION ?? "(unknown)",
-    raw_chat_test: rawTestResult,
+    probes,
     models: report,
   });
 }
