@@ -77,12 +77,52 @@ export async function GET(request: NextRequest) {
 
   const missingCount = report.filter((r) => !r.found).length;
 
+  // Raw fetch test: bypass AI SDK entirely, replicate the exact curl that
+  // succeeds from the developer's machine. If this also 404s, the issue is
+  // Vercel's outbound IP being filtered by OpenRouter regardless of source.
+  // If it succeeds, the AI SDK adds something to the payload that trips the
+  // filter.
+  let rawTestResult: {
+    status: number;
+    body: string;
+    cfRay: string | null;
+  };
+  try {
+    const rawRes = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "moonshotai/kimi-k2.6",
+          messages: [{ role: "user", content: "hello" }],
+        }),
+      },
+    );
+    const text = await rawRes.text();
+    rawTestResult = {
+      status: rawRes.status,
+      body: text.slice(0, 500),
+      cfRay: rawRes.headers.get("cf-ray"),
+    };
+  } catch (err) {
+    rawTestResult = {
+      status: -1,
+      body: err instanceof Error ? err.message : String(err),
+      cfRay: null,
+    };
+  }
+
   return NextResponse.json({
     openrouter_total_models: data.data.length,
     configured_count: HI_LOW_SLUGS.length,
     missing_count: missingCount,
     key_prefix: `${key.slice(0, 16)}...${key.slice(-4)}`,
     vercel_region: process.env.VERCEL_REGION ?? "(unknown)",
+    raw_chat_test: rawTestResult,
     models: report,
   });
 }
