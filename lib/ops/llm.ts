@@ -217,19 +217,28 @@ function shouldRetryOnOpenRouter(
   return false;
 }
 
-function openRouterFallbackLM(
-  resolved: ResolvedLLM,
-  tier: LLMTier,
-  opts?: { schemaMode?: boolean },
-) {
+/**
+ * OpenRouter's endpoint filter drops endpoints that can't honor the
+ * requested max_tokens. Kimi K2.6 via Parasail and several other upstream
+ * providers have conservative output limits; passing 4000+ eliminates them
+ * and triggers the misleading "No endpoints matching your guardrail
+ * restrictions and data policy" 404. For OpenRouter we omit max_tokens and
+ * let the upstream provider apply its default ceiling.
+ */
+function maxTokensFor(
+  provider: ResolvedLLM["provider"],
+  requested: number | undefined,
+): number | undefined {
+  if (provider === "openrouter") return undefined;
+  return requested;
+}
+
+function openRouterFallbackLM(resolved: ResolvedLLM, tier: LLMTier) {
   const altModelId = openRouterFallbackModel(tier);
   if (altModelId === resolved.modelId) return null;
   const openrouter = createOpenRouter({ apiKey: resolved.apiKey });
-  const extraBody = opts?.schemaMode
-    ? { response_format: { type: "json_object" } }
-    : undefined;
   return {
-    model: openrouter.chat(altModelId, extraBody ? { extraBody } : undefined),
+    model: openrouter.chat(altModelId),
     modelId: altModelId,
   };
 }
@@ -252,7 +261,7 @@ export async function opsGenerateText(
       system: opts.system,
       messages: opts.messages,
       tools: opts.tools,
-      maxOutputTokens: opts.maxTokens,
+      maxOutputTokens: maxTokensFor(resolved.provider, opts.maxTokens),
       temperature: opts.temperature,
       providerOptions,
     });
@@ -371,7 +380,7 @@ async function generateObjectViaText<S>(
     model: resolved.model,
     system: mergedSystem,
     messages: opts.messages,
-    maxOutputTokens: opts.maxTokens,
+    maxOutputTokens: maxTokensFor(resolved.provider, opts.maxTokens),
     temperature: opts.temperature,
   });
 

@@ -156,7 +156,6 @@ async function pickProviderAndKey(
 export async function resolveLLMProvider(
   scope: LLMScope,
   tier: LLMTier,
-  opts?: { schemaMode?: boolean },
 ): Promise<ResolvedLLM> {
   const { provider, apiKey, byok } = await pickProviderAndKey(scope);
   const modelId = modelIdFor(provider, tier);
@@ -184,19 +183,21 @@ export async function resolveLLMProvider(
       break;
     }
     case "openrouter": {
+      // Kimi K2.6, GLM 5.1, Qwen3.6 Plus, and other regional open-source
+      // endpoints on OpenRouter have inconsistent support for the
+      // `response_format` parameter. OpenRouter's endpoint filter returns a
+      // misleading "guardrail restrictions and data policy" 404 when no
+      // endpoint for the requested model supports the feature in the payload.
+      //
+      // We therefore construct OpenRouter chat models cleanly — no extraBody,
+      // no provider.data_collection, no response_format. Structured-output
+      // callers (opsGenerateObject) must inject schema guidance via the
+      // system prompt and validate the text response client-side with Zod.
       const openrouter = createOpenRouter({
         apiKey,
         fetch: process.env.LLM_DEBUG_REQUEST === "1" ? debugFetch : undefined,
       });
-      // The OpenRouter provider hardcodes `strict: true` on json_schema
-      // response_format, which filters out every endpoint that doesn't
-      // advertise strict-mode support (which is most of them for Kimi, GLM,
-      // Qwen, etc.). For structured-output calls we override to plain
-      // json_object mode; Zod validates the output client-side.
-      const extraBody = opts?.schemaMode
-        ? { response_format: { type: "json_object" } }
-        : undefined;
-      model = openrouter.chat(modelId, extraBody ? { extraBody } : undefined);
+      model = openrouter.chat(modelId);
       break;
     }
   }
