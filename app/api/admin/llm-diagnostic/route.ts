@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { isAuthenticatedRequest } from "@/lib/admin-auth";
 import { PERSONA_SYSTEM_PROMPT } from "@/lib/voice-persona";
+import { pillarsSchema } from "@/lib/ai/schemas";
 
 /**
  * Admin-only diagnostic: compares hi-low's configured OpenRouter model slugs
@@ -175,6 +177,23 @@ export async function GET(request: NextRequest) {
             `\n\n---\n\nYou are a content strategy consultant helping a founder define their 3-5 core LinkedIn content pillars.\n\n## Output format\nRespond with ONLY a JSON object matching the schema.\n\n\`\`\`json\n{"type":"object","properties":{"pillars":{"type":"array"}},"required":["pillars"]}\n\`\`\``,
         },
         { role: "user", content: "hello" },
+      ],
+    }),
+    // Full wizard payload with the REAL zod-generated schema embedded.
+    await probe("full_pillar_wizard_real_schema", {
+      model: "moonshotai/kimi-k2.6",
+      messages: [
+        {
+          role: "system",
+          content:
+            PERSONA_SYSTEM_PROMPT +
+            `\n\n---\n\nYou are a content strategy consultant helping a founder define their 3-5 core LinkedIn content pillars.\n\nA viable content pillar must sit at the intersection of three things:\n1. The person is an expert at it.\n2. Their audience cares about it.\n3. It logically leads back to their business.\n\nThe standard 5-pillar structure:\n- Pillar 1: Core Competency — tactical/strategic advice\n- Pillar 2: Industry Worldview — thought leadership, contrarian takes\n- Pillar 3: Journey / Build in Public — behind-the-scenes\n- Pillar 4: Audience Mindset / Soft Skills — empathy\n- Pillar 5: Tangential / Personal Passion — relatability\n\nRecommend 3, 4, or 5 pillars. Only recommend what the data supports.\n\n## Output format\nRespond with ONLY a JSON object that matches the schema below.\n- Begin your response with \`{\` and end it with \`}\`.\n- No markdown code fences. No prose. No preamble. No commentary.\n- All required fields must be present. Use the exact field names.\n\n\`\`\`json\n${JSON.stringify(z.toJSONSchema(pillarsSchema), null, 2)}\n\`\`\``,
+        },
+        {
+          role: "user",
+          content:
+            "Here are my discovery answers. Synthesize these into 3-5 content pillars.\n\n**What I could speak about for 45 minutes with no prep:**\nbaseball\n\n**Bad advice in my industry that drives me crazy:**\nbaseball\n\n**My unfair advantage:**\nbaseball\n\n**Top 3 problems my ideal client is trying to solve:**\nbaseball\n\n**What my audience needs to believe to be ready to buy:**\nbaseball\n\n**What people actually ask me on calls, in comments, and DMs:**\nbaseball",
+        },
       ],
     }),
     // Full wizard payload: persona + schema + user "baseball" answers.
