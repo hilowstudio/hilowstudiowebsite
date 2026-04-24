@@ -170,8 +170,11 @@ function logError(params: {
   const base = `[llm:error] provider=${params.provider} model=${params.modelId} tier=${params.tier}`;
   if (params.err instanceof APICallError) {
     const body = params.err.responseBody ?? "(no body)";
+    const reqBody = params.err.requestBodyValues
+      ? JSON.stringify(params.err.requestBodyValues)
+      : "(no request body)";
     console.error(
-      `${base} status=${params.err.statusCode ?? "?"} retryable=${params.err.isRetryable} message=${params.err.message}\n${base} body=${body}`,
+      `${base} status=${params.err.statusCode ?? "?"} retryable=${params.err.isRetryable} message=${params.err.message}\n${base} response=${body}\n${base} request=${reqBody}`,
     );
     return;
   }
