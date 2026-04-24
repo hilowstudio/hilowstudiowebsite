@@ -193,10 +193,8 @@ export async function resolveLLMProvider(
       // no provider.data_collection, no response_format. Structured-output
       // callers (opsGenerateObject) must inject schema guidance via the
       // system prompt and validate the text response client-side with Zod.
-      const openrouter = createOpenRouter({
-        apiKey,
-        fetch: process.env.LLM_DEBUG_REQUEST === "1" ? debugFetch : undefined,
-      });
+      // Always use debugFetch: silent on 2xx, dumps request+response on 4xx/5xx.
+      const openrouter = createOpenRouter({ apiKey, fetch: debugFetch });
       model = openrouter.chat(modelId);
       break;
     }
@@ -206,10 +204,16 @@ export async function resolveLLMProvider(
 }
 
 /**
- * Debug fetch wrapper that logs the exact outbound request + response for
- * OpenRouter calls. Activate by setting LLM_DEBUG_REQUEST=1 in env.
+ * Fetch wrapper for OpenRouter. Always silent on success. On ANY HTTP error
+ * (status >= 400), dumps both the outbound request body and the response
+ * body to console.error — this is the only way to see what payload OpenRouter
+ * is rejecting, since the errors thrown by @openrouter/ai-sdk-provider don't
+ * reliably inherit from APICallError.
+ *
+ * If LLM_DEBUG_REQUEST=1 is set, also logs every successful request/response
+ * (noisy, privacy-intrusive — only enable during active debugging).
  */
-const debugFetch: typeof fetch = async (input, init) => {
+export const debugFetch: typeof fetch = async (input, init) => {
   const url = typeof input === "string" ? input : (input as Request).url;
   const bodyStr =
     typeof init?.body === "string"
@@ -217,11 +221,29 @@ const debugFetch: typeof fetch = async (input, init) => {
       : init?.body instanceof Uint8Array
         ? new TextDecoder().decode(init.body)
         : "(non-string body)";
-  console.log(`[llm:request] url=${url}\n[llm:request] body=${bodyStr}`);
+
+  if (process.env.LLM_DEBUG_REQUEST === "1") {
+    console.log(`[llm:request] url=${url}\n[llm:request] body=${bodyStr}`);
+  }
+
   const res = await fetch(input, init);
-  const clone = res.clone();
-  const respText = await clone.text();
-  console.log(`[llm:response] status=${res.status}\n[llm:response] body=${respText.slice(0, 2000)}`);
+
+  if (!res.ok) {
+    const clone = res.clone();
+    const respText = await clone.text();
+    console.error(
+      `[llm:fetch-error] url=${url} status=${res.status}\n` +
+        `[llm:fetch-error] request=${bodyStr}\n` +
+        `[llm:fetch-error] response=${respText.slice(0, 2000)}`,
+    );
+  } else if (process.env.LLM_DEBUG_REQUEST === "1") {
+    const clone = res.clone();
+    const respText = await clone.text();
+    console.log(
+      `[llm:response] status=${res.status}\n[llm:response] body=${respText.slice(0, 2000)}`,
+    );
+  }
+
   return res;
 };
 

@@ -22,6 +22,7 @@ import { z, type ZodType } from "zod";
 import {
   resolveLLMProvider,
   openRouterFallbackModel,
+  debugFetch,
   type LLMScope,
   type LLMTier,
   type ResolvedLLM,
@@ -239,7 +240,10 @@ function maxTokensFor(
 function openRouterFallbackLM(resolved: ResolvedLLM, tier: LLMTier) {
   const altModelId = openRouterFallbackModel(tier);
   if (altModelId === resolved.modelId) return null;
-  const openrouter = createOpenRouter({ apiKey: resolved.apiKey });
+  const openrouter = createOpenRouter({
+    apiKey: resolved.apiKey,
+    fetch: debugFetch,
+  });
   return {
     model: openrouter.chat(altModelId),
     modelId: altModelId,
