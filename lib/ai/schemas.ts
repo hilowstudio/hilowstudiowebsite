@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/**
+ * Note on array constraints: Gemini's `responseSchema` rejects `minItems`
+ * and `maxItems` greater than 1. To stay portable across providers (the
+ * router can resolve to Anthropic, OpenAI, Gemini, xAI, or OpenRouter), we
+ * keep array length constraints OUT of the JSON schema and encode them in
+ * the field `.describe()` text. Models honor the description; the consumer
+ * can tighten validation client-side if exact bounds matter.
+ */
+
 /** Schema for AI analysis of podcast/video transcripts */
 export const insightSchema = z.object({
   summary: z
@@ -7,8 +16,9 @@ export const insightSchema = z.object({
     .describe("A concise summary of the episode (2-3 sentences)"),
   keyTakeaways: z
     .array(z.string())
-    .length(5)
-    .describe("Exactly 5 key bullet points from the episode"),
+    .describe(
+      "Exactly 5 key bullet points from the episode. Provide exactly 5 items.",
+    ),
   chapters: z
     .array(
       z.object({
@@ -50,9 +60,9 @@ export const articleSummarySchema = z.object({
   summary: z.string().describe("A concise summary of the article (2-3 sentences)"),
   keyTakeaways: z
     .array(z.string())
-    .min(3)
-    .max(5)
-    .describe("3-5 key points from the article"),
+    .describe(
+      "3 to 5 key points from the article. Provide between 3 and 5 items.",
+    ),
   entities: z
     .array(
       z.object({
@@ -72,9 +82,9 @@ export const bookSummarySchema = z.object({
     .describe("A deep 3-5 sentence summary of the book's core thesis and contribution"),
   keyTakeaways: z
     .array(z.string())
-    .min(3)
-    .max(7)
-    .describe("Key concepts and takeaways"),
+    .describe(
+      "Key concepts and takeaways. Provide between 3 and 7 items.",
+    ),
   tableOfContents: z
     .array(z.string())
     .describe("Reconstructed table of contents (main chapters/sections)"),
@@ -99,10 +109,8 @@ export const slidesSchema = z.object({
         body: z.string().describe("Body text, 1-3 sentences max"),
       }),
     )
-    .min(2)
-    .max(12)
     .describe(
-      "5-10 carousel slides. First slide: strong hook/title. Last slide: CTA.",
+      "Carousel slides. Provide between 5 and 10 slides (minimum 2, maximum 12). First slide: strong hook/title. Last slide: CTA.",
     ),
 });
 
@@ -112,7 +120,6 @@ export type SlidesResult = z.infer<typeof slidesSchema>;
 export const quoteSchema = z.object({
   quote: z
     .string()
-    .max(220)
     .describe(
       "The single most powerful, shareable sentence or short passage from the post. No quotation marks. Under 200 characters.",
     ),
@@ -133,8 +140,9 @@ export const pillarsSchema = z.object({
           .describe('e.g. "TOFU primary", "MOFU to BOFU bridge"'),
       }),
     )
-    .min(3)
-    .max(5),
+    .describe(
+      "Content pillars. Provide between 3 and 5 pillars based on what the user's data supports.",
+    ),
 });
 
 export type PillarsResult = z.infer<typeof pillarsSchema>;

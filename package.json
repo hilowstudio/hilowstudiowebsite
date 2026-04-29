@@ -27,7 +27,7 @@
         "clsx": "^2.1.1",
         "framer-motion": "^12.23.26",
         "googleapis": "^171.4.0",
-        "inngest": "^4.2.0",
+        "inngest": "^3.54.0",
         "jose": "^6.2.2",
         "next": "^16.1.1",
         "react": "^19.2.1",
