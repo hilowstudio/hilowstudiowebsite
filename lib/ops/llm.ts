@@ -22,6 +22,7 @@ import { z, type ZodType } from "zod";
 import {
   resolveLLMProvider,
   openRouterFallbackModel,
+  openRouterFallbackChain,
   debugFetch,
   type LLMScope,
   type LLMTier,
@@ -312,28 +313,35 @@ export async function opsGenerateText(
   await preflightCap(opts.scope, resolved.byok);
 
   if (resolved.provider === "openrouter") {
-    try {
-      return await opsGenerateTextViaOpenRouterRaw(
-        opts,
-        resolved,
-        resolved.modelId,
-      );
-    } catch (err) {
-      logError({
-        provider: resolved.provider,
-        modelId: resolved.modelId,
-        tier: opts.tier,
-        err,
-      });
-      const altId = openRouterFallbackModel(opts.tier);
-      if (altId === resolved.modelId) throw err;
-      return opsGenerateTextViaOpenRouterRaw(
-        opts,
-        resolved,
-        altId,
-        resolved.modelId,
-      );
+    // Iterate primary then full fallback chain. Some open-source models on
+    // OpenRouter intermittently return 404 with the misleading "guardrail
+    // restrictions" message. Trying the next model in the tier usually
+    // succeeds.
+    const chain = [
+      resolved.modelId,
+      ...openRouterFallbackChain(opts.tier, resolved.modelId),
+    ];
+    let lastErr: unknown = null;
+    for (let i = 0; i < chain.length; i++) {
+      const modelId = chain[i];
+      try {
+        return await opsGenerateTextViaOpenRouterRaw(
+          opts,
+          resolved,
+          modelId,
+          i > 0 ? chain[i - 1] : undefined,
+        );
+      } catch (err) {
+        lastErr = err;
+        logError({
+          provider: resolved.provider,
+          modelId,
+          tier: opts.tier,
+          err,
+        });
+      }
     }
+    throw lastErr ?? new Error("All OpenRouter fallback models failed");
   }
 
   const providerOptions = providerOptionsFor(resolved.provider, opts);
@@ -537,42 +545,33 @@ export async function opsGenerateObject<S>(
   const resolved = await resolveLLMProvider(opts.scope, opts.tier);
   await preflightCap(opts.scope, resolved.byok);
 
-  // OpenRouter: use text-based schema path (bypass response_format entirely).
+  // OpenRouter: text-based schema path with full fallback chain.
   if (resolved.provider === "openrouter") {
-    try {
-      return await generateObjectViaText(opts, resolved, resolved.modelId);
-    } catch (err) {
-      logError({
-        provider: resolved.provider,
-        modelId: resolved.modelId,
-        tier: opts.tier,
-        err,
-      });
-      // Retry once on the same model (transient parse/validation failure).
+    const chain = [
+      resolved.modelId,
+      ...openRouterFallbackChain(opts.tier, resolved.modelId),
+    ];
+    let lastErr: unknown = null;
+    for (let i = 0; i < chain.length; i++) {
+      const modelId = chain[i];
       try {
         return await generateObjectViaText(
           opts,
           resolved,
-          resolved.modelId,
-          resolved.modelId,
+          modelId,
+          i > 0 ? chain[i - 1] : undefined,
         );
-      } catch (retryErr) {
-        if (!shouldRetryOnOpenRouter(resolved, retryErr)) throw retryErr;
-        const fallback = openRouterFallbackLM(resolved, opts.tier);
-        if (!fallback) throw retryErr;
-        const fallbackResolved: ResolvedLLM = {
-          ...resolved,
-          model: fallback.model,
-          modelId: fallback.modelId,
-        };
-        return generateObjectViaText(
-          opts,
-          fallbackResolved,
-          fallback.modelId,
-          resolved.modelId,
-        );
+      } catch (err) {
+        lastErr = err;
+        logError({
+          provider: resolved.provider,
+          modelId,
+          tier: opts.tier,
+          err,
+        });
       }
     }
+    throw lastErr ?? new Error("All OpenRouter fallback models failed");
   }
 
   // Native providers: use the SDK's built-in structured output.

@@ -247,23 +247,41 @@ export const debugFetch: typeof fetch = async (input, init) => {
   return res;
 };
 
+const OPENROUTER_FALLBACK_CHAIN: Record<LLMTier, string[]> = {
+  fast: [
+    "qwen/qwen3.6-plus",
+    "google/gemma-4-26b-a4b-it",
+    "google/gemma-4-31b-it",
+  ],
+  standard: [
+    "z-ai/glm-5.1",
+    "minimax/minimax-m2.7",
+    "google/gemma-4-31b-it",
+  ],
+  strong: [
+    "moonshotai/kimi-k2.6",
+    "minimax/minimax-m2.7",
+    "z-ai/glm-5.1",
+    "google/gemma-4-31b-it",
+  ],
+  frontier: [
+    "moonshotai/kimi-k2.6",
+    "minimax/minimax-m2.7",
+    "z-ai/glm-5.1",
+  ],
+};
+
 /** For callers who need a fallback model id in the same tier after an OpenRouter 5xx. */
 export function openRouterFallbackModel(tier: LLMTier): string {
   const primary = modelIdFor("openrouter", tier);
-  const fallbacks: Record<LLMTier, string[]> = {
-    fast: [
-      "qwen/qwen3.6-plus",
-      "google/gemma-4-26b-a4b-it",
-      "google/gemma-4-31b-it",
-    ],
-    standard: ["z-ai/glm-5.1", "minimax/minimax-m2.7"],
-    strong: [
-      "moonshotai/kimi-k2.6",
-      "minimax/minimax-m2.7",
-      "z-ai/glm-5.1",
-    ],
-    frontier: ["moonshotai/kimi-k2.6", "minimax/minimax-m2.7"],
-  };
-  const alt = fallbacks[tier].find((id) => id !== primary);
+  const alt = OPENROUTER_FALLBACK_CHAIN[tier].find((id) => id !== primary);
   return alt ?? primary;
+}
+
+/** Full fallback chain for a tier, excluding the primary model. */
+export function openRouterFallbackChain(
+  tier: LLMTier,
+  primary: string,
+): string[] {
+  return OPENROUTER_FALLBACK_CHAIN[tier].filter((id) => id !== primary);
 }
