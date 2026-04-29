@@ -24,8 +24,8 @@ export const opsFirefliesSync = inngest.createFunction(
   {
     id: "ops-fireflies-sync",
     retries: 1,
-    triggers: [{ cron: "TZ=America/Chicago */15 * * * *" }],
   },
+  { cron: "TZ=America/Chicago */15 * * * *" },
   async ({ step }) => {
     const sources = await step.run("list-fireflies-sources", async () => {
       const { data } = await supabase

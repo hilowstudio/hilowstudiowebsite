@@ -8,8 +8,8 @@ export const generateImage = inngest.createFunction(
   {
     id: "generate-image",
     retries: 2,
-    triggers: [{ event: "content/image.generate" }],
   },
+  { event: "content/image.generate" },
   async ({ event, step }) => {
     const { postId } = event.data as { postId: string };
 

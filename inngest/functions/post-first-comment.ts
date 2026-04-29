@@ -6,8 +6,8 @@ export const postFirstComment = inngest.createFunction(
   {
     id: "post-first-comment",
     retries: 3,
-    triggers: [{ event: "linkedin/first-comment.schedule" }],
   },
+  { event: "linkedin/first-comment.schedule" },
   async ({ event, step }) => {
     const { postId, postUrn, comment, delayMinutes, workspaceId, clientId } =
       event.data as {

@@ -7,8 +7,8 @@ export const ingestBook = inngest.createFunction(
   {
     id: "ingest-book",
     retries: 2,
-    triggers: [{ event: "source/book.ingest" }],
   },
+  { event: "source/book.ingest" },
   async ({ event, step }) => {
     const book = event.data as {
       title: string;

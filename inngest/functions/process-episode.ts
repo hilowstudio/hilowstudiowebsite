@@ -11,8 +11,8 @@ export const processEpisode = inngest.createFunction(
   {
     id: "process-episode",
     retries: 2,
-    triggers: [{ event: "source/episode.process" }],
   },
+  { event: "source/episode.process" },
   async ({ event, step }) => {
     const { sourceId } = event.data as { sourceId: string };
 

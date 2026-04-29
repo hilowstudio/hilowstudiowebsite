@@ -6,8 +6,8 @@ export const checkRepurpose = inngest.createFunction(
   {
     id: "check-repurpose",
     retries: 1,
-    triggers: [{ event: "content/repurpose.check" }],
   },
+  { event: "content/repurpose.check" },
   async ({ step }) => {
     const created = await step.run("find-repurposable", async () => {
       const cutoff = new Date();

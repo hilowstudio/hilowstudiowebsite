@@ -7,8 +7,8 @@ export const generateCarousel = inngest.createFunction(
   {
     id: "generate-carousel",
     retries: 2,
-    triggers: [{ event: "content/carousel.generate" }],
   },
+  { event: "content/carousel.generate" },
   async ({ event, step }) => {
     const { postId } = event.data as { postId: string };
 

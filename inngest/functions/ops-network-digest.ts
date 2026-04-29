@@ -7,8 +7,8 @@ export const opsNetworkDigest = inngest.createFunction(
   {
     id: "ops-network-digest",
     retries: 1,
-    triggers: [{ cron: "TZ=America/Chicago 0 8 * * 1" }],
   },
+  { cron: "TZ=America/Chicago 0 8 * * 1" },
   async ({ step }) => {
     const clients = await step.run("list-active-clients", async () => {
       const { data } = await supabase

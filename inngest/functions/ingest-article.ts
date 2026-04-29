@@ -8,8 +8,8 @@ export const ingestArticle = inngest.createFunction(
   {
     id: "ingest-article",
     retries: 2,
-    triggers: [{ event: "source/article.ingest" }],
   },
+  { event: "source/article.ingest" },
   async ({ event, step }) => {
     const { url, workspaceId, clientId } = event.data as {
       url: string;

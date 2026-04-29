@@ -6,8 +6,8 @@ export const studioWeeklyUpdates = inngest.createFunction(
   {
     id: "studio-weekly-updates",
     retries: 1,
-    triggers: [{ cron: "TZ=America/Chicago 0 9 * * 1" }],
   },
+  { cron: "TZ=America/Chicago 0 9 * * 1" },
   async ({ step }) => {
     const projectIds = await step.run("fetch-active-projects", async () => {
       return getActiveProjectIds();
