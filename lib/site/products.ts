@@ -131,7 +131,7 @@ export const products: Product[] = [
             "Transcribes, summarizes and organizes the podcasts you follow, in the background. Search all of it, or send notes to Notion, Readwise, Obsidian or Google Drive.",
         lead: "You listen on a walk, in the car, while cooking dinner. Podcatch keeps what you heard, so you don’t have to go back to the screen to find it.",
         mark: { src: "/site/podcatch.png", width: 502, height: 512, kind: "mark" },
-        status: { label: "Paused", tone: "paused", note: "Podcatch is offline while it moves to new hosting." },
+        status: { label: "Live", tone: "live" },
         facts: [
             { label: "Made for", value: "People who learn from podcasts" },
             { label: "Runs on", value: "The web" },
@@ -139,6 +139,7 @@ export const products: Product[] = [
             { label: "Your data", value: "Export every transcript and summary, any time" },
         ],
         chips: ["The web", "Exports everything"],
+        site: { label: "podcatch.app", href: "https://www.podcatch.app" },
         sections: [
             {
                 heading: "It works in the background",
