@@ -40,13 +40,13 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                                 ? "text-clay font-medium"
                                 : currentStep > step.num
                                   ? "text-ink-muted"
-                                  : "text-ink-light/50"
+                                  : "text-ink-muted"
                         )}
                     >
                         {String(step.num).padStart(2, "0")} {step.label}
                     </span>
                     {i < STEPS.length - 1 && (
-                        <span className="text-ink-light/30">&middot;</span>
+                        <span className="text-ink-light/30" aria-hidden="true">&middot;</span>
                     )}
                 </span>
             ))}

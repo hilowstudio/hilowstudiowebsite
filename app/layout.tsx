@@ -18,20 +18,20 @@ const sans = Inter({
 
 export const metadata: Metadata = {
     title: {
-        default: "Hi Low Studio | Digital Supports for Analog Living",
+        default: "Hi Low Studio | Digital supports for analog living",
         template: "%s | Hi Low Studio",
     },
     description:
-        "We build calm tech for the sovereign individual. Utility-first software designed to solve problems, then get out of your way.",
-    keywords: ["calm tech", "post-institutional", "homeschool software", "death care", "sovereign individual", "data sovereignty"],
+        "Hi Low Studio makes small, calm software for study, school and focus, and builds AI, automation and web systems for the businesses it works with.",
+    keywords: ["calm tech", "Bible study software", "Christian school software", "homeschool software", "attention", "data sovereignty"],
     authors: [{ name: "Hi Low Studio" }],
     creator: "Hi Low Studio",
     openGraph: {
         type: "website",
         locale: "en_US",
         siteName: "Hi Low Studio",
-        title: "Hi Low Studio | Digital Supports for Analog Living",
-        description: "We build calm tech for the sovereign individual.",
+        title: "Hi Low Studio | Digital supports for analog living",
+        description: "Small, calm software for study, school and focus.",
     },
     twitter: {
         card: "summary_large_image",

@@ -202,7 +202,7 @@ export function InquiryForm({
                 Or email us directly at{" "}
                 <a
                     href="mailto:hello@hilowstudio.dev"
-                    className="text-ink hover:text-clay transition-colors"
+                    className="text-ink underline underline-offset-4 hover:text-clay transition-colors"
                 >
                     hello@hilowstudio.dev
                 </a>

@@ -1,29 +1,26 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { SiteShell } from "@/components/site/site-shell";
 
 export default function NotFound() {
     return (
-        <main className="min-h-[70vh] flex items-center justify-center py-24">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="text-center"
-            >
-                <p className="text-sm text-ink-muted mb-4">404</p>
-                <h1 className="text-4xl md:text-5xl mb-6">Page Not Found</h1>
-                <p className="text-ink-muted mb-8 max-w-md mx-auto">
-                    The page you're looking for doesn't exist or has been moved.
-                </p>
-                <Link
-                    href="/"
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-clay text-paper text-sm font-medium hover:bg-clay-muted focus:outline-none focus:ring-2 focus:ring-clay focus:ring-offset-2 transition-all duration-300"
-                >
-                    Return Home
-                </Link>
-            </motion.div>
-        </main>
+        <SiteShell>
+            <div className="hl-wrap">
+                <section className="hl-page-hero" aria-labelledby="nf-title" style={{ paddingBottom: 120 }}>
+                    <p className="hl-eyebrow">404</p>
+                    <h1 className="hl-h1" id="nf-title">
+                        This page isn’t here.
+                    </h1>
+                    <p className="hl-lead">It may have moved, or the address may have a typo.</p>
+                    <div className="hl-links" style={{ marginTop: 24 }}>
+                        <Link className="hl-btn" href="/">
+                            Go to the home page
+                        </Link>
+                        <Link className="hl-link" data-quiet href="/contact">
+                            Contact the studio <span aria-hidden="true">→</span>
+                        </Link>
+                    </div>
+                </section>
+            </div>
+        </SiteShell>
     );
 }

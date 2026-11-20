@@ -47,7 +47,7 @@ export const categoryMeta: Record<
     tagline: "Small Claude Code routines you own.",
   },
   build: {
-    label: "Custom Builds",
+    label: "Custom builds",
     tagline: "Small, durable apps you own.",
   },
   training: {

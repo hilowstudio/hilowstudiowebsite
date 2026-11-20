@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { List, X } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { isAppPath } from "@/lib/site/routes";
 
 const navLinks = [
     { href: "/", label: "Home" },
@@ -22,6 +23,10 @@ function isActive(pathname: string, href: string): boolean {
 export function Header() {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // The public site draws its own header (components/site/site-header.tsx).
+    // This one stays on the apps only, exactly as before.
+    if (!isAppPath(pathname)) return null;
 
     return (
         <header className="sticky top-0 z-50 bg-paper/80 backdrop-blur-sm border-b border-ink/5">

@@ -67,7 +67,7 @@ export function DateSelection({ onSelect }: DateSelectionProps) {
                 setLoading(false);
             })
             .catch(() => {
-                setError("Could not load availability. Please try again.");
+                setError("Open times didn’t load. Try again in a minute, or write to hello@hilowstudio.dev to set up a call.");
                 setLoading(false);
             });
     }, [currentMonth]);
@@ -138,16 +138,15 @@ export function DateSelection({ onSelect }: DateSelectionProps) {
             {/* Calendar grid */}
             <div
                 className="rounded-lg border border-ink/5 bg-paper-warm p-5 md:p-6"
-                role="grid"
+                role="group"
                 aria-label={`Calendar for ${monthName}`}
             >
                 {/* Day headers */}
-                <div className="grid grid-cols-7 mb-3" role="row">
+                <div className="grid grid-cols-7 mb-3" aria-hidden="true">
                     {DAY_LABELS.map((label) => (
                         <div
                             key={label}
                             className="text-center text-sm text-ink-light py-2"
-                            role="columnheader"
                         >
                             {label}
                         </div>
@@ -157,7 +156,6 @@ export function DateSelection({ onSelect }: DateSelectionProps) {
                 {/* Day cells */}
                 <div
                     className="grid grid-cols-7 border-t border-l border-ink/10"
-                    role="rowgroup"
                 >
                     {cells.map(({ day, key }) => {
                         if (day === null) {
@@ -211,7 +209,7 @@ export function DateSelection({ onSelect }: DateSelectionProps) {
 
                 {/* Error state */}
                 {error && (
-                    <p className="text-xs text-terracotta text-center py-4">{error}</p>
+                    <p className="text-sm text-terracotta text-center py-4" role="alert">{error}</p>
                 )}
             </div>
 

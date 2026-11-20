@@ -87,7 +87,7 @@ const domains: Domain[] = [
                 title: "2A. Data Portability",
                 criteria: [
                     { id: "DAT-01", type: "must-pass", text: "Full data export in at least one open, machine-readable format (JSON, CSV, XML, or domain-appropriate open standard)." },
-                    { id: "DAT-02", type: "must-pass", text: "Data export is complete \u2014 includes ALL user-generated content, metadata, configuration, and history." },
+                    { id: "DAT-02", type: "must-pass", text: "Data export is complete: it includes ALL user-generated content, metadata, configuration, and history." },
                     { id: "DAT-03", type: "must-pass", text: "Export accessible within 3 clicks from settings. No support ticket, waiting period exceeding 24 hours, or discouragement flow." },
                     { id: "DAT-04", type: "points", points: 3, text: "API or webhook system for real-time or near-real-time data sync with external systems chosen by the user." },
                     { id: "DAT-05", type: "points", points: 2, text: "Exported data structured and documented sufficiently for import into a competing product or custom system." },
@@ -99,7 +99,7 @@ const domains: Domain[] = [
                 criteria: [
                     { id: "DAT-07", type: "must-pass", text: "No data collected, stored, or transmitted beyond what is required for features the user is actively using." },
                     { id: "DAT-08", type: "must-pass", text: "Never sells, shares, or provides user data to third-party advertisers, data brokers, or ad networks." },
-                    { id: "DAT-09", type: "points", points: 3, text: "Real-time, user-accessible inventory of all data held about the user \u2014 not just privacy policy categories, but an actual data viewer." },
+                    { id: "DAT-09", type: "points", points: 3, text: "Real-time, user-accessible inventory of all data held about the user: an actual data viewer, beyond the privacy policy's categories." },
                     { id: "DAT-10", type: "points", points: 2, text: "Analytics and telemetry, if present, are opt-in (not opt-out) and clearly explain what is collected and why." },
                     { id: "DAT-11", type: "points", points: 2, text: "Core features function with all optional data collection declined." },
                     { id: "DAT-12", type: "points", points: 1, text: "Stated data retention periods with automatic purge when purpose expires." },
